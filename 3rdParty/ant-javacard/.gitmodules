@@ -1,3 +1,0 @@
-[submodule "sdks"]
-	path = sdks
-	url = ../oracle_javacard_sdks.git
