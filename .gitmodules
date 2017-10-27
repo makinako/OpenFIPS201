@@ -1,6 +1,0 @@
-[submodule "3rdParty/ant-javacard"]
-	path = 3rdParty/ant-javacard
-	url = https://github.com/martinpaljak/ant-javacard
-[submodule "3rdParty/sdks"]
-	path = 3rdParty/sdks
-	url = https://github.com/martinpaljak/oracle_javacard_sdks
