@@ -1,0 +1,579 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <title>Release Notes - Binary - Development Kit for the Java Card</title>
+  <link rel="stylesheet" href="j2me-docs.css" type="text/css">
+</head>
+<body>
+<table width="100%" cellspacing="0" cellpadding="0" border="0"
+ summary="This table is for formatting purposes only.">
+  <tbody>
+    <tr>
+      <td class="sun-darkblue">&nbsp;</td>
+    </tr>
+    <tr>
+      <td class="sun-darkblue">
+      <h1>Release Notes</h1>
+      <h2>Development Kit for the Java Card&#8482; Platform<br>
+Version 2.2.2</h2>
+      <h2><br>
+Binary Release<br>
+      </h2>
+      <br>
+      <h4>March 2006</h4>
+      </td>
+    </tr>
+    <tr>
+      <td class="sun-lightblue">&nbsp;</td>
+    </tr>
+  </tbody>
+</table>
+<br>
+<p class="nav-link">[<a href="#_maincontent">Skip TOC</a>]<a name="_top"></a></p>
+<h2>Table of Contents</h2>
+<dl>
+  <dt><a href="#introduction">Introduction</a></dt>
+  <dt><a href="#supported_platforms">Supported Platforms</a></dt>
+  <dt><a href="#installation">Installation Instructions and Setting Up
+Your Environment </a></dt>
+  <dt><a href="#documentation_roadmap">Documentation Roadmap For The
+Binary Release<br>
+    </a></dt>
+  <dl>
+    <dt><a href="#development_kit">Development Kit Documentation
+Bundle, Binary Release</a><br>
+      <a href="#anttasks">Ant Tasks Bundle</a> </dt>
+    <dt><a href="#specification">Specification Documentation Bundle</a>
+    </dt>
+    <dt> <a href="#whitepapers">White Papers</a> </dt>
+  </dl>
+  <dt><a href="#new_features">New Features and Improvements</a></dt>
+  <dt><a href="#known_bugs_and_issues">Known Bugs and Issues</a></dt>
+  <dt><a href="#prod_info">Where to Find Product Information and News</a></dt>
+  <dt><br>
+  </dt>
+</dl>
+<a name="_maincontent"></a>
+<h2><a name="introduction"></a>Introduction</h2>
+<p>These release notes describe the Development Kit
+for the Java Card&#8482; Platform, Version 2.2.2.
+This binary release is available in separate bundles for the
+Solaris&#8482;, Linux, and Microsoft Windows
+operating
+systems.&nbsp; These release notes pertain to both the development kit
+binary release and the development kit binary release
+with cryptography extensions. Issues that are marked <em>(Development
+Kit with Cryptography Extensions only)</em> pertain only to the
+Development Kit Binary Release with Cryptography Extensions, Version
+2.2.2.</p>
+<p>The development kit runs on a workstation using a Java&#8482;
+Virtual Machine
+(VM). The virtual machine for the Java Card platform, version 2.2.2,
+is written in the "C" programming language.&nbsp; For more details on
+the
+reference implementation (RI), please refer to the User's Guide that is
+installed with this kit.</p>
+<h2> <a name="supported_platforms"></a>Supported Platforms </h2>
+<ul type="disc">
+  <li>Microsoft Windows XP Operating System<br>
+  </li>
+  <li>Solaris 10 Operating System (SPARC&reg;
+platforms)</li>
+</ul>
+<p> <b>Java Development Kit software:</b> Java&#8482; 2
+Standard Edition
+(J2SE&#8482;) SDK, version 1.5. You can download
+the
+supported SDK from <font color="#0000ff"><a
+ href="http://java.sun.com/j2se/">http://java.sun.com/j2se/</a></font>.<br>
+</p>
+<p>This release was built using <span style="font-family: monospace;">gcc</span>
+version 3.2.3 on Windows, 3.2.2 on Linux, and the Sun&#8482;
+Studio 10: C 5.7 Compiler on Solaris.&nbsp; The GNU Compiler
+Collection, <span style="font-family: monospace;">gcc</span>, can be
+obtained at <font color="#0000ff"><a href="http://gcc.gnu.org/">http://gcc.gnu.org</a></font>.<br>
+</p>
+<p><b>NOTE:</b> The Linux platform version was tested on the English
+language SuSE Linux, kernel 2.6.5-7.139, and <span
+ style="font-family: monospace;">gcc</span> version 3.2.2. The Linux
+platform version is unsupported;&nbsp; Sun Microsystems may choose not
+to address problems or bug reports submitted against the Linux platform
+version.
+</p>
+<p>No specific card readers are supported.<br>
+</p>
+<p class="nav-link">[<a href="#_top">Top</a>] </p>
+<h2> <a name="installation"></a>Installation Instructions and Setting
+Up Your Environment </h2>
+<p>For detailed instructions on installing the binary release, see
+Chapter 2,
+"Installation" in the <span style="font-style: italic;">Development
+Kit User's Guide</span> that is included with this
+development kit. That chapter also describes any additional
+tools you might need for setting up your environment, such as Apache
+Ant.&nbsp; See the <span style="font-style: italic;">Development
+Kit User's Guide</span> or <span style="font-style: italic;">Ant Tasks
+User's Guide</span> for more information on Apache Ant installation and
+setup.
+</p>
+<p class="nav-link">[<a href="#_top">Top</a>]</p>
+<h2> <a name="documentation_roadmap"></a>Documentation Roadmap For The
+Binary Release<br>
+</h2>
+<p>These release notes are at the base of a hierarchy of files in the
+unzipped download bundle.&nbsp; Within the subdirectory
+<span style="font-family: monospace;">java_card_kit-2_2_2</span> you
+will find several additional bundles: the
+Java Card specifications, the development kit documentation, the Ant
+Tasks, and the
+Java Card platform binary code itself.&nbsp; You must unzip all these
+bundles in
+the subdirectory
+<span style="font-family: monospace;">java_card_kit-2_2_2</span> to
+have full use of this development kit.<br>
+</p>
+<p>Documentation for version 2.2.2 of the Java Card platform binary
+release can be
+found
+in the development kit documentation bundle, the Ant tasks bundle, and
+the specification bundle. Note that the specifications within
+this download bundle are identical to the specifications available for
+separate download from the Java Card technology download web site.</p>
+<p>Most documents are available in both HTML and PDF formats. HTML can
+be viewed with any CSS-compliant browser, such as:</p>
+<ul>
+  <li>Netscape Communicator, version 5.0 or
+later</li>
+  <li>Mozilla, version 1.1 or later</li>
+</ul>
+<p>PDF files can be viewed in your web browser <em>with an appropriate
+plugin</em> or in Adobe&reg; Acrobat Reader. Most recent browsers
+include
+the
+PDF reader plugin. If your browser does not, you can download the
+plugin from the browser vendor's web site or the Adobe web site at</p>
+<p><font color="#0000ff"><a
+ href="http://www.adobe.com/products/acrobat/readstep.html">http://www.adobe.com/products/acrobat/readstep.html</a></font><br>
+</p>
+<p>Documentation files packaged in the release were current when the
+release shipped. See any updates for the Java Card
+technology web site at</p>
+<p><a href="http://java.sun.com/products/javacard/">http://java.sun.com/products/javacard</a><br>
+</p>
+<h3><a name="development_kit"></a>Development Kit Documentation Bundle,
+Binary Release<br>
+</h3>
+<p>The following table lists the main binary release
+documentation, which is in the subdirectory <span
+ style="font-family: monospace;">java_card_kit-2_2_2/doc</span>. <br>
+&nbsp; </p>
+<table>
+  <thead> <tr>
+    <th class="sun-lightblue" scope="col" width="217">Document</th>
+    <th class="sun-lightblue" scope="col" width="562">Description</th>
+  </tr>
+  </thead> <tfoot> <tr>
+    <td colspan="2">
+    <hr class="pHr"> </td>
+  </tr>
+  </tfoot> <tbody>
+    <tr>
+      <td width="217"><em>Development Kit User&#8217;s
+Guide, Version 2.2.2&nbsp; </em></td>
+      <td style="vertical-align: top; width: 562px; text-align: left;">
+      <div style="text-align: left;"> </div>
+Describes how to run the binary release for the
+Java Card Platform, Version 2.2.2.&nbsp; You will find a
+User's Guide is in this bundle that corresponds to the type of
+development kit you have downloaded, either with or without the
+cryptography
+extensions.<br>
+The Javadoc&#8482; tool files for the Java Card remote method invocation
+(Java Card RMI) client-side API
+are also included in HTML format and in PDF format.<br>
+      </td>
+    </tr>
+    <tr>
+      <td valign="top" width="217"><i>Application Programming Notes,
+Version 2.2.2<br>
+      </i></td>
+      <td valign="top" width="562">Contains tips and guidelines for the
+applet developer who is using the <span style="font-style: italic;">Java
+Card Application
+Programming Interface for the Java Card Platform, Version 2.2.2</span>,
+to implement applet
+management, multiselectable applets, logical channels and Java
+Card RMI. It is also for developers who are considering creating a
+vendor-specific framework based on any of the version 2.2.2 Java Card
+technology specifications.<br>
+The Javadoc tool files for the APDU I/O API are also included in HTML
+format
+and in PDF format.<br>
+      </td>
+    </tr>
+  </tbody>
+</table>
+<h3><a name="anttasks"></a>Ant Tasks Bundle</h3>
+<p>The development kit tools require the use of Apache Ant.&nbsp;
+However, the Ant tasks
+in the Ant tasks bundle are not part of the development kit and their
+use is optional and unsupported. See the Apache web site at <font
+ color="#0000ff"><a href="http://ant.apache.org/">http://ant.apache.org</a></font>
+for information on Ant.<br>
+</p>
+<p>The Ant tasks bundle unzips within the binary release
+bundle at <span style="font-family: monospace;">java_card_kit-2_2_2/ant-tasks</span>.&nbsp;
+When you unzip the Ant tasks bundle, the Ant tasks' Java
+Archive (JAR) file is extracted into the subdirectory&nbsp;<span
+ style="font-family: monospace;">java_card_kit-2_2_2/ant-tasks/lib/jctasks.jar</span>.
+The
+user's guide for the Ant tasks is extracted into the subdirectory&nbsp;<span
+ style="font-family: monospace;">java_card_kit-2_2_2/ant-tasks</span><span
+ style="font-family: monospace;">/docs</span>. For more
+information, see <span style="font-style: italic;">Ant Tasks User's
+Guide</span>. <br>
+</p>
+<b>NOTE:</b> The use of Ant is supported only for use with the
+development kit tools. The use of Ant outside the development kit is
+optional and not
+supported. Furthermore, the Ant tasks documented in the <span
+ style="font-style: italic;">Ant Tasks User's Guide</span> have not
+been thoroughly tested.&nbsp;
+<br>
+<br>
+<table>
+  <thead> <tr>
+    <th class="sun-lightblue" scope="col" width="217">Document</th>
+    <th class="sun-lightblue" scope="col" width="562">Description</th>
+  </tr>
+  </thead> <tfoot> <tr>
+    <td colspan="2">
+    <hr class="pHr"> </td>
+  </tr>
+  </tfoot> <tbody>
+    <tr>
+      <td width="217"><i>Ant Tasks User's Guide, Version 2.2.2</i> </td>
+      <td width="562">Describes how to use the Ant tasks in the
+development kit to create your own, customized Ant tasks.&nbsp; The
+Javadoc tool files for the Ant tasks API are also included in HTML
+format
+and in PDF format. </td>
+    </tr>
+    <tr>
+      <td width="217"><i>Ant Tasks Release Notes, Version 2.2.2</i> </td>
+      <td width="562">Describes the purpose and limitations of the Ant
+tasks provided with the development kit. While the Ant tasks are
+necessary to run the development kit, they are unsupported for use
+outside the development kit.<br>
+      </td>
+    </tr>
+  </tbody>
+</table>
+<br>
+<h3><a name="specification"></a>Specification Documentation Bundle<br>
+</h3>
+<p>These documents are included in the specification bundle that is
+included with this binary release, as well as in the separately
+downloadable specification bundle. The specification bundle unzips
+into the subdirectory <span style="font-family: monospace;">java_card_kit-2_2_2/jc_specification.</span></p>
+<table>
+  <thead> <tr>
+    <th class="sun-lightblue" scope="col" width="193">Document</th>
+    <th class="sun-lightblue" scope="col" width="504">Description</th>
+  </tr>
+  </thead> <tfoot> <tr>
+    <td style="vertical-align: top;"><span style="font-style: italic;">Release
+Notes for the Java Card Specifications, Version 2.2.2</span> <br>
+    </td>
+    <td style="vertical-align: top;">Describes changes to the
+specifications since Version 2.2.1 of the specifications.<br>
+    </td>
+  </tr>
+  <tr>
+    <td colspan="4">
+    <hr class="pHr"> </td>
+  </tr>
+  </tfoot> <tbody>
+    <tr>
+      <td width="193"><em>Application Programming Interface for the
+Java Card Platform, Version 2.2.2</em></td>
+      <td valign="top" width="504"> Provides the documentation for the
+Java Card API in PDF and
+HTML formats. </td>
+    </tr>
+    <tr>
+      <td width="193"><em>Virtual Machine Specification for the Java
+Card Platform, Version 2.2.2</em></td>
+      <td width="504">Assists developers in creating an implementation,
+developing a specification to extend the Java Card technology
+specifications, or in creating an extension to the Java Card
+runtime environment. The specification is provided in PDF and
+HTML formats.</td>
+    </tr>
+    <tr>
+      <td width="193"><em>Runtime Environment Specification for the
+Java Card Platform, Version 2.2.2 </em></td>
+      <td width="504"> Assists Java Card runtime environment
+implementers in creating
+an implementation, developing a specification to extend the
+Java Card technology specifications, or in creating an
+extension to the Java Card runtime environment. The specification is
+provided in PDF and HTML formats. </td>
+    </tr>
+  </tbody>
+</table>
+<h3><a name="whitepapers"></a>White Papers</h3>
+<p>The development kit documentation references the following white
+papers. You can obtain these white papers from the Java Card
+technology web site at <font color="#0000ff"><a
+ href="http://java.sun.com/products/javacard/">http://java.sun.com/products/javacard</a></font>.<br>
+</p>
+<table>
+  <thead> <tr>
+    <th class="sun-lightblue" scope="col" width="193">Document</th>
+    <th class="sun-lightblue" scope="col" width="504">Description</th>
+  </tr>
+  </thead> <tfoot> <tr>
+    <td colspan="4">
+    <hr class="pHr"> </td>
+  </tr>
+  </tfoot> <tbody>
+    <tr>
+      <td style="width: 193px; vertical-align: top;"><em>Off-Card
+Verifier White Paper</em></td>
+      <td style="vertical-align: top;">This white paper describes the
+off-card verifier for the Java
+Card platform. The off-card verifier provides the
+functionality for verifying that Java Card applets (CAP
+files) and export files conform to the Java Card
+specifications and platform interoperability standards.</td>
+    </tr>
+    <tr>
+      <td width="193" valign="top"><em>Java Card RMI Client Application
+Programming Interface</em></td>
+      <td width="504">This white paper describes a sample client-side
+API to be used in client applications which access a Java Card
+Remote Method Invocation (RMI) server applet executing on the smart
+card. This API is
+presented as an aid to developers who are writing their own
+client-side API.</td>
+    </tr>
+  </tbody>
+</table>
+<p class="nav-link">[<a href="#_top">Top</a>]</p>
+<h2><a name="new_features"></a>New Features and Improvements</h2>
+<ul type="disc">
+  <li>Added support for ISO7816-4:2005 and 20 logical channels</li>
+  <li>Added applet programmability assists for ISO 7816 defined
+extended length APDU</li>
+  <li><span style="font-family: monospace;">MessageDigest</span> now
+supports the initial message digest capability<br>
+  </li>
+  <li>Added support for the following new hashing algorithms:</li>
+  <ul>
+    <li><span style="font-family: monospace;">SHA-256,</span> <span
+ style="font-family: monospace;">SHA-384,</span> <span
+ style="font-family: monospace;">SHA-512</span><br>
+    </li>
+  </ul>
+  <li>Added support for the following new signature algorithms:</li>
+  <ul>
+    <li><span style="font-family: monospace;">ISO9796-2</span> with
+message recovery</li>
+    <li><span style="font-family: monospace;">HMAC</span></li>
+    <li><span style="font-family: monospace;">Korean SEED MAC NOPAD<br>
+      </span></li>
+  </ul>
+  <li>Added support for the following new cipher algorithms:</li>
+  <ul>
+    <li><span style="font-family: monospace;">Korean SEED NOPAD</span><br>
+    </li>
+  </ul>
+  <li>New extension package for ISO 7816 defined extended length APDU</li>
+  <li>New extension package for External Memory Subsystem access</li>
+  <li>New extension package for Biometry <br>
+  </li>
+  <li>New extension framework package includes<br>
+  </li>
+  <ul>
+    <li>utility package to manipulate arrays and primitives of <span
+ style="font-family: monospace;">short</span> and <span
+ style="font-family: monospace;">int</span> type</li>
+    <li>math package for BCD and DES parity computations</li>
+    <li>TLV package for managing BER-TLV structures</li>
+  </ul>
+</ul>
+<ul type="disc">
+  <li>Management of logical channels in contactless interface and in
+concurrent dual interface mode defined</li>
+  <li>Java Card runtime environmnet (Java Card RE) support for extended
+length APDU defined<br>
+  </li>
+  <li>Grammatical corrections for conformance with Sun's style guide
+for specifications</li>
+  <ul>
+    <li>improved list introductions</li>
+    <li>fixed some verb tenses to present tense</li>
+  </ul>
+  <li>Punctuation and rewording changes for readability and trademark
+restrictions<br>
+  </li>
+  <li>Font changes for conformance with Sun's style guide for
+specifications</li>
+  <li>Java Card platform language aligned with JDK&#8482;
+version
+1.5 technology and
+tools</li>
+  <li>DES encryption and signature APIs have been enhanced so that
+when
+transient keys are used, the API avoids persistent memory writes. The
+reduction in persistent memory writes was achieved by eliminating use
+of instance variables in persistent memory when transient keys are
+used. This enhancement will significantly improve the performance of
+the DES API, since persistent memory updates are relatively slow, when
+compared to RAM memory updates.</li>
+  <li>The default protocol supported in this release is T=1/T=CL dual
+interface.</li>
+</ul>
+<p class="nav-link">[<a href="#_top">Top</a>]</p>
+<h2 style="text-align: left;"> <a name="known_bugs_and_issues"></a>Known
+Bugs and Issues<br>
+</h2>
+This section describes release limitations and issues.<br>
+<br>
+<table style="height: 146px; width: 100%;">
+  <thead> <tr>
+    <th class="sun-lightblue" scope="col"
+ style="text-align: left; vertical-align: top; width: 10%;">BUG ID<br>
+    </th>
+    <th class="sun-lightblue" scope="col"
+ style="width: 90%; text-align: left; vertical-align: top;">DESCRIPTION</th>
+  </tr>
+  </thead> <tfoot> <tr>
+    <td style="vertical-align: top;"> 6301113</td>
+    <td style="vertical-align: top;">Error T=0 CASE 2 APDU with Le &gt;
+0xF9 : CadT0Client.isoOut only supports Le up to 249.</td>
+  </tr>
+  <tr>
+    <td style="vertical-align: top;"> 6316626</td>
+    <td style="vertical-align: top;">Apdutool script must follow ISO
+format.</td>
+  </tr>
+  <tr>
+    <td style="vertical-align: top;">6324856</td>
+    <td style="vertical-align: top;">Apduio/apdutool cannot handle T=0,
+Case 4 with Lc &lt; 256, Le &gt; 256.</td>
+  </tr>
+  <tr>
+    <td style="vertical-align: top;">6322909</td>
+    <td style="vertical-align: top;">T=0, CASE 4 with Le=00 (256)
+should be short case (4S).</td>
+  </tr>
+  <tr>
+    <td style="vertical-align: top;">6393099<br>
+    </td>
+    <td style="vertical-align: top;">Maskgen builds mask with negative
+remaining ROM space.<br>
+    </td>
+  </tr>
+  <tr>
+    <td style="vertical-align: top;">6395309<br>
+    </td>
+    <td style="vertical-align: top;">In T=0 <span
+ style="font-family: monospace;">apdu.setOutgoingNoChaining()</span>
+does not return 256, applet implements
+ExtendedLength interface.<br>
+    </td>
+  </tr>
+  <tr>
+    <td colspan="4"
+ style="text-align: left; vertical-align: top; width: 10%;">
+    <hr class="pHr"> </td>
+  </tr>
+  </tfoot> <tbody>
+    <tr>
+      <td style="text-align: left; vertical-align: top; width: 10%;">6357521<br>
+      </td>
+      <td style="width: 90%; text-align: left; vertical-align: top;">Contactless
+interface activation before contacted interface activation is
+not supported in the C-language Java Card Runtime Environment (<span
+ style="font-family: monospace;">cref</span>) or the
+Java Card WDE at this time.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; vertical-align: top; width: 10%;">6328483</td>
+      <td style="width: 90%; text-align: left; vertical-align: top;">
+      <div style="text-align: left;"> </div>
+For case 4E, APDU in T=0.&nbsp; Section 11.2.3 in the ISO 7816-3 spec
+describes the Command APDU structure for case 4.&nbsp; In case 4E, the
+entire command APDU structure is encapsulated in a series of envelope
+commands. Section 11.3.7 never says that LE should not be included; it
+only says that the entire APDU command should be the envelope. The
+specification is ambiguous whether LE should be included.&nbsp; For the
+Java Card Platform, v2.2.2 release, LE is included in the encapsulated
+APDU. </td>
+    </tr>
+  </tbody>
+</table>
+<h3>T=1/T=0 Protocol Differences in API Behavior
+</h3>
+There are significant differences in layering between the T=1
+and T=0 protocols. The Java Card API behavior can substantially vary
+depending on the protocol implemented underneath. Specifically, T=0
+depends greatly on the application to be able to correctly interpret an
+APDU because it is virtually impossible to tell by simply examining the
+buffer,&nbsp; whether an APDU is case 1 or case 2E, for example. T=1
+corrects these deficiencies by making the protocol self-contained
+because all
+information to correctly interpret an APDU is in the T=1 data
+structures themselves. <br>
+<br>
+As a result of these low-level differences, certain API calls might
+behave differently, or return different results, depending on the
+underlying protocol. Incorrectly interpreting an APDU in T=0 might
+result in desynchronized I/O, and thus lead to errors or applet
+exceptions thrown by the Java Card runtime environment. It is important
+that programmers take
+care on using the API calls correctly in order to help the Java Card
+runtime environment&nbsp; to
+better interpret APDUs in T=0, and to adhere to API call semantics in
+order to ensure correct interpretation of results, and also isolate the
+applets from low-level protocol differences. <br>
+<h3>T=CL Protocol Dual Interface Only</h3>
+The T=CL protocol is not supported in single interface
+configurations.&nbsp; You cannot build <span
+ style="font-family: monospace;">cref</span> with a single interface
+protocol that supports T=CL.&nbsp; You can build it only with a dual
+interface.<br>
+<h3>Using a Contactless <span style="font-family: monospace;">cref</span></h3>
+Although the Java Card specification specifically allows you to
+simulate use cases where a contactless interface is powered up before a
+contacted interface, when simulating a dual-interface use case and
+using <span style="font-family: monospace;">cref</span> or Java Card
+WDE, it is not supported to power up a contactless interface before a
+contacted interface. In the binary release, the <span
+ style="font-family: monospace;">cref</span>
+and Java Card WDE implementations require that a contacted interface is
+powered up before a contactless interface. In the binary release, you
+can power up the contacted interface, then
+power up the contactless, and then use the contactless interface to
+exchange APDUs.<br>
+<h2><a name="prod_info"></a>Where to Find Product Information and
+News </h2>
+<p>Visit the product web site at: </p>
+<p><font color="#0000ff"><a
+ href="http://java.sun.com/products/javacard/">http://java.sun.com/products/javacard/</a></font>
+</p>
+<p>For the most up-to-date information on: </p>
+<ul type="disc">
+  <li>Product News and Reviews </li>
+  <li>Release Notes and Product Documentation </li>
+  <li>Technical Support Contact Information </li>
+</ul>
+<p class="nav-link">[<a href="#_top">Top</a>]</p>
+<hr class="pHr"><a href="copyright/COPYRIGHT.html">Copyright</a>
+&copy;
+2005 Sun Microsystems, Inc. All rights
+reserved. <br>
+</body>
+</html>
