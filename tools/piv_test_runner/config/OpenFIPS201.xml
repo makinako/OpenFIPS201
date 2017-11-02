@@ -1,0 +1,271 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><configuration format_name="com/tvec/smart_card/piv/test_runner/ConfigFormat_PIV_SP800_73_4.xml">
+	<group name="connectivity">
+			<entry name="PIV_API_CLASS_LOCATION" type="string"/>
+			<entry name="PIV_API_DLL" type="string">OTPivLib_64</entry>
+			<entry name="PIV_API_WRAPPER_DLL" type="string">PIVAPIWrapper_x64</entry>
+			<entry name="SMART_CARD_PROTOCOL" type="string">SCARD_PROTOCOL_T1</entry>
+			<entry name="PIV_API_CLASS" type="string">com.tvec.smart_card.piv.api.tests.PIVAPIWrapper</entry>
+			<entry name="CONTACT_READER_NAME" type="string">Gemalto USB SmartCard Reader 0</entry>
+			<entry name="CONTACTLESS_READER_NAME" type="string">JAVACOS Virtual Contactless Reader 1</entry>
+			<entry name="PROXY_PORT" type="string">80</entry>
+			<entry name="PROXY_HOSTNAME" type="string"/>
+	</group>
+	<group name="testing">
+			<entry name="TEST_RESET_TIME" type="string">2</entry>
+			<entry name="UNKNOWN_ALGORITHM" type="string">AA</entry>
+			<entry name="PIN_UPDATE" type="string">123455</entry>
+			<entry name="GLOBAL_PUK" type="string"/>
+			<entry name="RUN_BLOCKING_TESTS_FINGERPRINT" type="string">false</entry>
+			<entry name="RUN_BLOCKING_TESTS" type="string">false</entry>
+			<entry name="SYMMETRIC_CARD_AUTHENTICATION_KEY_SUPPORTED" type="string">false</entry>
+			<entry name="PUK_VALID" type="string">12345678</entry>
+			<entry name="GLOBAL_PIN" type="string">12345678</entry>
+			<entry name="OPTIONAL_TEST_FILTER" type="string">DIGITAL_SIGNATURE;DISCOVERY_OBJECT;KEY_MANAGEMENT</entry>
+			<entry name="KEY_ALGORITHMS_AUTHENTICATION" type="string">07</entry>
+			<entry name="CHANGE_REFERENCE_WITH_PUK" type="string">true</entry>
+			<entry name="OCC_FIRST_FINGER_BLOCK_ATTEMPTS" type="string">8</entry>
+			<entry name="UNKNOWN_KEY" type="string">77</entry>
+			<entry name="RUN_BLOCKING_TESTS_PUK" type="string">false</entry>
+			<entry name="PIN_RESET_RETRY_COUNTER_RESETS_PUK_COUNTER" type="string">true</entry>
+			<entry name="PUK_BLOCK_ATTEMPTS" type="string">6</entry>
+			<entry name="GENERAL_AUTH_ALGORITHM_PIV_AUTHENTICATION_KEY" type="string">07</entry>
+			<entry name="UNKNOWN_OBJECT" type="string">05cf20</entry>
+			<entry name="OCC_PRIMARY_FINGER_VALUE" type="string"/>
+			<entry name="OCC_SECONDARY_FINGER_VALUE" type="string"/>
+			<entry name="KEY_ALGORITHMS_CARD_MANAGEMENT" type="string">03</entry>
+			<entry name="KEY_ALGORITHMS_CARD_AUTHENTICATION_SYMMETRIC" type="string">03</entry>
+			<entry name="PIN_VALID" type="string">123456</entry>
+			<entry name="KEY_ALGORITHMS_CARD_AUTHENTICATION" type="string">07</entry>
+			<entry name="RUN_BLOCKING_TESTS_PIN" type="string">false</entry>
+			<entry name="GLOBAL_PIN_UPDATE" type="string">12345678</entry>
+			<entry name="KEY_ALGORITHMS_DIGITAL_SIGNATURE" type="string">07</entry>
+			<entry name="PIN_BLOCK_ATTEMPTS" type="string">6</entry>
+			<entry name="GLOBAL_PIN_BLOCK_ATTEMPTS" type="string">2</entry>
+			<entry name="PAIRING_CODE" type="string"/>
+			<entry name="OCC_SECOND_FINGER_BLOCK_ATTEMPTS" type="string">8</entry>
+			<entry name="KEY_ALGORITHMS_KEY_MANAGEMENT" type="string">07</entry>
+			<entry name="KEY_ALGORITHMS_SECURE_MESSAGING" type="string">11</entry>
+		<group name="output">
+					<entry name="TestResultPath" type="string">.\piv_tests\SP800_73_4\results</entry>
+					<entry name="ContainerBufferPath" type="string">.\piv_tests\SP800_73_4\buffer</entry>
+					<entry name="TestLogPath" type="string">.\piv_tests\SP800_73_4\log</entry>
+					<entry name="TestMainPath" type="string">.\piv_tests\SP800_73_4</entry>
+		</group>
+	<group name="keytypealgorithmkeys">
+					<entry name="KEY_9D_0E" type="string"/>
+					<entry name="KEY_9D_0F" type="string"/>
+					<entry name="KEY_04_11" type="string"/>
+					<entry name="KEY_9D_10" type="string"/>
+					<entry name="KEY_9C_07" type="string">-----BEGIN CERTIFICATE-----
+MIIEdDCCA1ygAwIBAgIJANRItVinV3jwMA0GCSqGSIb3DQEBCwUAMIGCMQswCQYD
+VQQGEwJBVTEMMAoGA1UECBMDTlNXMRAwDgYDVQQHEwdFeGFtcGxlMRgwFgYDVQQK
+Ew9FeGFtcGxlIFB0eSBMdGQxFzAVBgNVBAMTDkV4YW1wbGUgOUMgS2V5MSAwHgYJ
+KoZIhvcNAQkBFhFwaXZAbWFraW5hLmNvbS5hdTAeFw0xNzEwMTcwMTUyMjVaFw0y
+MjEwMTYwMTUyMjVaMIGCMQswCQYDVQQGEwJBVTEMMAoGA1UECBMDTlNXMRAwDgYD
+VQQHEwdFeGFtcGxlMRgwFgYDVQQKEw9FeGFtcGxlIFB0eSBMdGQxFzAVBgNVBAMT
+DkV4YW1wbGUgOUMgS2V5MSAwHgYJKoZIhvcNAQkBFhFwaXZAbWFraW5hLmNvbS5h
+dTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBANTJKU70E+fjObRQ5N+S
+YjB4DAL7ilmkfFf7GMfPORKXVkd3Vf9ZdKa+2Pvv9+6sQuL6+DSGrhNe23rkLQe2
+x2h2keXL4YcmP1pna5IJIH+n/SAb/czSZCb3ONx5KsKO8n7VLQR6hbaSo19y1cTh
+dNTm5oOB9+rgYpF5zyVwEbifN3+r2KtqS+yB4jqCbahxuZ8kFlTH0XyySDrR/ulw
+8DUdG3vm2qhTFgpY3i10q+3WsLjbqTGBZv3qSlKfuJFiODRgrZD6/QoZMpXVvRYu
+DTOmhudxJ2qJqzI63NqbDSywcXWavrG03Z9ig/wMglkT1Ye85V6Ffl/TXIxS1Zqw
+GBsCAwEAAaOB6jCB5zAdBgNVHQ4EFgQUDwhqzkGXf5g/V8XITdaHDY/7k60wgbcG
+A1UdIwSBrzCBrIAUDwhqzkGXf5g/V8XITdaHDY/7k62hgYikgYUwgYIxCzAJBgNV
+BAYTAkFVMQwwCgYDVQQIEwNOU1cxEDAOBgNVBAcTB0V4YW1wbGUxGDAWBgNVBAoT
+D0V4YW1wbGUgUHR5IEx0ZDEXMBUGA1UEAxMORXhhbXBsZSA5QyBLZXkxIDAeBgkq
+hkiG9w0BCQEWEXBpdkBtYWtpbmEuY29tLmF1ggkA1Ei1WKdXePAwDAYDVR0TBAUw
+AwEB/zANBgkqhkiG9w0BAQsFAAOCAQEAlLuX5k+GWLZbxZ6oPepYduh7hpOTUn0c
+7gbhP6jhG4NlNztxe1I9r/cqGJk0tgoYn6paqFfr8NtfyZ9cOxFMooDy2+Byfok8
+Py172xviWMxoelUMTt30oj6TIobz68tgpNUTsuywHD4z7Fz4AepoDiUH43VuOnUm
+4M9/rMkf9AxjvFcTPqP44vrWUAGyGBSo1Qpkqitek5bHDAMS3WzMiVkPSIACIFw2
+VPDyqeJ46uvdnhyqngSlNn7mVm5GFS16qvBBNG94cHIEaoHKYzGMVRz2fOqN5czN
+aAPUCLRACIdf5T0MGaxGfhfJXAcRuoQF0qiATkOjv/0jiCIKiD0yAA==
+-----END CERTIFICATE-----</entry>
+					<entry name="KEY_9D_11" type="string"/>
+					<entry name="KEY_9C_06" type="string"/>
+					<entry name="KEY_04_14" type="string"/>
+					<entry name="KEY_9D_12" type="string"/>
+					<entry name="KEY_9C_05" type="string"/>
+					<entry name="KEY_9D_13" type="string"/>
+					<entry name="KEY_9D_14" type="string"/>
+					<entry name="KEY_9E_0E" type="string"/>
+					<entry name="KEY_9E_0F" type="string"/>
+					<entry name="KEY_9A_0E" type="string"/>
+					<entry name="KEY_9A_0F" type="string"/>
+					<entry name="KEY_9E_0A" type="string">9E9E9E9E9E9E9E9E9E9E9E9E9E9E9E9E9E9E9E9E9E9E9E9E</entry>
+					<entry name="KEY_9E_0B" type="string"/>
+					<entry name="KEY_9E_0C" type="string">9E9E9E9E9E9E9E9E9E9E9E9E9E9E9E9E9E9E9E9E9E9E9E9E9E9E9E9E9E9E9E9E</entry>
+					<entry name="KEY_9E_0D" type="string"/>
+					<entry name="KEY_9A_10" type="string"/>
+					<entry name="KEY_9D_05" type="string"/>
+					<entry name="KEY_9A_11" type="string"/>
+					<entry name="KEY_9D_06" type="string"/>
+					<entry name="KEY_9D_07" type="string">-----BEGIN CERTIFICATE-----
+MIIEdDCCA1ygAwIBAgIJAOZ0JDzR0+JQMA0GCSqGSIb3DQEBCwUAMIGCMQswCQYD
+VQQGEwJBVTEMMAoGA1UECBMDTlNXMRAwDgYDVQQHEwdFeGFtcGxlMRgwFgYDVQQK
+Ew9FeGFtcGxlIFB0eSBMdGQxFzAVBgNVBAMTDkV4YW1wbGUgOUQgS2V5MSAwHgYJ
+KoZIhvcNAQkBFhFwaXZAbWFraW5hLmNvbS5hdTAeFw0xNzEwMTcwMTUyNTFaFw0y
+MjEwMTYwMTUyNTFaMIGCMQswCQYDVQQGEwJBVTEMMAoGA1UECBMDTlNXMRAwDgYD
+VQQHEwdFeGFtcGxlMRgwFgYDVQQKEw9FeGFtcGxlIFB0eSBMdGQxFzAVBgNVBAMT
+DkV4YW1wbGUgOUQgS2V5MSAwHgYJKoZIhvcNAQkBFhFwaXZAbWFraW5hLmNvbS5h
+dTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAJ2B06rVUR9A4IqxYRkE
+qoLndM/7Edu4jGPTjC3TPHRLDwzMgv35BJQPyobevzMrP52PcCsNfLNvI1ei9Vsp
+440Vv5ZOtPvIakPhJcL+XZJ3aOOVdPbuVVrf898oBUtDEl6t+RlGWIFz09gbPQZc
+8v9YAUywv5943qwqWW6UMWflXCC+3W113qKsQVhLbBq2ZzVKljkosAJCJyxNuhNZ
+KINZhD4Kdys1LVB5xloN/8ue2VCMufr9SwRojPK8s1bJaYY39uZc7BMK9eQXB824
+Hsm+4eyIo7eaEWKXTrXLtd8UtiUOfEnMXp/WfW1KC2FN55xynZyfeLpF9NPm+svW
+SycCAwEAAaOB6jCB5zAdBgNVHQ4EFgQUOrOygtXAg6znyQFEtCxXNmwtZBEwgbcG
+A1UdIwSBrzCBrIAUOrOygtXAg6znyQFEtCxXNmwtZBGhgYikgYUwgYIxCzAJBgNV
+BAYTAkFVMQwwCgYDVQQIEwNOU1cxEDAOBgNVBAcTB0V4YW1wbGUxGDAWBgNVBAoT
+D0V4YW1wbGUgUHR5IEx0ZDEXMBUGA1UEAxMORXhhbXBsZSA5RCBLZXkxIDAeBgkq
+hkiG9w0BCQEWEXBpdkBtYWtpbmEuY29tLmF1ggkA5nQkPNHT4lAwDAYDVR0TBAUw
+AwEB/zANBgkqhkiG9w0BAQsFAAOCAQEADS0YKirNdDZIHMMesN1hA4hemQBGmrdm
+6XZltK/tX8Uq91c9EoKAn9R9vNNsn1oC9LAT1uFZV8LfvCBmnHvXgdNHXnh3dmbw
+qMeReFUV0BfLklF+A7yVN9pk8RbEYOI8Ri728PISELrx/VJPiTfXbqfopwmaCbDc
+G0k9mVmwNAmWZRK9ut82WPdpW2SFhXLhFnCA75aeRq+joUPYdHYRFeOiEY9mP4R2
+eGM25fuKPEjjn8kMwmUohDdA7hMlFjwek6MPPCWRk0zJl7EIxw3kyOxhb1Q8JGQj
+pGTFQ5sAiitHfm3XGV4sSxXgHV7+1dOM3QCI2gmM//IPVoNgUDgeqw==
+-----END CERTIFICATE-----</entry>
+					<entry name="KEY_9E_10" type="string"/>
+					<entry name="KEY_9E_11" type="string"/>
+					<entry name="KEY_9E_12" type="string"/>
+					<entry name="KEY_9E_13" type="string"/>
+					<entry name="KEY_9E_14" type="string">-----BEGIN CERTIFICATE-----
+MIICwTCCAkegAwIBAgIBATAKBggqhkjOPQQDAzArMQswCQYDVQQGEwJVUzENMAsG
+A1UECgwETklTVDENMAsGA1UEAwwETklTVDAeFw0wOTA1MTkwMjM4NDBaFw0wOTA1
+MTkwMjQwMjBaMCsxCzAJBgNVBAYTAlVTMQ0wCwYDVQQKDAROSVNUMQ0wCwYDVQQD
+DAROSVNUMIIBtTCCAU0GByqGSM49AgEwggFAAgEBMDwGByqGSM49AQECMQD/////
+/////////////////////////////////////v////8AAAAAAAAAAP////8wZAQw
+//////////////////////////////////////////7/////AAAAAAAAAAD////8
+BDD//////////////////////////////////////////v////8AAAAAAAAAAP//
+//wEYQSqh8oivosFN46xxx7zIK10bh07Younm5hZ90HgglQqOFUC8l2/VSlsOlRe
+OHJ2Crc2F95KliYsb12emL+Sktwp+PQdvSiaFHzp2jETtfC4wApgsc4dfoGdekMd
+fJDqDl8CMQD////////////////////////////////HY02B9Dct31gaDbJIsKd6
+7OwZaszFKXMCAQEDYgAEK7MvqBlMnVDH0ZCgHr006hxgDaHYTQSbVw8XifZ3hffj
+DZ3HOrlOUe78OE0rLTS1MTXOADpj6DunXRsoMhXKapzJFTS8RSgZtIax7b+deqON
++hJNDkIlZe8J81FO8OF/MAoGCCqGSM49BAMDA2gAMGUCMQCXP97ooFIo1CocXXq+
+x5oIH6dGU0UESdC9IXCB7pNGTJbUElht8p3f6GJl4PglcYgCMBLH1e0xThgK+HwY
+UiGFlUOQTzn6g4uI8SI/KItXO7oRqsWakC6jLo3J1fPnoQbhhw==
+-----END CERTIFICATE-----</entry>
+					<entry name="KEY_9A_12" type="string"/>
+					<entry name="KEY_9A_13" type="string"/>
+					<entry name="KEY_9B_0A" type="string">9B9B9B9B9B9B9B9B9B9B9B9B9B9B9B9B9B9B9B9B9B9B9B9B</entry>
+					<entry name="KEY_9B_0D" type="string"/>
+					<entry name="KEY_9B_0C" type="string">9B9B9B9B9B9B9B9B9B9B9B9B9B9B9B9B9B9B9B9B9B9B9B9B9B9B9B9B9B9B9B9B</entry>
+					<entry name="KEY_9B_0B" type="string"/>
+					<entry name="KEY_9E_05" type="string"/>
+					<entry name="KEY_9E_06" type="string">-----BEGIN CERTIFICATE-----
+MIIB0DCCATmgAwIBAgIID25t+TLsRIIwDQYJKoZIhvcNAQEFBQAwKzELMAkGA1UE
+BhMCVVMxDTALBgNVBAoMBE5JU1QxDTALBgNVBAMMBE5JU1QwHhcNMTUwNDExMjIw
+NjU4WhcNMTUwNDI4MjI1NzI3WjArMQswCQYDVQQGEwJVUzENMAsGA1UECgwETklT
+VDENMAsGA1UEAwwETklTVDCBnjANBgkqhkiG9w0BAQEFAAOBjAAwgYgCgYCzbgET
+bdYYdizRccFKaJCYq8sv0msLFGvRD0sN3NNgTXGcmrfHXbsZIrTIUtZ9BKwZOLq7
+zMzJrWEr6TgPAWl5GDK0bksffkmtKBxnUP0mz59E+zCmitL0namY/qaVrkGHQvID
+Y46GIDwtS2S6p5h516ybLkxuVgRLL7w07s3Q6wIDAQABMA0GCSqGSIb3DQEBBQUA
+A4GBACBvaUG951OsZmxtaNmJJTmVAVNs4pc5a/nLsU55YSeOyMJDD1QvQviO5lnc
+RI0xIAOE1S08yihh2juXaDhkE0v3rewjkkijzcVw7+MadD2NlvoNg8VPluxaonjb
+Qr6BviLZqODmxH8zBsMp8+vYK8mvMmbzVNOVIwaX/yWlFURQ
+-----END CERTIFICATE-----</entry>
+					<entry name="KEY_9E_07" type="string">-----BEGIN CERTIFICATE-----
+MIIEdDCCA1ygAwIBAgIJAO30ukbHydFmMA0GCSqGSIb3DQEBCwUAMIGCMQswCQYD
+VQQGEwJBVTEMMAoGA1UECBMDTlNXMRAwDgYDVQQHEwdFeGFtcGxlMRgwFgYDVQQK
+Ew9FeGFtcGxlIFB0eSBMdGQxFzAVBgNVBAMTDkV4YW1wbGUgOUUgS2V5MSAwHgYJ
+KoZIhvcNAQkBFhFwaXZAbWFraW5hLmNvbS5hdTAeFw0xNzEwMTcwMTUzMjFaFw0y
+MjEwMTYwMTUzMjFaMIGCMQswCQYDVQQGEwJBVTEMMAoGA1UECBMDTlNXMRAwDgYD
+VQQHEwdFeGFtcGxlMRgwFgYDVQQKEw9FeGFtcGxlIFB0eSBMdGQxFzAVBgNVBAMT
+DkV4YW1wbGUgOUUgS2V5MSAwHgYJKoZIhvcNAQkBFhFwaXZAbWFraW5hLmNvbS5h
+dTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBANr2Glni0TU5mkI4ey5F
+r4P2IS1b3trkYrqtpZeseAOL2penUTbIhj8YjPe8Jyq4N5SY4TvZGtFEfTZJkk6r
++Na8AzbL6x7HUbnONcnDxdJVddncxY8GVLGEzqvgAIiR0N/7wPO1aXFyek+n3+qD
+NxX/G5uPRaS54mRRmKlGDy3/dAGmbuM+CIpFhoLzOX57x70uYnkJV4bqT7s2oKZA
+LO+V8urZBQYWiv4wYNs2nIkSqE9jXFnqefpobxng1YuXN5kNZfGmA5D/R8uVYk7O
+CzS/CccFKY6hauHW4sqrKg/7FJgtj44kUZMQdBqza1TTkMihWPcl6GsZ4Q0a2Ivz
+3LUCAwEAAaOB6jCB5zAdBgNVHQ4EFgQUy0L4SDrLzMHlX0jguC9NEvjS2nAwgbcG
+A1UdIwSBrzCBrIAUy0L4SDrLzMHlX0jguC9NEvjS2nChgYikgYUwgYIxCzAJBgNV
+BAYTAkFVMQwwCgYDVQQIEwNOU1cxEDAOBgNVBAcTB0V4YW1wbGUxGDAWBgNVBAoT
+D0V4YW1wbGUgUHR5IEx0ZDEXMBUGA1UEAxMORXhhbXBsZSA5RSBLZXkxIDAeBgkq
+hkiG9w0BCQEWEXBpdkBtYWtpbmEuY29tLmF1ggkA7fS6RsfJ0WYwDAYDVR0TBAUw
+AwEB/zANBgkqhkiG9w0BAQsFAAOCAQEAuXiWsiQ8E6HPgDX/SJxJYB4JFXNwQmqS
+SznI0TsJXsntnEEQDSeHs+Vw4LpJHlzX8itoiI9OnWs/iajN3s2CuV2ARTEQawbZ
+gyoKYYWhxjNjFYM4aHguybwcX+BXTxOTDG6A2h9LLzBlHnpAKIqk1vqEOpCemrd8
+DUb206DuD67xbOYOHHIM33fP76EetuN9/Mk7h0RTOHyA/UqwU7O8mikztjV/vRJg
+adr2nCS/+rEHHKsgATJWryUoZQZK0BmC60X3XYmTnK0q5lnLDopPpdQ9pDc0EPDC
+Jzqz8Nn30SSabEFqj88JiVHw4bPaygzF/LqheGbJLzklRTbq0Es1tw==
+-----END CERTIFICATE-----</entry>
+					<entry name="KEY_9E_08" type="string">9E9E9E9E9E9E9E9E9E9E9E9E9E9E9E9E</entry>
+					<entry name="KEY_9E_09" type="string"/>
+					<entry name="KEY_9A_07" type="string">-----BEGIN CERTIFICATE-----
+MIIEdDCCA1ygAwIBAgIJAPjB/EkQkjGdMA0GCSqGSIb3DQEBCwUAMIGCMQswCQYD
+VQQGEwJBVTEMMAoGA1UECBMDTlNXMRAwDgYDVQQHEwdFeGFtcGxlMRgwFgYDVQQK
+Ew9FeGFtcGxlIFB0eSBMdGQxFzAVBgNVBAMTDkV4YW1wbGUgOUEgS2V5MSAwHgYJ
+KoZIhvcNAQkBFhFwaXZAbWFraW5hLmNvbS5hdTAeFw0xNzEwMTcwMTUxMThaFw0y
+MjEwMTYwMTUxMThaMIGCMQswCQYDVQQGEwJBVTEMMAoGA1UECBMDTlNXMRAwDgYD
+VQQHEwdFeGFtcGxlMRgwFgYDVQQKEw9FeGFtcGxlIFB0eSBMdGQxFzAVBgNVBAMT
+DkV4YW1wbGUgOUEgS2V5MSAwHgYJKoZIhvcNAQkBFhFwaXZAbWFraW5hLmNvbS5h
+dTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAKBISJG5WhPLlRxZK2iT
+ov2Yjo7Lpvvg8BruNW28julHZQRy6pueiO6VNySw4TMkzEYM849Ha63CCdQAjEJN
+qdXwJwIdN27DW1+3bPQsiM6722hNlw8SzNZI0XWHMNk7z9h5UmNbchl3u1r4FG+l
+aCcw/2Yqgy64Gyr0DBfuBbaRmcXz7MNk3stbBbEDno+k5LLmdUlJQyYYzHAgNK9B
+HYDUeIQtye2Evu5litVw4GA5stNbuxIPos+xNIJZKhgfaKHRjIFQHd0gnSAXYW6j
+vYo+03wc5Ipa1eI+Ck15PSEw+wLL6NmY77wlthJj1Y9E/uvDajNvaR9u+rxIhIA5
+TFkCAwEAAaOB6jCB5zAdBgNVHQ4EFgQUp5xKsLJyvZ3NmMl99tZ8ZdE62xowgbcG
+A1UdIwSBrzCBrIAUp5xKsLJyvZ3NmMl99tZ8ZdE62xqhgYikgYUwgYIxCzAJBgNV
+BAYTAkFVMQwwCgYDVQQIEwNOU1cxEDAOBgNVBAcTB0V4YW1wbGUxGDAWBgNVBAoT
+D0V4YW1wbGUgUHR5IEx0ZDEXMBUGA1UEAxMORXhhbXBsZSA5QSBLZXkxIDAeBgkq
+hkiG9w0BCQEWEXBpdkBtYWtpbmEuY29tLmF1ggkA+MH8SRCSMZ0wDAYDVR0TBAUw
+AwEB/zANBgkqhkiG9w0BAQsFAAOCAQEAFVDWFZHihJMOTGCkljw8BMDxg8b4FsnO
+NJTDOJ0WgKBu7v004JW3e1BRAu+XNIyoglJ/DIvo2EubokhL5kijDRom6phB4SL6
+A9BnLR7tf0C5VrPjQ3r/KbqoDtcGw4Khowd4Bt7ZSGXu5uHL/llt3L3uuWfg40kx
+34Cw/ej54KRlQEpRAcD0gd4sWf29KWx2Yg9/14lep645J0R5fjgThwC8pHIZaaI6
+0zauJH+QcGgnmtkH4irNojM0mBpeatbWXEOXuaupjkcY2Hhy5BUEL9VRlgY/1LpS
+ocz1NUSPiUcVSIx5Zw1rUJZsoMUcmVeOpKzgsV/nq62xERQ89HXvWg==
+-----END CERTIFICATE-----</entry>
+					<entry name="KEY_9A_05" type="string"/>
+					<entry name="KEY_9A_06" type="string"/>
+					<entry name="KEY_9E_01" type="string"/>
+					<entry name="KEY_9E_02" type="string"/>
+					<entry name="KEY_9E_03" type="string">9E09E19E29E39E49E59E69E79E89E99EA9EB9EC9ED9EE9EF</entry>
+					<entry name="KEY_9E_04" type="string"/>
+					<entry name="KEY_9C_0F" type="string"/>
+					<entry name="KEY_9C_0E" type="string"/>
+					<entry name="KEY_9B_01" type="string"/>
+					<entry name="KEY_9C_13" type="string"/>
+					<entry name="KEY_9B_00" type="string">101112131415161718191A1B1C1D1E1F2021222324252627</entry>
+					<entry name="KEY_9C_12" type="string"/>
+					<entry name="KEY_9C_11" type="string"/>
+					<entry name="KEY_9C_10" type="string"/>
+					<entry name="KEY_9B_09" type="string"/>
+					<entry name="KEY_9B_08" type="string">9B9B9B9B9B9B9B9B9B9B9B9B9B9B9B9B</entry>
+					<entry name="KEY_9B_04" type="string"/>
+					<entry name="KEY_9B_03" type="string">101112131415161718191A1B1C1D1E1F2021222324252627</entry>
+					<entry name="KEY_9B_02" type="string"/>
+					<entry name="KEY_9C_14" type="string"/>
+		</group>
+	<group name="advanced">
+					<entry name="TestClassFactory" type="string">com.tvec.smart_card.piv.apdu.tests.TestClassFactory</entry>
+					<entry name="TestManagerModifications" type="fragment"><modifications>
+					<modification subsystem="CHECK_attempts_remaining" testnumber="3" type="warning">
+						<message>CHECK_attempts_remaining test 3 can potentially place the
+							card in a permanently blocked state.              </message>
+					</modification>
+				</modifications></entry>
+					<entry name="TestDriverJarPath" type="string">com/tvec/smart_card/piv/test_drivers/SP800_73_4</entry>
+					<entry name="PluginClass" type="string">com.tvec.smart_card.piv.TestRunnerPlugin_SP800_73_4</entry>
+					<entry name="TestDriverPath" type="string"/>
+		</group>
+	<group name="overrides">
+					<entry name="RunSecureMessagingKeyGeneration" type="string">false</entry>
+					<entry name="RunCVCCertificateTests" type="string">false</entry>
+					<entry name="RunBITGPutData" type="string">false</entry>
+					<entry name="RunKeyGenerationTests" type="string">true</entry>
+		</group>
+</group>
+	<group name="report_settings">
+			<entry name="iut_version" type="string">SP800_73_4 ver. test</entry>
+			<entry name="iut_card_manufacturer_name" type="string">Makina</entry>
+			<entry name="iut_tester_name" type="string">Kim O'Sullivan - Makina</entry>
+			<entry name="implementation_under_test" type="string">OpenFIPS201</entry>
+			<entry name="report_directory" type="string">C:\Users\Kim\Desktop\PIV Test Runner\test_runner_reports</entry>
+	</group>
+</configuration>
