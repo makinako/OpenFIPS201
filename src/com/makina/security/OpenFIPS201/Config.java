@@ -174,12 +174,6 @@ public abstract class Config {
     //
     ///////////////////////////////////////////////////////////////////////////
 
-    /// The PIV application identifier, including version
-    protected static final byte[] AID = new byte[] {
-	    (byte)0xA0, (byte)0x00, (byte)0x00, (byte)0x03, (byte)0x08, (byte)0x00, (byte)0x00, (byte)0x10,
-        (byte)0x00, (byte)0x01, (byte)0x00
-    };
-
     /// If FEATURE_PIN_INIT_RANDOM is not set, this will be the default value for the Card PIN object
     protected static final byte[] DEFAULT_PIN = new byte[] {
         (byte)0x31, (byte)0x32, (byte)0x33, (byte)0x34, (byte)0x35, (byte)0x36, (byte)0xFF, (byte)0xFF
