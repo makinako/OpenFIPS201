@@ -1,10 +1,8 @@
 MIT License
 
-  Project: OpenFIPS201
-
-Copyright: (c) 2017 Commonwealth of Australia
-
-   Author: Kim O'Sullivan - Makina (kim@makina.com.au)
+* Project - OpenFIPS201
+* Copyright (c) 2017 Commonwealth of Australia
+* Author - Kim O'Sullivan - Makina (kim@makina.com.au)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
