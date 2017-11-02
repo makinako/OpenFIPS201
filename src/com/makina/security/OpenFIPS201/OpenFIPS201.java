@@ -130,7 +130,8 @@ public final class OpenFIPS201 extends Applet {
 
 			// Update the APDU, including the header bytes
 			length = secureChannel.unwrap(buffer, (short)0, (short)(ISO7816.OFFSET_CDATA + length));            
-
+			length -= ISO7816.OFFSET_CDATA; // Remove the header length
+			
             isSecureChannel = true;
         } else {
             isSecureChannel = false;
@@ -262,6 +263,9 @@ public final class OpenFIPS201 extends Applet {
          */
 
         // None
+        if (!selectingApplet()) {
+	        ISOException.throwIt(ISO7816.SW_FILE_NOT_FOUND);
+        }
 
         /*
          * EXECUTION STEPS
