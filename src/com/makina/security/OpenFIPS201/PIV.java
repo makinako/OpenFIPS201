@@ -1486,13 +1486,21 @@ public final class PIV {
         // Global PIN.
         for (short i = 0; i < Config.PIN_LENGTH_MAX; i++) {
 
+			boolean padding = false;
+
             if (i < Config.PIN_LENGTH_MIN) {
                 // Must be between '0' and '9' only
                 if (buffer[offset] < '0' || buffer[offset] >'9') return false;
             } else {
-                // Must be between '0' and '9' OR the padding byte
-                if ( (buffer[offset] < '0' || buffer[offset] >'9') && buffer[offset] != CONST_PAD) return false;
+				if ( (buffer[offset] < '0' || buffer[offset] >'9') && buffer[offset] != CONST_PAD) return false;
             }
+            
+			// If we have reached the padding, must continue to be padding
+			if (padding && buffer[offset] != CONST_PAD) return false;				
+			if (buffer[offset] == CONST_PAD) {
+			    if (i < Config.PIN_LENGTH_MIN) return false; // Make sure our PIN bytes are minimum length
+				padding = true; // Set padding flag
+			}
             offset++;
         }
 
