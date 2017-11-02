@@ -66,10 +66,7 @@ public final class PIVSecurityProvider {
     // If non-zero, a PIN verification occured prior to the last GENERAL AUTHENTICATE command
     private static final short FLAG_PIN_ALWAYS = (short)2;
     
-    // If non-zero, the applet was selected already in this CAD session   
-    private static final short FLAG_APPLET_SELECTED = (short)3;
-    
-    private static final short LENGTH_FLAGS = (short)4;
+    private static final short LENGTH_FLAGS = (short)3;
 
     public PIVSecurityProvider() {
 
@@ -80,7 +77,7 @@ public final class PIVSecurityProvider {
         cspRNG = RandomData.getInstance(RandomData.ALG_SECURE_RANDOM);
 
         // Create our security flags
-        securityFlags = JCSystem.makeTransientBooleanArray(LENGTH_FLAGS, JCSystem.CLEAR_ON_RESET);
+        securityFlags = JCSystem.makeTransientBooleanArray(LENGTH_FLAGS, JCSystem.CLEAR_ON_DESELECT);
 
         //
         // Create our PIN objects
@@ -117,14 +114,6 @@ public final class PIVSecurityProvider {
     public boolean getPINAlways() {
         return (securityFlags[FLAG_PIN_ALWAYS] &&
                 (cardPIN.isValidated() || globalPIN.isValidated()));
-    }
-
-    public void setAppletSelected(boolean value) {
-        securityFlags[FLAG_APPLET_SELECTED] = value;
-    }
-
-    public boolean getAppletSelected() {
-        return securityFlags[FLAG_APPLET_SELECTED];
     }
 
 	/**

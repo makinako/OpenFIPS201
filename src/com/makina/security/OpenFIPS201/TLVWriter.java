@@ -66,8 +66,8 @@ public final class TLVWriter {
     public static final short LENGTH_3BYTE_MAX			= (short)0x7FFF;
 
     public TLVWriter() {
-        dataPtr = JCSystem.makeTransientObjectArray((short)1, JCSystem.CLEAR_ON_RESET);
-        context = JCSystem.makeTransientShortArray(LENGTH_CONTEXT, JCSystem.CLEAR_ON_RESET);
+        dataPtr = JCSystem.makeTransientObjectArray((short)1, JCSystem.CLEAR_ON_DESELECT);
+        context = JCSystem.makeTransientShortArray(LENGTH_CONTEXT, JCSystem.CLEAR_ON_DESELECT);
     }
 
     /**

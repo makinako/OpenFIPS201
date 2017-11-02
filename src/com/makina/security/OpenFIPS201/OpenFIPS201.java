@@ -96,12 +96,11 @@ public final class OpenFIPS201 extends Applet {
     }
 
     public void process(APDU apdu) {
+ 
         // Get a reference to the GlobalPlatform SecureChannel (not allowed to do this in the constructor)
         if (secureChannel == null) {
             secureChannel = GPSystem.getSecureChannel();
         }
-
-		boolean selectingApplet = selectingApplet();
 		
         //
         // Handle incoming APDUs

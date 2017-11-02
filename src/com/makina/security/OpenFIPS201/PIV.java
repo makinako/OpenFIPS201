@@ -147,8 +147,8 @@ public final class PIV {
         //
 
         // Create our transient buffers
-        scratch = JCSystem.makeTransientByteArray(LENGTH_SCRATCH, JCSystem.CLEAR_ON_RESET);
-        authenticationContext = JCSystem.makeTransientByteArray(LENGTH_AUTH_STATE, JCSystem.CLEAR_ON_RESET);
+        scratch = JCSystem.makeTransientByteArray(LENGTH_SCRATCH, JCSystem.CLEAR_ON_DESELECT);
+        authenticationContext = JCSystem.makeTransientByteArray(LENGTH_AUTH_STATE, JCSystem.CLEAR_ON_DESELECT);
 
         // Create our chainBuffer reference and make sure its state is cleared
         this.chainBuffer = chainBuffer;
@@ -200,25 +200,11 @@ public final class PIV {
         // PRE-CONDITIONS
         //
 
-        // PRE-CONDITION 1 - The AID must not be zero-length or greater than the full AID length
-        if (length == (short)0 || length > (short)Config.AID.length) {
-	        ISOException.throwIt(ISO7816.SW_FILE_NOT_FOUND);
-        }
-
-        // PRE-CONDITION 2 - The AID must fully or partially match the PIV AID
-        if (0 != Util.arrayCompare(buffer, offset, Config.AID, (short)0, length)) {	        
-	        ISOException.throwIt(ISO7816.SW_FILE_NOT_FOUND);
-        }
+		// NONE
 
         //
         // EXECUTION STEPS
         //
-
-		// STEP 1 - If this is the first time we have been selected in this session, reset the security conditions
-		//if (!cspPIV.getAppletSelected()) {
-//			cspPIV.resetSecurityStatus();
-//			cspPIV.setAppletSelected(true);
-		//}
 
         // STEP 1 - Return the APT
         Util.arrayCopyNonAtomic(Config.DEFAULT_APT, (short)0, buffer, offset, (short)Config.DEFAULT_APT.length);
@@ -238,8 +224,6 @@ public final class PIV {
         // selected card application and the setting of all security status indicators in the PIV Card Application
         // shall be unchanged.
 
-        // This is NOT the behaviour of the JCRE according to 
-
         // If the currently selected application is the PIV Card Application when the SELECT command is given
         // and the AID in the data field of the SELECT command is not the PIV Card Application (or the right truncated
         // version thereof), but a valid AID supported by the ICC, then the PIV Card Application shall be
@@ -247,7 +231,7 @@ public final class PIV {
         // be set to FALSE.
 
         // Reset all security conditions in the security provider
-        //cspPIV.resetSecurityStatus();
+        cspPIV.resetSecurityStatus();
     }
 
     /**
