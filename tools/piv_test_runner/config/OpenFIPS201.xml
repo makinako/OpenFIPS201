@@ -266,6 +266,6 @@ ocz1NUSPiUcVSIx5Zw1rUJZsoMUcmVeOpKzgsV/nq62xERQ89HXvWg==
 			<entry name="iut_card_manufacturer_name" type="string">Makina</entry>
 			<entry name="iut_tester_name" type="string">Kim O'Sullivan - Makina</entry>
 			<entry name="implementation_under_test" type="string">OpenFIPS201</entry>
-			<entry name="report_directory" type="string">C:\Users\Kim\Desktop\PIV Test Runner\test_runner_reports</entry>
+			<entry name="report_directory" type="string">.\test_runner_reports</entry>
 	</group>
 </configuration>
