@@ -52,7 +52,7 @@ public abstract class Config {
     /// to use FIXED values for cryptographic nonces and will cripple security.
     /// !!!!!!! WARNING !!!!!!!
     /// SP800-73-4 Requirement: Must be set to false
-    public static final boolean FEATURE_PIV_TEST_VECTORS = true;
+    public static final boolean FEATURE_PIV_TEST_VECTORS = false;
 
     /// Indicates that the mandatory PIV Card Application PIN satisfies the PIV Access Control
     /// Rules (ACRs) for command execution and data object access.
@@ -141,7 +141,7 @@ public abstract class Config {
     /// The number of retries that the PIN object will not be permitted to go below over
     /// the contactless interface. Setting to zero effectively disables this option.
     /// SP800-73-4 Requirement: Issuer-defined
-    public static final byte PIN_RETRIES_INTERMEDIATE	= (byte)0;
+    public static final byte PIN_RETRIES_INTERMEDIATE	= (byte)1;
 
     /// The number of retries before the PUK object is blocked
     /// SP800-73-4 Requirement: Issuer-defined
@@ -150,7 +150,7 @@ public abstract class Config {
     /// The number of retries that the PUK object will not be permitted to go below over
     /// the contactless interface. Setting to zero effectively disables this option.
     /// SP800-73-4 Requirement: Issuer-defined
-    public static final byte PUK_RETRIES_INTERMEDIATE	= (byte)0;
+    public static final byte PUK_RETRIES_INTERMEDIATE	= (byte)1;
 
     /// The minimum length of the PIN value (SP800-73-4 default is '6')
     /// NOTE: Changing this value from its default will break PIV compliance
@@ -266,22 +266,17 @@ public abstract class Config {
         (byte)0x4F, (byte)0x05, (byte)0xA0, (byte)0x00, (byte)0x00, (byte)0x03, (byte)0x08,
 
         // 2 + 11 bytes - Application label
+        // OpenFIPS201
         (byte)0x50, (byte)0x0B,
         'O', 'p', 'e', 'n', 'F', 'I', 'P', 'S', '2', '0', '1',
 
         // 3 + 73 bytes - Uniform resource locator
         // http://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-73-4.pdf
         (byte)0x5F, (byte)0x50, (byte)0x49,
-        (byte)0x68, (byte)0x74, (byte)0x74, (byte)0x70, (byte)0x3A, (byte)0x2F, (byte)0x2F, (byte)0x6E,
-        (byte)0x76, (byte)0x6C, (byte)0x70, (byte)0x75, (byte)0x62, (byte)0x73, (byte)0x2E, (byte)0x6E,
-        (byte)0x69, (byte)0x73, (byte)0x74, (byte)0x2E, (byte)0x67, (byte)0x6F, (byte)0x76, (byte)0x2F,
-        (byte)0x6E, (byte)0x69, (byte)0x73, (byte)0x74, (byte)0x70, (byte)0x75, (byte)0x62, (byte)0x73,
-        (byte)0x2F, (byte)0x53, (byte)0x70, (byte)0x65, (byte)0x63, (byte)0x69, (byte)0x61, (byte)0x6C,
-        (byte)0x50, (byte)0x75, (byte)0x62, (byte)0x6C, (byte)0x69, (byte)0x63, (byte)0x61, (byte)0x74,
-        (byte)0x69, (byte)0x6F, (byte)0x6E, (byte)0x73, (byte)0x2F, (byte)0x4E, (byte)0x49, (byte)0x53,
-        (byte)0x54, (byte)0x2E, (byte)0x53, (byte)0x50, (byte)0x2E, (byte)0x38, (byte)0x30, (byte)0x30,
-        (byte)0x2D, (byte)0x37, (byte)0x33, (byte)0x2D, (byte)0x34, (byte)0x2E, (byte)0x70, (byte)0x64,
-        (byte)0x66,
+		'h', 't', 't', 'p', ':', '/', '/', 'n', 'v', 'l', 'p', 'u', 'b', 's', '.', 'n', 'i', 's', 't', '.', 
+		'g', 'o', 'v', '/', 'n', 'i', 's', 't', 'p', 'u', 'b', 's', '/', 'S', 'p', 'e', 'c', 'i', 'a', 'l', 
+		'P', 'u', 'b', 'l', 'i', 'c', 'a', 't', 'i', 'o', 'n', 's', '/', 'N', 'I', 'S', 'T', '.', 'S', 'P', 
+		'.', '8', '0', '0', '-', '7', '3', '-', '4', '.', 'p', 'd', 'f',
 
         // 2 + 24 - Cryptographic Algorithm Identifier Template (Tag 'AC')
         (byte)0xAC, (byte)0x18,
@@ -297,7 +292,6 @@ public abstract class Config {
 
         // Object identifier
         (byte)0x06, (byte)0x01, (byte)0x00
+        
     };
 }
-
-
