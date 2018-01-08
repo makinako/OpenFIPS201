@@ -916,7 +916,7 @@ public final class PIV {
      */
     public short generalAuthenticate(byte[] buffer, short offset, short length) {
 
-        final byte CONST_TAG_TEMPLATE	= (byte)0x7C;
+        final byte CONST_TAG_TEMPLATE		= (byte)0x7C;
         final byte CONST_TAG_WITNESS 	= (byte)0x80;
         final byte CONST_TAG_CHALLENGE 	= (byte)0x81;
         final byte CONST_TAG_RESPONSE 	= (byte)0x82;
@@ -1049,6 +1049,11 @@ public final class PIV {
                 ISOException.throwIt(ISO7816.SW_WRONG_DATA);
             }
 
+            // Encrypt the CHALLENGE data
+            length = cspPIV.encrypt(key, scratch, tlvReader.getDataOffset(), length, buffer, (short)0);
+            
+            cspPIV.zeroise(scratch, (short)0, LENGTH_SCRATCH);
+            
             // Write out the response TLV, passing through the block length as an indicative maximum
             tlvWriter.init(scratch, (short)0, length, CONST_TAG_TEMPLATE);
 
@@ -1056,9 +1061,8 @@ public final class PIV {
             tlvWriter.writeTag(CONST_TAG_RESPONSE);
             tlvWriter.writeLength(length);
 
-            // Encrypt the CHALLENGE data and write it to the output buffer
-            offset = tlvWriter.getOffset();
-            offset += cspPIV.encrypt(key, scratch, tlvReader.getDataOffset(), length, scratch, offset);
+			// Write the response cryptogram
+            offset = Util.arrayCopyNonAtomic(buffer, (short)0, scratch, tlvWriter.getOffset(), length);
             tlvWriter.setOffset(offset); // Update the TLV offset value
 
             // Finalise the TLV object and get the entire data object length
@@ -1286,6 +1290,9 @@ public final class PIV {
                 ISOException.throwIt(ISO7816.SW_WRONG_LENGTH);
             }
 
+            // Encrypt the CHALLENGE data
+            length = cspPIV.encrypt(key, scratch, tlvReader.getDataOffset(), length, buffer, (short)0);
+            
             // Write out the response TLV, passing through the block length as an indicative maximum
             tlvWriter.init(scratch, (short)0, length, CONST_TAG_TEMPLATE);
 
@@ -1293,9 +1300,8 @@ public final class PIV {
             tlvWriter.writeTag(CONST_TAG_RESPONSE);
             tlvWriter.writeLength(length);
 
-            // Encrypt the RESPONSE data and write it to the output buffer
-            offset = tlvWriter.getOffset();
-            offset += cspPIV.encrypt(key, scratch, tlvReader.getDataOffset(), key.getBlockLength(), scratch, offset);
+			// Write the response cryptogram
+            offset = Util.arrayCopyNonAtomic(buffer, (short)0, scratch, tlvWriter.getOffset(), length);
             tlvWriter.setOffset(offset); // Update the TLV offset value
 
             // Finalise the TLV object and get the entire data object length
