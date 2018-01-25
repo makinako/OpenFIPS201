@@ -4,4 +4,4 @@ This project has been commissioned and funded by the Australian Department of De
 
 * To get started, please head on over to the [OpenFIPS201 Wiki](https://github.com/makinako/OpenFIPS201/wiki)
 
-* The latest binary release is: [OpenFIPS201 v1.0.0-beta5](https://github.com/makinako/OpenFIPS201/releases/tag/v1.0.0-beta5)
+* The latest binary release is: [OpenFIPS201 v1.0.0-beta6](https://github.com/makinako/OpenFIPS201/releases/tag/v1.0.0-beta6)
