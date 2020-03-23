@@ -87,7 +87,7 @@ public final class PIVSecurityProvider {
         cardPIN = new OwnerPIN(Config.PIN_RETRIES, Config.PIN_LENGTH_MAX);
 
         // Mandatory
-        cardPUK = new OwnerPIN(Config.PIN_RETRIES, Config.PIN_LENGTH_MAX);
+        cardPUK = new OwnerPIN(Config.PUK_RETRIES, Config.PIN_LENGTH_MAX);
 
         // Optional - But we still have to create it because it can be enabled at runtime
         globalPIN = new CVMPIN(Config.PIN_RETRIES, Config.PIN_LENGTH_MAX);
