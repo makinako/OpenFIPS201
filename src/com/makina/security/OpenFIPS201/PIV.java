@@ -392,7 +392,7 @@ public final class PIV {
         // PRE-CONDITION 2B - If the special 'BIOMETRIC GROUP TEMPLATE' is being written, the tag values
         //					  specified by CONST_TAG_BIOMETRIC_1 and CONST_TAG_BIOMETRIC_2 must be present
         else if (buffer[offset] == CONST_TAG_BIOMETRIC_1) {
-            if ((short)(buffer[offset] + 1) != CONST_TAG_BIOMETRIC_2) ISOException.throwIt(SW_REFERENCE_NOT_FOUND);
+            if (buffer[(short) (offset + 1)] != CONST_TAG_BIOMETRIC_2) ISOException.throwIt(SW_REFERENCE_NOT_FOUND);
             id = CONST_TAG_BIOMETRIC_2;
             // We don't move the buffer for this special object to include the special data object tag
         }
