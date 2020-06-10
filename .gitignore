@@ -20,6 +20,19 @@
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
 
+# JCIDE build ignore
+JCIDE/
+.jcideslndata/
+.classpath
+.project
+bookMarkInfo.xml
+breakPointInfo.xml
+debugConfig.xml
+jumpRecordInfo.xml
+*.jcproj
+*.jcsln
+postbuild.bat
+bin/
 
 ##
 ## OPERATING SYSTEM

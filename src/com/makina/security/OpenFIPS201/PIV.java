@@ -246,8 +246,6 @@ public final class PIV {
     public short getData(byte[] buffer, short offset, short length) {
 
         final byte CONST_TAG 		= (byte)0x5C;
-        final byte CONST_TAG_MIN 	= (byte)0x01;
-        final byte CONST_TAG_MAX 	= (byte)0x03;
 
         final byte CONST_TAG_DISCOVERY		= (byte)0x7E;
         final byte CONST_TAG_BIOMETRIC_1	= (byte)0x7F;
@@ -257,6 +255,7 @@ public final class PIV {
 
         final short CONST_LEN_DISCOVERY	= (short)0x01;
         final short CONST_LEN_BIOMETRIC	= (short)0x02;
+        final short CONST_LEN_NORMAL	= (short)0x03;
 
         //
         // PRE-CONDITIONS
@@ -266,10 +265,6 @@ public final class PIV {
         // NOTE: This is parsed manually rather than going through a TLV parser
         if (buffer[offset++] != CONST_TAG) ISOException.throwIt(ISO7816.SW_WRONG_DATA); // Check SW12
 
-        // PRE-CONDITION 2 - The 'LENGTH' data element must be between CONST_TAG_MIN and CONST_TAG_MAX
-        length = (short)(buffer[offset++] & 0xFF);
-        if (length < CONST_TAG_MIN || length > CONST_TAG_MAX) ISOException.throwIt(ISO7816.SW_WRONG_DATA); // Check SW12
-
         //
         // Retrieve the data object TAG identifier
         // NOTE: All objects in the datastore have had their tag reduced to one byte, which is
@@ -278,28 +273,45 @@ public final class PIV {
 
         byte id = 0;
 
-        // SPECIAL OBJECT - DISCOVERY OBJECT
-        if ((length == (short)1) && buffer[offset] == CONST_TAG_DISCOVERY) {
-            id = CONST_TAG_DISCOVERY;
-        }
+		switch (buffer[offset]) {
+			
+		//
+		// SPECIAL CASE 1 - DISCOVERY OBJECT
+		//		
+		case CONST_LEN_DISCOVERY:
+			offset++; // Move to the 1st byte of the tag			
+			if (buffer[offset] != CONST_TAG_DISCOVERY) ISOException.throwIt(SW_REFERENCE_NOT_FOUND);
+			id = CONST_TAG_DISCOVERY; // Store it as our object ID
+			break;
+			
+		//
+		// SPECIAL CASE 2 - BIOMETRIC INFORMATION TEMPLATE
+		//		
+		case CONST_LEN_BIOMETRIC:
+			offset++; // Move to the 1st byte of the tag			
+			if (buffer[offset] != CONST_TAG_BIOMETRIC_1) ISOException.throwIt(SW_REFERENCE_NOT_FOUND);
+			offset++; // Move to the 2nd byte
+			if (buffer[offset] != CONST_TAG_BIOMETRIC_2) ISOException.throwIt(SW_REFERENCE_NOT_FOUND);
+			id = CONST_TAG_BIOMETRIC_2; // Store it as our object ID
+			break;
+			
+		//
+		// ALL OTHER OBJECTS
+		//
+		case CONST_LEN_NORMAL:
+			offset++; // Move to the 1st byte of the tag			
+			if (buffer[offset] != CONST_TAG_NORMAL_1) ISOException.throwIt(SW_REFERENCE_NOT_FOUND);
+			offset++; // Move to the 2nd byte
+			if (buffer[offset] != CONST_TAG_NORMAL_2) ISOException.throwIt(SW_REFERENCE_NOT_FOUND);
+			offset++; // Move to the 3rd byte
+			id = buffer[offset]; // Store it as our object ID
+			break;
 
-        // SPECIAL OBJECT - BIOMETRIC GROUP TEMPLATE
-        else if ((length == (short)2) && buffer[offset] == CONST_TAG_BIOMETRIC_1) {
-            offset++;
-            if (buffer[offset] != CONST_TAG_BIOMETRIC_2) ISOException.throwIt(ISO7816.SW_FILE_NOT_FOUND);
-            id = CONST_TAG_BIOMETRIC_2;
-        }
-        // ALL OTHER OBJECTS
-        else if ((length == (short)3) && buffer[offset] == CONST_TAG_NORMAL_1) {
-            offset++; // Move to the 2nd byte
-            if (buffer[offset] != CONST_TAG_NORMAL_2) ISOException.throwIt(ISO7816.SW_FILE_NOT_FOUND);
-            offset++; // Move to the 3rd byte
-            id = buffer[offset]; // Store it as our object ID
-        }
-        // Invalid Object
-        else {
-            ISOException.throwIt(ISO7816.SW_FILE_NOT_FOUND);
-        }
+		default:
+			// Unsupported length supplied
+			ISOException.throwIt(ISO7816.SW_WRONG_DATA);
+			break;
+		}
 
         PIVDataObject data = findDataObject(id);
         if (data == null) {
@@ -335,7 +347,7 @@ public final class PIV {
         //
 
         // STEP 1 - Set up the outgoing chainbuffer
-        length = (short)data.content.length;
+        length = data.getLength();
         chainBuffer.setOutgoing(data.content, (short)0, length, false);
 
         // Done - return how many bytes we will process
@@ -353,8 +365,6 @@ public final class PIV {
     public void putData(byte[] buffer, short offset, short length) {
 
         final byte CONST_TAG 		= (byte)0x5C;
-        final byte CONST_TAG_MIN 	= (byte)0x01;
-        final byte CONST_TAG_MAX 	= (byte)0x03;
         final byte CONST_DATA		= (byte)0x53;
 
         final byte CONST_TAG_DISCOVERY		= (byte)0x7E;
@@ -365,6 +375,7 @@ public final class PIV {
 
         final short CONST_LEN_DISCOVERY	= (short)0x01;
         final short CONST_LEN_BIOMETRIC	= (short)0x02;
+        final short CONST_LEN_NORMAL	= (short)0x03;
 
         //
         // PRE-CONDITIONS
@@ -378,62 +389,67 @@ public final class PIV {
             ISOException.throwIt(ISO7816.SW_SECURITY_STATUS_NOT_SATISFIED);
         }
 
+
+        // PRE-CONDITION 2 - The TAG LIST value must be present
+        if (buffer[offset++] != CONST_TAG) {
+            ISOException.throwIt(SW_REFERENCE_NOT_FOUND);	        
+        }
+
+		//
+		// Retrieve the data object TAG identifier
+		// NOTE: All objects in the datastore have had their tag reduced to one byte, which is
+		//		 always the least significant byte of the tag.
+		//		
         byte id = 0;
+		
+		switch (buffer[offset]) {
+			
+		//
+		// SPECIAL CASE 1 - DISCOVERY OBJECT
+		//		
+		case CONST_LEN_DISCOVERY:
+			offset++; // Move to the 1st byte of the tag			
+			if (buffer[offset] != CONST_TAG_DISCOVERY) ISOException.throwIt(SW_REFERENCE_NOT_FOUND);
+			id = CONST_TAG_DISCOVERY; // Store it as our object ID
+			break;
+			
+		//
+		// SPECIAL CASE 2 - BIOMETRIC INFORMATION TEMPLATE
+		//		
+		case CONST_LEN_BIOMETRIC:
+			offset++; // Move to the 1st byte of the tag			
+			if (buffer[offset] != CONST_TAG_BIOMETRIC_1) ISOException.throwIt(SW_REFERENCE_NOT_FOUND);
+			offset++; // Move to the 2nd byte
+			if (buffer[offset] != CONST_TAG_BIOMETRIC_2) ISOException.throwIt(SW_REFERENCE_NOT_FOUND);
+			id = CONST_TAG_BIOMETRIC_2; // Store it as our object ID
+			break;
+			
+		//
+		// ALL OTHER OBJECTS
+		//
+		case CONST_LEN_NORMAL:
+			offset++; // Move to the 1st byte of the tag			
+			if (buffer[offset] != CONST_TAG_NORMAL_1) ISOException.throwIt(SW_REFERENCE_NOT_FOUND);
+			offset++; // Move to the 2nd byte
+			if (buffer[offset] != CONST_TAG_NORMAL_2) ISOException.throwIt(SW_REFERENCE_NOT_FOUND);
+			offset++; // Move to the 3rd byte
+			id = buffer[offset]; // Store it as our object ID
+			break;
 
-        // SPECIAL OBJECT - DISCOVERY OBJECT
-        // PRE-CONDITION 2A - If the special 'DISCOVERY OBJECT' is being written, the tag specified by
-        //					  CONST_TAG_DISCOVERY must be present
-        if (buffer[offset] == CONST_TAG_DISCOVERY) {
-            id = CONST_TAG_DISCOVERY;
-            // We don't move the buffer for this special object to include the special data object tag
-        }
+		default:
+			// Unsupported length supplied
+			ISOException.throwIt(ISO7816.SW_WRONG_DATA);
+			break;
+		}
 
-        // SPECIAL OBJECT - BIOMETRIC GROUP TEMPLATE
-        // PRE-CONDITION 2B - If the special 'BIOMETRIC GROUP TEMPLATE' is being written, the tag values
-        //					  specified by CONST_TAG_BIOMETRIC_1 and CONST_TAG_BIOMETRIC_2 must be present
-        else if (buffer[offset] == CONST_TAG_BIOMETRIC_1) {
-            if ((short)(buffer[offset] + 1) != CONST_TAG_BIOMETRIC_2) ISOException.throwIt(SW_REFERENCE_NOT_FOUND);
-            id = CONST_TAG_BIOMETRIC_2;
-            // We don't move the buffer for this special object to include the special data object tag
-        }
+		offset++; // Move to the DATA element
 
-        //
-        // ALL OTHER OBJECTS (Must have the TAG LIST value)
-        //
-        else if (buffer[offset] == CONST_TAG) {
-
-            //
-            // Retrieve the data object TAG identifier
-            // NOTE: All objects in the datastore have had their tag reduced to one byte, which is
-            //		 always the least significant byte of the tag.
-            //
-
-            offset++; // Move to the length field
-
-            // PRE-CONDITION 3 - The 'TAG LIST' tag must have a length of between CONST_TAG_MIN and CONST_TAG_MAX
-            if (buffer[offset] < CONST_TAG_MIN || buffer[offset] > CONST_TAG_MAX) {
-                ISOException.throwIt(ISO7816.SW_WRONG_DATA);
-            }
-
-            offset++; // Move to the 1st byte of the tag
-            if (buffer[offset] != CONST_TAG_NORMAL_1) ISOException.throwIt(SW_REFERENCE_NOT_FOUND);
-            offset++; // Move to the 2nd byte
-            if (buffer[offset] != CONST_TAG_NORMAL_2) ISOException.throwIt(SW_REFERENCE_NOT_FOUND);
-            offset++; // Move to the 3rd byte
-            id = buffer[offset]; // Store it as our object ID
-            offset++; // Move to the DATA element
-
-            // PRE-CONDITION 4 - The 'DATA' tag must be present in the supplied buffer
-            if (buffer[offset] != CONST_DATA) {
-                ISOException.throwIt(ISO7816.SW_WRONG_DATA);
-            }
-            // The offset now holds the correct position for writing the object, including the DATA tag
-        }
-        // Invalid Object
-        else {
-            ISOException.throwIt(SW_REFERENCE_NOT_FOUND);
-        }
-
+		// PRE-CONDITION 4 - The 'DATA' tag must be present in the supplied buffer
+		if (buffer[offset] != CONST_DATA) {
+			ISOException.throwIt(ISO7816.SW_WRONG_DATA);
+		}
+		
+		// The offset now holds the correct position for writing the object, including the DATA tag
 
         // PRE-CONDITION 5 - The tag supplied in the 'TAG LIST' element must exist in the data store
         PIVDataObject obj = findDataObject(id);
@@ -1820,18 +1836,18 @@ public final class PIV {
 
     /**
      * Adds a data object to the data store
-     * @param The id of the data object to create (just the LSB)
-     * @param The contact Access Mode control flags
-     * @param The contactless Access Mode control flags
+     * @param id of the data object to create (just the LSB)
+     * @param modeContact Access Mode control flags
+     * @param modeContactless Access Mode control flags
      */
-    private void createDataObject(byte id, byte modeContact, byte modeContactess) {
+    private void createDataObject(byte id, byte modeContact, byte modeContactless) {
 
         final byte ID_DISCOVERY = (byte)0x7E;
 
         // Create our new key
-        PIVDataObject data = new PIVDataObject(id, modeContact, modeContactess);
+        PIVDataObject data = new PIVDataObject(id, modeContact, modeContactless);
 
-        // Check if this is the first key added
+        // Check if this is the first data object added
         if (firstDataObject == null) {
             firstDataObject = data;
             return;
