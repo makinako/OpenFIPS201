@@ -335,7 +335,7 @@ public final class PIV {
         //
 
         // STEP 1 - Set up the outgoing chainbuffer
-        length = (short)data.content.length;
+        length = data.getLength();
         chainBuffer.setOutgoing(data.content, (short)0, length, false);
 
         // Done - return how many bytes we will process
@@ -1815,16 +1815,16 @@ public final class PIV {
 
     /**
      * Adds a data object to the data store
-     * @param The id of the data object to create (just the LSB)
-     * @param The contact Access Mode control flags
-     * @param The contactless Access Mode control flags
+     * @param id of the data object to create (just the LSB)
+     * @param modeContact Access Mode control flags
+     * @param modeContactless Access Mode control flags
      */
-    private void createDataObject(byte id, byte modeContact, byte modeContactess) {
+    private void createDataObject(byte id, byte modeContact, byte modeContactless) {
 
         final byte ID_DISCOVERY = (byte)0x7E;
 
         // Create our new key
-        PIVDataObject data = new PIVDataObject(id, modeContact, modeContactess);
+        PIVDataObject data = new PIVDataObject(id, modeContact, modeContactless);
 
         // Check if this is the first key added
         if (firstDataObject == null) {
