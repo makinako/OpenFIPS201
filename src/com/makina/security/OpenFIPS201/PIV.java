@@ -1774,6 +1774,11 @@ public final class PIV {
             ISOException.throwIt(SW_REFERENCE_NOT_FOUND);
         }
 
+		// PRE-CONDITION 2 - The key object must not have the ROLE_GENERATE_ONLY role flag
+		if (key.hasRole(PIVKeyObject.ROLE_GENERATE_ONLY)) {
+			ISOException.throwIt(ISO7816.SW_SECURITY_STATUS_NOT_SATISFIED);
+		}
+		
         // Set up our TLV reader
         tlvReader.init(scratch, (short)0, length);
 
