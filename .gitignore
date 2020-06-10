@@ -21,7 +21,17 @@
 hs_err_pid*
 
 # JCIDE build ignore
-jcide/
+JCIDE/
+.jcideslndata/
+.classpath
+.project
+bookMarkInfo.xml
+breakPointInfo.xml
+debugConfig.xml
+jumpRecordInfo.xml
+*.jcproj
+*.jcsln
+postbuild.bat
 
 ##
 ## OPERATING SYSTEM
