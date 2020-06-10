@@ -41,10 +41,27 @@ public abstract class PIVKeyObject extends PIVObject {
     private static final short FLAGS_AUTHENTICATED 			= (short)0;
     private static final short LENGTH_FLAGS 				= (short)1;
 
+	//
+	// Key Roles
+	//
+	// The following key roles are defined as control bitmap flags, meaning multiple can be
+	// set at once.
+	//
+	
+	// No special roles are defined by this key
     public static final byte ROLE_NONE						= (byte)0x00;
+    
+    // This key can be used for administrative authentication
     public static final byte ROLE_ADMIN						= (byte)0x01;
+    
+    // This key can be used for external authentication
     public static final byte ROLE_AUTH_EXTERNAL				= (byte)0x02;
+    
+    // This key can be used for internal authentication
     public static final byte ROLE_AUTH_INTERNAL				= (byte)0x04;
+    
+    // This key can only be generated on-card (i.e. injection is blocked)
+    public static final byte ROLE_GENERATE_ONLY				= (byte)0x08;
 
     // Transient declaration
     private boolean[] securityFlags;
