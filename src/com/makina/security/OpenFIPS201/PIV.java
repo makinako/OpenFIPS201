@@ -684,7 +684,6 @@ public final class PIV {
         // NOTE: This is handled in the switch statement and is configurable at compile-time
 
         OwnerPIN pin = null;
-        boolean pinAlways = false;
         byte intermediateLimit = (byte)0;
 
         switch (id) {
@@ -806,7 +805,7 @@ public final class PIV {
         pin.check(buffer, offset, Config.PIN_LENGTH_MAX);
 
         // STEP 3 - Set the PIN ALWAYS flag as this is now verified
-        if (pinAlways) cspPIV.setPINAlways(true);
+        cspPIV.setPINAlways(true);
 
         // Done
     }
@@ -909,6 +908,13 @@ public final class PIV {
     }
 
     /**
+     * Resets the PIN ALWAYS security status
+     */
+    public void resetPinAlways() {
+    	cspPIV.setPINAlways(false);
+    }
+
+    /**
      * Clears any intermediate authentication status used by 'GENERAL AUTHENTICATE'
      */
     private void authenticateReset() {
@@ -963,20 +969,22 @@ public final class PIV {
         if (key == null) {
             // If any key reference value is specified that is not supported by the card, the PIV Card Application
             // shall return the status word '6A 88'.
+            cspPIV.setPINAlways(false); // Clear the PIN ALWAYS flag            
             cspPIV.zeroise(scratch, (short)0, LENGTH_SCRATCH);
             ISOException.throwIt(ISO7816.SW_INCORRECT_P1P2);
         }
 
-        // PRE-CONDITION 2 - The key's value must have been set
-        if (!key.isInitialised()) {
-            cspPIV.zeroise(scratch, (short)0, LENGTH_SCRATCH);
-            ISOException.throwIt(ISO7816.SW_INCORRECT_P1P2);
-        }
-
-        // PRE-CONDITION 3 - The access rules must be satisfied for the requested key
+        // PRE-CONDITION 2 - The access rules must be satisfied for the requested key
+        // NOTE: A call to this method automatically clears the PIN ALWAYS status.
         if (!cspPIV.checkAccessModeObject(key)) {
             cspPIV.zeroise(scratch, (short)0, LENGTH_SCRATCH);
             ISOException.throwIt(ISO7816.SW_SECURITY_STATUS_NOT_SATISFIED);
+        }
+
+        // PRE-CONDITION 3 - The key's value must have been set
+        if (!key.isInitialised()) {
+            cspPIV.zeroise(scratch, (short)0, LENGTH_SCRATCH);
+            ISOException.throwIt(ISO7816.SW_INCORRECT_P1P2);
         }
 
         // PRE-CONDITION 4 - The Dynamic Authentication Template tag must be present in the data
