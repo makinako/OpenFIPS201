@@ -213,8 +213,8 @@ public final class ChainBuffer {
         if (context[CONTEXT_STATE] != STATE_INCOMING_APDU) return;
 
 		// If the command has changed, cancel the previous incoming APDU and continue.
-		if (context[CONTEXT_APDU_CLAINS] != (short)((Util.getShort(apdu, ISO7816.OFFSET_CLA) & CLA_MASK)) ||
-				context[CONTEXT_APDU_P1P2] != Util.getShort(apdu, ISO7816.OFFSET_P1)) {			
+		if ((context[CONTEXT_APDU_CLAINS] & CLA_MASK) != Util.getShort(apdu, ISO7816.OFFSET_CLA) ||
+				context[CONTEXT_APDU_P1P2] != Util.getShort(apdu, ISO7816.OFFSET_P1)) {
 			// Cancel the previous incoming APDU
 			reset();
 
