@@ -127,7 +127,13 @@ public abstract class Config {
     /// SP800-73-4 Requirement: Not specified under PIV (extension functionality)
     public static final boolean FEATURE_DISCOVERY_OBJECT_DEFAULT = true;
 
-
+	// If set to true, the applet will return SW_LAST_COMMAND_EXPECTED if a chained APDU is
+	// not completed. The implication of this is that if a chained INCOMING or OUTGOING
+	// APDU is cancelled by the host by starting a new APDU, an error will be produced.
+	//
+    /// SP800-73-4 Requirement: Not specified under PIV (extension functionality)
+    public static final boolean FEATURE_STRICT_APDU_CHAINING = false;
+    
     ///////////////////////////////////////////////////////////////////////////
     //
     // PIN and PUK CONFIGURATION
