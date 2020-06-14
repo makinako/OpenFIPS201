@@ -2,6 +2,7 @@
 
 This project has been commissioned and funded by the Australian Department of Defence, to provide an open source implementation of the card application for the NIST Personal Identity Verification (PIV) standard as specified by [FIPS PUB 201-2](https://en.wikipedia.org/wiki/FIPS_201) and [SP800-73-4](http://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-73-4.pdf). 
 
+
 **OpenFIPS201 implements the following functionality:**
 
 * A flexible filesystem that can be defined easily without recompilation
@@ -13,8 +14,11 @@ This project has been commissioned and funded by the Australian Department of De
   * Virtual Contact Interface
   * Secure Messaging (Opacity)
   * Biometric On-Card Comparison (OCC)
-* To get started, please head on over to the [OpenFIPS201 Wiki](https://github.com/makinako/OpenFIPS201/wiki)
-* The latest binary release is: [OpenFIPS201 v1.0.0-beta6](https://github.com/makinako/OpenFIPS201/releases/tag/v1.0.0-beta6)
+  
+
+To get started, please head on over to the [OpenFIPS201 Wiki](https://github.com/makinako/OpenFIPS201/wiki)
+The latest binary release is: [OpenFIPS201 v1.0.0-beta6](https://github.com/makinako/OpenFIPS201/releases/tag/v1.0.0-beta6)
+
 
 **Want to get in touch?**
 
