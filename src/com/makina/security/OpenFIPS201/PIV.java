@@ -1602,28 +1602,34 @@ public final class PIV {
         // Initialise our TLV reader
         tlvReader.init(scratch, (short)0, length);
 
-
         //
         // PRE-CONDITIONS
         //
 
         // PRE-CONDITION 1 - The 'COMMAND' constructed tag must be present
-        if (!tlvReader.match(CONST_TAG_COMMAND)) ISOException.throwIt(ISO7816.SW_WRONG_DATA);
+        if (!tlvReader.match(CONST_TAG_COMMAND)) {
+            ISOException.throwIt(ISO7816.SW_WRONG_DATA);
+        }
+        
+        // PRE-CONDITION 2 - The SEQUENCE length must be smaller than the APDU data length
+        if (tlvReader.getLength() > length) {
+            ISOException.throwIt(ISO7816.SW_WRONG_DATA);	        
+        }  
 
         // Move into the constructed tag
         tlvReader.moveInto();
 
-        // PRE-CONDITION 2 - The mandatory 'OPERATION' tag must be present with length 1
+        // PRE-CONDITION 3 - The mandatory 'OPERATION' tag must be present with length 1
         if (!tlvReader.match(CONST_TAG_OPERATION)) ISOException.throwIt(ISO7816.SW_WRONG_DATA);
         byte operation = tlvReader.toByte();
 
-        // PRE-CONDITION 3 - The 'OPERATION' value must be set to the value CONST_OP_DATA or CONST_OP_KEY
+        // PRE-CONDITION 4 - The 'OPERATION' value must be set to the value CONST_OP_DATA or CONST_OP_KEY
         if (operation != CONST_OP_DATA && operation != CONST_OP_KEY) ISOException.throwIt(ISO7816.SW_WRONG_DATA);
 
         // Move to the next tag
         tlvReader.moveNext();
 
-        // PRE-CONDITION 4 - The 'ID' value must be present with length 1
+        // PRE-CONDITION 5 - The 'ID' value must be present with length 1
         if (!tlvReader.match(CONST_TAG_ID)) ISOException.throwIt(ISO7816.SW_WRONG_DATA);
         if (tlvReader.getLength() != (short)1) ISOException.throwIt(ISO7816.SW_WRONG_LENGTH);
         byte id = tlvReader.toByte();
@@ -1631,7 +1637,7 @@ public final class PIV {
         // Move to the next tag
         tlvReader.moveNext();
 
-        // PRE-CONDITION 5 - The 'MODE CONTACT' value must be present with length 1
+        // PRE-CONDITION 6 - The 'MODE CONTACT' value must be present with length 1
         if (!tlvReader.match(CONST_TAG_MODE_CONTACT)) ISOException.throwIt(ISO7816.SW_WRONG_DATA);
         if (tlvReader.getLength() != (short)1) ISOException.throwIt(ISO7816.SW_WRONG_LENGTH);
         byte modeContact = tlvReader.toByte();
@@ -1639,7 +1645,7 @@ public final class PIV {
         // Move to the next tag
         tlvReader.moveNext();
 
-        // PRE-CONDITION 6 - The 'MODE CONTACTLESS' value must be present with length 1
+        // PRE-CONDITION 7 - The 'MODE CONTACTLESS' value must be present with length 1
         if (!tlvReader.match(CONST_TAG_MODE_CONTACTLESS)) ISOException.throwIt(ISO7816.SW_WRONG_DATA);
         if (tlvReader.getLength() != (short)1) ISOException.throwIt(ISO7816.SW_WRONG_LENGTH);
         byte modeContactless = tlvReader.toByte();
@@ -1652,7 +1658,7 @@ public final class PIV {
 
         if (CONST_OP_KEY == operation) {
 
-            // PRE-CONDITION 7a - If the operation is CONST_OP_KEY, then the 'KEY MECHANISM' tag
+            // PRE-CONDITION 8a - If the operation is CONST_OP_KEY, then the 'KEY MECHANISM' tag
             //					 must be present with length 1
             if (!tlvReader.match(CONST_TAG_KEY_MECHANISM)) ISOException.throwIt(ISO7816.SW_WRONG_DATA);
             if (tlvReader.getLength() != (short)1) ISOException.throwIt(ISO7816.SW_WRONG_LENGTH);
@@ -1661,14 +1667,14 @@ public final class PIV {
             // Move to the next tag
             tlvReader.moveNext();
 
-            // PRE-CONDITION 8a - If the operation is CONST_OP_KEY, then the 'KEY ROLE' tag
+            // PRE-CONDITION 8b - If the operation is CONST_OP_KEY, then the 'KEY ROLE' tag
             //					 must be present with length 1
 
             if (!tlvReader.match(CONST_TAG_KEY_ROLE)) ISOException.throwIt(ISO7816.SW_WRONG_DATA);
             if (tlvReader.getLength() != (short)1) ISOException.throwIt(ISO7816.SW_WRONG_LENGTH);
             keyRole = tlvReader.toByte();
 
-            // PRE-CONDITION 9a - If 'OPERATION' is set to CONST_OP_KEY, the key referenced by the 'id' and
+            // PRE-CONDITION 8c - If 'OPERATION' is set to CONST_OP_KEY, the key referenced by the 'id' and
             //					  'mechanism' values must not already exist in the key store
             if (cspPIV.selectKey(id, keyMechanism) != null) {
                 ISOException.throwIt(ISO7816.SW_FILE_FULL);
@@ -1676,7 +1682,7 @@ public final class PIV {
 
         } else { //(CONST_OP_DATA == operation)
 
-            // PRE-CONDITION 7b - If 'OPERATION' is set to CONST_OP_DATA, the object referenced by 'id' value
+            // PRE-CONDITION 8d - If 'OPERATION' is set to CONST_OP_DATA, the object referenced by 'id' value
             // 					 must not already exist in the data store
             PIVObject obj = firstDataObject;
             while (obj != null) {
@@ -1805,11 +1811,16 @@ public final class PIV {
         // Set up our TLV reader
         tlvReader.init(scratch, (short)0, length);
 
-        // PRE-CONDITION 2 - The sequence tag must be present in the data
-        if (!tlvReader.find(CONST_TAG_SEQUENCE)) {
+        // PRE-CONDITION 2 - The parent tag must by of type SEQUENCE
+        if (!tlvReader.match(CONST_TAG_SEQUENCE)) {
             ISOException.throwIt(ISO7816.SW_WRONG_DATA);
         }
-
+        
+        // PRE-CONDITION 3 - The SEQUENCE length must be smaller than the APDU data length
+        if (tlvReader.getLength() > length) {
+            ISOException.throwIt(ISO7816.SW_WRONG_DATA);	        
+        }  
+        
         // Move to the child tag
         tlvReader.moveInto();
 
