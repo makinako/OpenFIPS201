@@ -291,7 +291,8 @@ public final class PIVSecurityProvider {
             }
 
             // Check for PIN ALWAYS
-            if ( ((mode & PIVObject.ACCESS_MODE_PIN_ALWAYS) == PIVObject.ACCESS_MODE_PIN_ALWAYS) && !securityFlags[FLAG_PIN_ALWAYS]) {
+            if ( ((mode & PIVObject.ACCESS_MODE_PIN_ALWAYS) == PIVObject.ACCESS_MODE_PIN_ALWAYS) &&
+				 !securityFlags[FLAG_PIN_ALWAYS]) {
                 valid = false;
             }
         }

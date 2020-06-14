@@ -175,6 +175,18 @@ public final class OpenFIPS201 extends Applet {
         // Normal APDU processing
         //
 
+		// If this command is not INS_PIV_GENERAL_AUTHENTICATE, we reset the PIN ALWAYS
+		// flag automatically here. This is to ensure that any other command subsequent to
+		// a successful VERIFY PIN causes the status to be reset.
+		//
+		// NOTE:
+		// The general authentication handler resets the PIN ALWAYS status internally on
+		// any successful or failed call to it.
+		//
+		if (buffer[ISO7816.OFFSET_INS] != INS_PIV_GENERAL_AUTHENTICATE) {
+			piv.resetPinAlways();
+		}
+
         // Call the appropriate process method based on the INS
         switch (buffer[ISO7816.OFFSET_INS]) {
 
