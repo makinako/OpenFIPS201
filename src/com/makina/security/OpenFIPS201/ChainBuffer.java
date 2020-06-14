@@ -156,10 +156,6 @@ public final class ChainBuffer {
      * @param offset The starting offset of the data to read from
      * @param length The total number of bytes to read
      * @param clearOnCompletion If true, the buffer will be wiped when the chain operation ends
-     * NOTE:
-     * We expect _exactly_ the length supplied to be read by the caller. If we
-     * still have bytes left and we receive a command other than GET RESPONSE,
-     * we will return SW_LAST_COMMAND_EXPECTED.
      */
     public void setOutgoing(byte[] buffer, short offset, short length, boolean clearOnCompletion) {
 
@@ -181,10 +177,6 @@ public final class ChainBuffer {
      * @param offset The starting offset of the data to write to
      * @param length The length to expect to be written
      * @param atomic If true, this operation will be conducted inside a transaction
-     * NOTE:
-     * We expect <b>exactly</b> the length supplied to be written. If we receive a final
-     * (non-chained) command and we haven't written [length] bytes, this is treated as
-     * a failure.
      */
     public void setIncomingObject(byte[] destination, short offset, short length, boolean atomic) {
 
@@ -203,6 +195,43 @@ public final class ChainBuffer {
         }
     }
 
+
+	/**
+	 * Used to pre-validate an incoming APDU, to support cancelling mid-command.
+	 * Note that this function does not process the APDU at all, it simply checks whether
+	 * the command has been changed before completion. If so, it cancels and optionally allows
+	 * the APDU the continue being processed by the applet.
+     * @param apdu The incoming APDU buffer
+     * @param inOffset The starting offset of initial APDU
+     * @param inLength The length of the initial APDU
+	 */
+    public void checkIncomingAPDU(byte[] apdu, short inOffset, short inLength) {
+
+		final short CLA_MASK = ~(short)0x1000;
+
+        // Check if we have anything to do
+        if (context[CONTEXT_STATE] != STATE_INCOMING_APDU) return;
+
+		// If the command has changed, cancel the previous incoming APDU and continue.
+		if (context[CONTEXT_APDU_CLAINS] != (short)((Util.getShort(apdu, ISO7816.OFFSET_CLA) & CLA_MASK)) ||
+				context[CONTEXT_APDU_P1P2] != Util.getShort(apdu, ISO7816.OFFSET_P1)) {			
+			// Cancel the previous incoming APDU
+			reset();
+
+			if (Config.FEATURE_STRICT_APDU_CHAINING) {
+				// For implementations that wish to force the completion of chained commands, 
+				// this optionally throws an exception.
+				ISOException.throwIt(ISO7816.SW_LAST_COMMAND_EXPECTED);	            
+			}
+			else {
+				// Ignore this and let the applet handle as a new APDU
+				return;
+			}                			
+		}
+		
+		// If we have passed, the applet will continue and direct this APDU to the appropriate 
+		// handler, which will then call processIncomingAPDU() to complete this.
+    }
 
     /**
      * Configures the ChainBuffer class to process a large incoming APDU
@@ -281,7 +310,12 @@ public final class ChainBuffer {
             if (context[CONTEXT_APDU_CLAINS] != Util.getShort(apdu, ISO7816.OFFSET_CLA) ||
                     context[CONTEXT_APDU_P1P2] != Util.getShort(apdu, ISO7816.OFFSET_P1)) {
                 reset();
-                ISOException.throwIt(ISO7816.SW_LAST_COMMAND_EXPECTED);
+                
+                // NOTE regarding Config.FEATURE_STRICT_APDU_CHAINING:
+                // If we have gotten here, then checkIncomingAPDU was not called. Since we are 
+                // already past the point of allowing the applet to switch to other commands,
+                // so we always fail. Use checkIncomingAPDU() and this will never be reached.
+				ISOException.throwIt(ISO7816.SW_LAST_COMMAND_EXPECTED);	            
             }
 
             // Calculate the outOffset by adding the amount of data we have already written
@@ -314,6 +348,11 @@ public final class ChainBuffer {
             if ((context[CONTEXT_APDU_CLAINS] & CLA_MASK) != Util.getShort(apdu, ISO7816.OFFSET_CLA) ||
                     context[CONTEXT_APDU_P1P2] != Util.getShort(apdu, ISO7816.OFFSET_P1)) {
                 reset();
+
+                // NOTE regarding Config.FEATURE_STRICT_APDU_CHAINING:
+                // If we have gotten here, then checkIncomingAPDU was not called. Since we are 
+                // already past the point of allowing the applet to switch to other commands,
+                // so we always fail. Use checkIncomingAPDU() and this will never be reached.
                 ISOException.throwIt(ISO7816.SW_LAST_COMMAND_EXPECTED);
             }
 
@@ -362,20 +401,30 @@ public final class ChainBuffer {
         if (context[CONTEXT_STATE] != STATE_INCOMING_OBJECT) return;
 
         // This method presumes that setIncomingAndReceive() was previously called if required
-
-        // If we have not written anything, this must be the first command so set the APDU header
         final short CLA_MASK = ~(short)0x1000;
-
+        
+        // If we have not written anything, this must be the first command so set the APDU header
         if (context[CONTEXT_LENGTH] == context[CONTEXT_REMAINING]) {
             context[CONTEXT_APDU_CLAINS] = (short)(Util.getShort(buffer, ISO7816.OFFSET_CLA) & CLA_MASK);
             context[CONTEXT_APDU_P1P2] = Util.getShort(buffer, ISO7816.OFFSET_P1);
-        } else {
-            // Validate that we are chaining for the correct command
-            if (context[CONTEXT_APDU_CLAINS] != (short)((Util.getShort(buffer, ISO7816.OFFSET_CLA) & CLA_MASK)) ||
-                    context[CONTEXT_APDU_P1P2] != Util.getShort(buffer, ISO7816.OFFSET_P1)) {
-                resetAbort();
-                ISOException.throwIt(ISO7816.SW_LAST_COMMAND_EXPECTED);
-            }
+        } 
+        
+		// Validate that we are chaining for the correct command
+		else if (context[CONTEXT_APDU_CLAINS] != (short)((Util.getShort(buffer, ISO7816.OFFSET_CLA) & CLA_MASK)) ||
+				 context[CONTEXT_APDU_P1P2] != Util.getShort(buffer, ISO7816.OFFSET_P1)) {                    	
+				 	
+			// Abort the data object write
+			resetAbort();
+			
+			if (Config.FEATURE_STRICT_APDU_CHAINING) {
+				// For implementations that wish to force the completion of chained commands, 
+				// this optionally throws an exception.
+				ISOException.throwIt(ISO7816.SW_LAST_COMMAND_EXPECTED);	            
+			}
+			else {
+				// Ignore this and let the applet handle as a new APDU
+				return;
+			}                
         }
 
         // Check if we are chaining or not (we don't use the in-built APDU.isCommandChainingCLA() call
@@ -449,8 +498,19 @@ public final class ChainBuffer {
         // CASE 0 - If the remaining data is EQUAL TO the total data, ignore the INS
         // CASE 1 - If the remaining data is LESS THAN the total data, look for a GET RESPONSE command (clear if it isn't)
         if (apduBuffer[ISO7816.OFFSET_INS] != INS_GET_RESPONSE && context[CONTEXT_REMAINING] != context[CONTEXT_LENGTH] ) {
+        	
+        	// Clear the apdu buffer
             reset();
-            ISOException.throwIt(ISO7816.SW_LAST_COMMAND_EXPECTED);
+
+            if (Config.FEATURE_STRICT_APDU_CHAINING) {
+				// For implementations that wish to force the completion of chained commands, 
+				// this optionally throws an exception.
+				ISOException.throwIt(ISO7816.SW_LAST_COMMAND_EXPECTED);	            
+            }
+            else {
+            	// Ignore this and let the applet handle this as a new command
+	            return;
+            }
         }
 
         //

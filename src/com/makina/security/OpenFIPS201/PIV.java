@@ -941,8 +941,8 @@ public final class PIV {
         // COMMAND CHAIN HANDLING
         //
 
-        // Pass the APDU to the chainBuffer instance first. It will return zero if there is store more
-        // to of the chain to process, otherwise it will return the length of the large CDATA buffer
+        // Pass the APDU to the chainBuffer instance first. It will return zero if there is more
+        // of the chain to process, otherwise it will return the length of the large CDATA buffer
         length = chainBuffer.processIncomingAPDU(buffer, offset, length, scratch, (short)0);
 
         // If the length is zero, just return so the caller can keep sending
@@ -1750,7 +1750,6 @@ public final class PIV {
 
         // If we got this far, the scratch buffer now contains the incoming DATA. Keep in mind that the original buffer
         // still contains the APDU header.
-
 
         //
         // PIN cases

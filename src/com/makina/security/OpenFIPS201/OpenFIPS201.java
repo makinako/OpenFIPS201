@@ -129,8 +129,10 @@ public final class OpenFIPS201 extends Applet {
         if ((secureChannel.getSecurityLevel() & SC_MASK) == SC_MASK) {
 
 			// Update the APDU, including the header bytes
-			length = secureChannel.unwrap(buffer, (short)0, (short)(ISO7816.OFFSET_CDATA + length));            
-			length -= ISO7816.OFFSET_CDATA; // Remove the header length
+			//if (length != 0) { // Only used for debugging, never in production.
+				length = secureChannel.unwrap(buffer, (short)0, (short)(ISO7816.OFFSET_CDATA + length));            
+				length -= ISO7816.OFFSET_CDATA; // Remove the header length				
+			//}
 			
             isSecureChannel = true;
         } else {
@@ -140,8 +142,18 @@ public final class OpenFIPS201 extends Applet {
         // Notify PIV of any updated applet security conditions
         piv.updateSecurityStatus(contactless, isSecureChannel);
 
-        //
-        // Process any outstanding chain requests
+		//
+		// ChainBuffer handling
+		//
+		// There are 3 different ChainBuffer cases that can be handled here:
+		// 1) There is no existing chained command to manage
+		// 2) There is an outstanding response APDU to process ('GET RESPONSE')
+		// 3) There is an incoming data object to process
+		//
+		// The above can result in the APDU being processed and a response or exception 
+		// generated without proceeding further into the applet.
+		// In addition, there is a check performed for incoming APDU's, to cancel 
+		// them if the caller has changed APDU's mid-command.
         // NOTES:
         // - If there is an outstanding chain request to process, this method will throw an ISOException
         //	 (including SW_NO_ERROR) and no further processing will occur.
@@ -154,6 +166,10 @@ public final class OpenFIPS201 extends Applet {
 
         // We pass the byte array, offset and length here because the previous call to unwrap() may have altered the length
         chainBuffer.processIncomingObject(buffer, apdu.getOffsetCdata(), length);
+        
+        // Check if an incoming APDU has been cancelled
+        chainBuffer.checkIncomingAPDU(buffer, apdu.getOffsetCdata(), length);
+
 
         //
         // Normal APDU processing
