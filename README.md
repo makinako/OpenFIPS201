@@ -24,3 +24,4 @@ The latest binary release is: [OpenFIPS201 v1.0.0-beta6](https://github.com/maki
 **Want to get in touch?**
 
 Contact us at piv@makina.com.au if you want to talk about the project, or just to even say how you're using it!
+To contact the author directly, email kim@makina.com.au
