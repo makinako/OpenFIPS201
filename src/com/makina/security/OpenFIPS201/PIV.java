@@ -280,7 +280,7 @@ public final class PIV {
 		//		
 		case CONST_LEN_DISCOVERY:
 			offset++; // Move to the 1st byte of the tag			
-			if (buffer[offset] != CONST_TAG_DISCOVERY) ISOException.throwIt(SW_REFERENCE_NOT_FOUND);
+			if (buffer[offset] != CONST_TAG_DISCOVERY) ISOException.throwIt(ISO7816.SW_FILE_NOT_FOUND);
 			id = CONST_TAG_DISCOVERY; // Store it as our object ID
 			break;
 			
@@ -289,9 +289,9 @@ public final class PIV {
 		//		
 		case CONST_LEN_BIOMETRIC:
 			offset++; // Move to the 1st byte of the tag			
-			if (buffer[offset] != CONST_TAG_BIOMETRIC_1) ISOException.throwIt(SW_REFERENCE_NOT_FOUND);
+			if (buffer[offset] != CONST_TAG_BIOMETRIC_1) ISOException.throwIt(ISO7816.SW_FILE_NOT_FOUND);
 			offset++; // Move to the 2nd byte
-			if (buffer[offset] != CONST_TAG_BIOMETRIC_2) ISOException.throwIt(SW_REFERENCE_NOT_FOUND);
+			if (buffer[offset] != CONST_TAG_BIOMETRIC_2) ISOException.throwIt(ISO7816.SW_FILE_NOT_FOUND);
 			id = CONST_TAG_BIOMETRIC_2; // Store it as our object ID
 			break;
 			
@@ -300,9 +300,9 @@ public final class PIV {
 		//
 		case CONST_LEN_NORMAL:
 			offset++; // Move to the 1st byte of the tag			
-			if (buffer[offset] != CONST_TAG_NORMAL_1) ISOException.throwIt(SW_REFERENCE_NOT_FOUND);
+			if (buffer[offset] != CONST_TAG_NORMAL_1) ISOException.throwIt(ISO7816.SW_FILE_NOT_FOUND);
 			offset++; // Move to the 2nd byte
-			if (buffer[offset] != CONST_TAG_NORMAL_2) ISOException.throwIt(SW_REFERENCE_NOT_FOUND);
+			if (buffer[offset] != CONST_TAG_NORMAL_2) ISOException.throwIt(ISO7816.SW_FILE_NOT_FOUND);
 			offset++; // Move to the 3rd byte
 			id = buffer[offset]; // Store it as our object ID
 			break;
@@ -389,64 +389,52 @@ public final class PIV {
             ISOException.throwIt(ISO7816.SW_SECURITY_STATUS_NOT_SATISFIED);
         }
 
-
-        // PRE-CONDITION 2 - The TAG LIST value must be present
-        if (buffer[offset++] != CONST_TAG) {
-            ISOException.throwIt(SW_REFERENCE_NOT_FOUND);	        
-        }
-
 		//
 		// Retrieve the data object TAG identifier
 		// NOTE: All objects in the datastore have had their tag reduced to one byte, which is
 		//		 always the least significant byte of the tag.
 		//		
         byte id = 0;
-		
+
 		switch (buffer[offset]) {
-			
-		//
-		// SPECIAL CASE 1 - DISCOVERY OBJECT
-		//		
-		case CONST_LEN_DISCOVERY:
-			offset++; // Move to the 1st byte of the tag			
-			if (buffer[offset] != CONST_TAG_DISCOVERY) ISOException.throwIt(SW_REFERENCE_NOT_FOUND);
-			id = CONST_TAG_DISCOVERY; // Store it as our object ID
+
+			//
+			// SPECIAL OBJECT - Discovery Object
+			//
+		case CONST_TAG_DISCOVERY:
+			id = CONST_TAG_DISCOVERY;
 			break;
-			
-		//
-		// SPECIAL CASE 2 - BIOMETRIC INFORMATION TEMPLATE
-		//		
-		case CONST_LEN_BIOMETRIC:
-			offset++; // Move to the 1st byte of the tag			
-			if (buffer[offset] != CONST_TAG_BIOMETRIC_1) ISOException.throwIt(SW_REFERENCE_NOT_FOUND);
-			offset++; // Move to the 2nd byte
-			if (buffer[offset] != CONST_TAG_BIOMETRIC_2) ISOException.throwIt(SW_REFERENCE_NOT_FOUND);
+
+			//
+			// SPECIAL OBJECT - Biometric Information Template Group
+			//
+		case CONST_TAG_BIOMETRIC_1:
+			if (buffer[(short)(offset + 1)] != CONST_TAG_BIOMETRIC_2) ISOException.throwIt(SW_REFERENCE_NOT_FOUND);
 			id = CONST_TAG_BIOMETRIC_2; // Store it as our object ID
 			break;
+
+			//
+			// All other objects
+			//
+		case CONST_TAG:
+			offset++; // Move to the length byte
+			if (buffer[offset] != CONST_LEN_NORMAL) ISOException.throwIt(SW_REFERENCE_NOT_FOUND);
 			
-		//
-		// ALL OTHER OBJECTS
-		//
-		case CONST_LEN_NORMAL:
-			offset++; // Move to the 1st byte of the tag			
-			if (buffer[offset] != CONST_TAG_NORMAL_1) ISOException.throwIt(SW_REFERENCE_NOT_FOUND);
-			offset++; // Move to the 2nd byte
-			if (buffer[offset] != CONST_TAG_NORMAL_2) ISOException.throwIt(SW_REFERENCE_NOT_FOUND);
-			offset++; // Move to the 3rd byte
+			offset++; // Move to the first tag data byte
+            if (buffer[offset] != CONST_TAG_NORMAL_1) ISOException.throwIt(ISO7816.SW_FILE_NOT_FOUND);			
+
+			offset++; // Move to the second tag data byte
+            if (buffer[offset] != CONST_TAG_NORMAL_2) ISOException.throwIt(ISO7816.SW_FILE_NOT_FOUND);			
+			
+			offset++; // Move to the third tag data byte (which is our identifier)
 			id = buffer[offset]; // Store it as our object ID
-			break;
-
-		default:
-			// Unsupported length supplied
-			ISOException.throwIt(ISO7816.SW_WRONG_DATA);
-			break;
-		}
-
-		offset++; // Move to the DATA element
-
-		// PRE-CONDITION 4 - The 'DATA' tag must be present in the supplied buffer
-		if (buffer[offset] != CONST_DATA) {
-			ISOException.throwIt(ISO7816.SW_WRONG_DATA);
+			
+			// PRE-CONDITION 4 - For all other objects, the 'DATA' tag must be present in the supplied buffer
+			offset++; // Move to the DATA tag
+			if (buffer[offset] != CONST_DATA) {
+				ISOException.throwIt(ISO7816.SW_WRONG_DATA);
+			}
+			break;			
 		}
 		
 		// The offset now holds the correct position for writing the object, including the DATA tag
