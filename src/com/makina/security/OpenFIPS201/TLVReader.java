@@ -46,6 +46,7 @@ public final class TLVReader {
     public static final byte MASK_CONSTRUCTED 			= (byte) 0x20;
     public static final byte MASK_LOW_TAG_NUMBER 		= (byte) 0x1F;
     public static final byte MASK_HIGH_TAG_NUMBER 		= (byte) 0x7F;
+    public static final byte MASK_TAG_MULTI_BYTE		= (byte) 0x1F;
     public static final byte MASK_HIGH_TAG_MOREDATA 	= (byte) 0x80;
     public static final byte MASK_LONG_LENGTH 			= (byte) 0x80;
     public static final byte MASK_LENGTH 				= (byte) 0x7F;
@@ -277,8 +278,21 @@ public final class TLVReader {
      */
     public static short getLength(byte[] data, short offset) {
 
-        // Skip the TAG element (always 1 byte in PIVTLV)
-        offset++;
+		//
+        // Skip the TAG element 
+		//
+		
+		// If the bits B5-B1 of the leading byte are not all set to 1, then may they shall encode 
+		// an integer equal to the tag number which therefore lies in the range from 0 to 30. 
+		// Then the tag field consists of a single byte.
+		// Otherwise (B5-B1 set to 1 in the leading byte), the tag field shall continue on one or more subsequent bytes.
+		if ( (data[offset] & MASK_TAG_MULTI_BYTE) == MASK_TAG_MULTI_BYTE ) {
+			while ( (data[++offset] & MASK_HIGH_TAG_MOREDATA) == MASK_HIGH_TAG_MOREDATA) 
+			{				
+				// Do nothing, just skip
+			}
+		}
+		offset++; // We now know we can move to the length byte
 
         // Is this a short-form length byte?
         if ((data[offset] & MASK_LONG_LENGTH) != MASK_LONG_LENGTH) {
@@ -344,8 +358,22 @@ public final class TLVReader {
      * @return The data element offset
      */
     public static short getDataOffset(byte[] data, short offset) {
-        // Skip the TAG element (always 1 byte in PIVTLV)
-        offset++;
+
+		//
+        // Skip the TAG element 
+		//
+		
+		// If the bits B5-B1 of the leading byte are not all set to 1, then may they shall encode 
+		// an integer equal to the tag number which therefore lies in the range from 0 to 30. 
+		// Then the tag field consists of a single byte.
+		// Otherwise (B5-B1 set to 1 in the leading byte), the tag field shall continue on one or more subsequent bytes.
+		if ( (data[offset] & MASK_TAG_MULTI_BYTE) == MASK_TAG_MULTI_BYTE ) {
+			while ( (data[++offset] & MASK_HIGH_TAG_MOREDATA) == MASK_HIGH_TAG_MOREDATA) 
+			{				
+				// Do nothing, just skip
+			}
+		}
+		offset++; // We now know we can move to the length byte
 
         // Skip through the LENGTH element
 
