@@ -91,8 +91,27 @@ public final class OpenFIPS201 extends Applet {
         // Reset any security domain session (see resetSecurity() documentation)
         if (secureChannel != null) secureChannel.resetSecurity();
 
-        // Reset the PIV security status
-        piv.deselect();
+		//
+		// The PIV applet specification defines rules for how to manage security conditions when 
+		// it is selected or deselected. These rules/requirements are described in SP800-73-4 
+		
+		// Part 2 - 3.1.1 - SELECT Card Command, and can be simplified as follows:
+		// 		a.	If the PIV applet is not selected and becomes selected, the security 
+		//			conditions must be reset. 
+		//		b.	If the PIV applet is selected and becomes not selected (i.e. a different 
+		//			applet is selected), then the PIV applet becomes selected again, the security 
+		//			conditions must be reset.
+		//		c.	If the PIV applet is selected and a select command is issued again for the 
+		//			PIV applet (i.e. it is re-selected), then the security conditions must not be 
+		//			reset.
+		//		d.	If the PIV applet is selected and a select command is issued for a non-existent
+		//			applet, then the PIV applet should remain selected and the security conditions 
+		//			must not be reset.
+
+        // Reset the PIV security status only if we are not reselecting the current applet
+        if (!reSelectingApplet()) {
+			piv.deselect();        
+        }
     }
 
     public void process(APDU apdu) {
