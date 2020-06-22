@@ -2,6 +2,9 @@
 ## Java
 ##
 
+# Binary output
+bin/
+
 # Compiled class file
 *.class
 
@@ -32,7 +35,6 @@ jumpRecordInfo.xml
 *.jcproj
 *.jcsln
 postbuild.bat
-./bin/
 
 ##
 ## OPERATING SYSTEM
