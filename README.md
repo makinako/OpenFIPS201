@@ -1,13 +1,26 @@
 # OpenFIPS201 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-This project has been commissioned and funded by the Australian Department of Defence, to provide an open source implementation of the card application for the NIST Personal Identity Verification (PIV) standard as specified by [FIPS PUB 201-2](https://en.wikipedia.org/wiki/FIPS_201) and [SP800-73-4](http://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-73-4.pdf). 
 
+
+> **<u>IMPORTANT UPDATE - 22nd July 2020</u>**
+>
+> OpenFIPS201 has attempted to maintain compatibility with Javacard 2.2.x, however it is clear that there are a number of very good reasons to move away from it in the context of the PIV standard:
+>
+> * There are a number of cryptographic primitives that are not supported by JC22, especially in the Elliptic Curve domain. This makes it impossible to fully implement SP800-73-4. 
+> * The PIV requirement to format signature input blocks off-card, which is not supported by JC22 resulted in the need to implement a hack to encrypt using the private key. Moving to JC30 will allow the use of Signature with 'signPreComputedHash()' and 'setInitialDigest', which are both specifically intended for off-card signature block formatting.
+> * JC22 does not support the 'Applet.reselectingApplet()' feature, which again is a breaking point for PIV. NIST have indicated they will permit certification exceptions to support JC22 cards, however this hasn't been tested to our knowledge.
+>
+> Going forward, OpenFIPS201 will target Javacard SDK 3.0.4 as a minimum. To continue to support Javacard 2.2.x we have added a new repository [OpenFIPS201-jc22](https://github.com/makinako/OpenFIPS201-jc22), which will serve as the compatibility release going forward.
+
+
+
+This project has been commissioned and funded by the Australian Department of Defence, to provide an open source implementation of the card application for the NIST Personal Identity Verification (PIV) standard as specified by [FIPS PUB 201-2](https://en.wikipedia.org/wiki/FIPS_201) and [SP800-73-4](http://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-73-4.pdf). 
 
 **OpenFIPS201 implements the following functionality:**
 
 * A flexible filesystem that can be defined easily without recompilation
 * A flexible key store that defines key roles instead of hard-coding which key is used for what function
-* It compiles to Javacard 2.2.2 for maximum compatibility (this will be forked to separate 3.0.x and 2.2.x builds)
+* It compiles to Javacard 3.0.4 as a minimum
 * Secure personalisation over SCP w/CEnc+CMac using the CHANGE REFERENCE DATA and PUT DATA commands
 * The following is out-of-scope at this time:
   * Elliptic Curve Cryptography mechanisms

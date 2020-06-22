@@ -3,7 +3,7 @@
 REM *********************************************************************
 REM This value MUST be defined if JAVA_HOME is not already set correctly.
 REM *********************************************************************
-SET JDK="C:\Progra~1\Java\jdk1.8.0_151"
+SET JDK="C:\Progra~1\Java\jdk1.8.0_221"
 
 ECHO Setting environment variables
 SETLOCAL ENABLEEXTENSIONS

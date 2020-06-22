@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project name="OpenFIPS201 PIV Applet" default="all" basedir="..">
 
-  <property name="jc.version" value="jc222"/>
+  <property name="jc.version" value="jc304"/>
   <property name="gp.version" value="gp211"/>
 
 
@@ -15,7 +15,7 @@
   <property name="build.outputfile" value="OpenFIPS201.cap"/>
 
   <property name="docs.outputpath" value="build/docs"/>
-  <property name="docs.classpath" value="${jc.home}/lib/api.jar;${gp.exportjar}"/>
+  <property name="docs.classpath" value="${jc.home}/lib/api_classic.jar;${gp.exportjar}"/>
 
   <target name="clean">
     <delete dir="${build.outputpath}"/>

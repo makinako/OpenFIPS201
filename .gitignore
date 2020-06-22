@@ -32,7 +32,7 @@ jumpRecordInfo.xml
 *.jcproj
 *.jcsln
 postbuild.bat
-bin/
+./bin/
 
 ##
 ## OPERATING SYSTEM
