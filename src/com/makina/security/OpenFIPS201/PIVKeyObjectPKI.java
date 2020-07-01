@@ -35,9 +35,10 @@ import javacard.framework.*;
  */
 public final class PIVKeyObjectPKI extends PIVKeyObject {
 
-    private RSAPrivateKey privateKey;
+    private Key privateKey;
     private RSAPublicKey publicKey;
     private KeyPair keyPair;
+    private boolean isCrtKey;
 
     // The list of elements that can be updated for an asymmetric key
 
@@ -80,8 +81,11 @@ public final class PIVKeyObjectPKI extends PIVKeyObject {
         case ELEMENT_RSA_N:
             if (length != getKeyLength()) ISOException.throwIt(ISO7816.SW_WRONG_LENGTH);
             if (publicKey == null || privateKey == null) allocate();
+            if (isCrtKey) {
+                ISOException.throwIt(ISO7816.SW_FUNC_NOT_SUPPORTED);
+            }
             publicKey.setModulus(buffer, offset, length);
-            privateKey.setModulus(buffer, offset, length);
+            ((RSAPrivateKey) privateKey).setModulus(buffer, offset, length);
             break;
 
         // RSA Public Exponent
@@ -95,7 +99,10 @@ public final class PIVKeyObjectPKI extends PIVKeyObject {
         case ELEMENT_RSA_D:
             if (length != getKeyLength()) ISOException.throwIt(ISO7816.SW_WRONG_LENGTH);
             if (privateKey == null) allocate();
-            privateKey.setExponent(buffer, offset, length);
+            if (isCrtKey) {
+                ISOException.throwIt(ISO7816.SW_FUNC_NOT_SUPPORTED);
+            }
+            ((RSAPrivateKey) privateKey).setExponent(buffer, offset, length);
             break;
 
         /*
@@ -146,7 +153,11 @@ public final class PIVKeyObjectPKI extends PIVKeyObject {
      */
     public void setPrivateExponent(byte[] buffer, short offset, short length) {
         if (privateKey == null) allocate();
-        privateKey.setExponent(buffer, offset, length);
+        ISOException.throwIt(ISO7816.SW_FUNC_NOT_SUPPORTED);
+        if (isCrtKey) {
+            ISOException.throwIt(ISO7816.SW_FUNC_NOT_SUPPORTED);
+        }
+        ((RSAPrivateKey) privateKey).setExponent(buffer, offset, length);
     }
 
     /**
@@ -168,7 +179,11 @@ public final class PIVKeyObjectPKI extends PIVKeyObject {
      */
     public void setModulus(byte[] buffer, short offset, short length) {
         if (privateKey == null || publicKey == null) allocate();
-        privateKey.setModulus(buffer, offset, length);
+        ISOException.throwIt(ISO7816.SW_FUNC_NOT_SUPPORTED);
+        if (isCrtKey) {
+            ISOException.throwIt(ISO7816.SW_FUNC_NOT_SUPPORTED);
+        }
+        ((RSAPrivateKey) privateKey).setModulus(buffer, offset, length);
         publicKey.setModulus(buffer, offset, length);
     }
 
@@ -194,15 +209,31 @@ public final class PIVKeyObjectPKI extends PIVKeyObject {
 
     private void allocate() {
 
+        isCrtKey = false;
+
         // Generate the appropriate key(s)
         switch (header[HEADER_MECHANISM]) {
 
         case PIV.ID_ALG_RSA_1024:
-            keyPair = new KeyPair(KeyPair.ALG_RSA, KeyBuilder.LENGTH_RSA_1024);
+            try {
+                keyPair = new KeyPair(KeyPair.ALG_RSA, KeyBuilder.LENGTH_RSA_1024);
+            } catch (CryptoException e) {
+	        if (e.getReason() == CryptoException.NO_SUCH_ALGORITHM) {
+                    keyPair = new KeyPair(KeyPair.ALG_RSA_CRT, KeyBuilder.LENGTH_RSA_1024);
+	            isCrtKey = true;
+                }
+	    }
             break;
 
         case PIV.ID_ALG_RSA_2048:
-            keyPair = new KeyPair(KeyPair.ALG_RSA, KeyBuilder.LENGTH_RSA_2048);
+            try {
+                keyPair = new KeyPair(KeyPair.ALG_RSA, KeyBuilder.LENGTH_RSA_2048);
+            } catch (CryptoException e) {
+	        if (e.getReason() == CryptoException.NO_SUCH_ALGORITHM) {
+                    keyPair = new KeyPair(KeyPair.ALG_RSA_CRT, KeyBuilder.LENGTH_RSA_2048);
+	            isCrtKey = true;
+                }
+	    }
             break;
 
         default:
@@ -210,7 +241,7 @@ public final class PIVKeyObjectPKI extends PIVKeyObject {
             break;
         }
 
-        privateKey = (RSAPrivateKey)keyPair.getPrivate();
+        privateKey = keyPair.getPrivate();
         publicKey = (RSAPublicKey)keyPair.getPublic();
     }
 
