@@ -2,8 +2,10 @@
 
 This is configuration and test input for the the NIST-created unit testing tool for PIV interoperability. 
 
+
 It can be obtained from:
 https://csrc.nist.gov/Projects/PIV/download
+
 And you will need to get the archive password by sending an email to piv-dmtester@nist.gov. 
 
 A copy of the configuration file used by OpenFIPS201 has been provided to remove the optional test components that are not relevant to this applet.
