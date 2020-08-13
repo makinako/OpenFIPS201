@@ -58,7 +58,8 @@ public abstract class PIVKeyObjectPKI extends PIVKeyObject {
   }
 
   /** @return true if the privateKey exists and is initialized. */
-  public boolean isPrivateInitialised() {
+  @Override
+  public boolean isInitialised() {
     return (privateKey != null && privateKey.isInitialized());
   }
 
@@ -98,13 +99,7 @@ public abstract class PIVKeyObjectPKI extends PIVKeyObject {
    */
   protected void allocatePublic(byte publicKeyType, short keyLength) {
     clearPublic();
-    if (publicKey == null) {
-      publicKey = (PublicKey) KeyBuilder.buildKey(publicKeyType, keyLength, false);
-    } else if (publicKey.getSize() != keyLength || publicKey.getType() != publicKeyType) {
-      publicKey = null;
-      runGc();
-      publicKey = (PublicKey) KeyBuilder.buildKey(publicKeyType, keyLength, false);
-    }
+    publicKey = (PublicKey) KeyBuilder.buildKey(publicKeyType, keyLength, false);
   }
 
   /**
@@ -146,6 +141,8 @@ public abstract class PIVKeyObjectPKI extends PIVKeyObject {
   private void clearPublic() {
     if (publicKey != null) {
       publicKey.clearKey();
+      publicKey = null;
+      runGc();
     }
   }
 

@@ -973,14 +973,7 @@ public final class PIV {
     }
 
     // PRE-CONDITION 3 - The key's private or secret values must have been set
-    boolean isInitialised;
-    if (key instanceof PIVKeyObjectSYM) {
-      isInitialised = ((PIVKeyObjectSYM) key).isInitialised();
-    } else {
-      isInitialised = ((PIVKeyObjectPKI) key).isPrivateInitialised();
-    }
-
-    if (!isInitialised) {
+    if (!key.isInitialised()) {
       PIVSecurityProvider.zeroise(scratch, (short) 0, LENGTH_SCRATCH);
       ISOException.throwIt(ISO7816.SW_INCORRECT_P1P2);
     }
