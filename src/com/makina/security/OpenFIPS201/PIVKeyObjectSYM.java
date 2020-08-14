@@ -50,9 +50,8 @@ public final class PIVKeyObjectSYM extends PIVKeyObject {
 
   @Override
   public void updateElement(byte element, byte[] buffer, short offset, short length) {
-
-    if (length != getKeyLength()) ISOException.throwIt(ISO7816.SW_WRONG_LENGTH);
-
+    short keyLengthBytes = getKeyLengthBytes();
+    if (length != keyLengthBytes) ISOException.throwIt(ISO7816.SW_WRONG_LENGTH);
     switch (element) {
       case ELEMENT_KEY:
         clear();
@@ -93,10 +92,9 @@ public final class PIVKeyObjectSYM extends PIVKeyObject {
         ISOException.throwIt(ISO7816.SW_WRONG_DATA);
         break;
     }
-    PIVSecurityProvider.zeroise(buffer, offset, getKeyLength());
+    PIVSecurityProvider.zeroise(buffer, offset, keyLengthBytes);
   }
 
-  @Override
   protected void allocate() {
 
     clear();
@@ -166,20 +164,20 @@ public final class PIVKeyObjectSYM extends PIVKeyObject {
   }
 
   @Override
-  public short getKeyLength() {
+  public short getKeyLengthBits() {
     switch (getMechanism()) {
       case PIV.ID_ALG_DEFAULT:
       case PIV.ID_ALG_TDEA_3KEY:
-        return KeyBuilder.LENGTH_DES3_3KEY / 8;
+        return KeyBuilder.LENGTH_DES3_3KEY;
 
       case PIV.ID_ALG_AES_128:
-        return KeyBuilder.LENGTH_AES_128 / 8;
+        return KeyBuilder.LENGTH_AES_128;
 
       case PIV.ID_ALG_AES_192:
-        return KeyBuilder.LENGTH_AES_192 / 8;
+        return KeyBuilder.LENGTH_AES_192;
 
       case PIV.ID_ALG_AES_256:
-        return KeyBuilder.LENGTH_AES_256 / 8;
+        return KeyBuilder.LENGTH_AES_256;
 
       default:
         ISOException.throwIt(ISO7816.SW_DATA_INVALID);

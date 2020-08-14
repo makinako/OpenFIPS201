@@ -129,11 +129,15 @@ public abstract class PIVKeyObject extends PIVObject {
     return (securityFlags[FLAGS_AUTHENTICATED]);
   }
 
-  protected abstract void allocate();
+  /** @return the length og the key in bytes */
+  public final short getKeyLengthBytes() {
+    return (short) (getKeyLengthBits() / 8);
+  }
+
+  /** @return the length of the key in bits */
+  public abstract short getKeyLengthBits();
 
   public abstract short getBlockLength();
-
-  public abstract short getKeyLength();
 
   public abstract boolean isAsymmetric();
 

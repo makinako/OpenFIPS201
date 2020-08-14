@@ -32,23 +32,16 @@ import javacard.security.*;
 
 /** Provides functionality for ECC PIV key objects */
 public final class PIVKeyObjectECC extends PIVKeyObjectPKI {
-  // Uncompressed ECC public keys are marshaled as the concatenation of:
-  // CONST_POINT_UNCOMPRESSED | X | Y
-  // where the length of the X and Y coordinates is the byte length of the key.
-  private static final short CONST_MARSHALLED_PUB_KEY_LEN_P256 =
-      (short) ((KeyBuilder.LENGTH_EC_FP_256 / 8) * 2 + 1);
-  private static final short CONST_MARSHALLED_PUB_KEY_LEN_P384 =
-      (short) ((KeyBuilder.LENGTH_EC_FP_384 / 8) * 2 + 1);
-  // From SP 800-73-4 Part 2 3.3.2
   private static final byte CONST_POINT_UNCOMPRESSED = (byte) 0x04;
 
   // The ECC public key element tag
-  public final byte ELEMENT_ECC_POINT = (byte) 0x86;
+  private static final byte ELEMENT_ECC_POINT = (byte) 0x86;
 
   // The ECC private key element tag
-  public final byte ELEMENT_ECC_SECRET = (byte) 0x87;
+  private static final byte ELEMENT_ECC_SECRET = (byte) 0x87;
 
-  private ECParams params = null;
+  private final ECParams params;
+  private final short marshaledPubKeyLen;
 
   public PIVKeyObjectECC(
       byte id, byte modeContact, byte modeContactless, byte mechanism, byte role) {
@@ -62,8 +55,14 @@ public final class PIVKeyObjectECC extends PIVKeyObjectPKI {
         params = ECParamsP384.Instance();
         break;
       default:
+        params = null; // Keep the compiler happy
         ISOException.throwIt(ISO7816.SW_DATA_INVALID);
     }
+
+    // Uncompressed ECC public keys are marshaled as the concatenation of:
+    // CONST_POINT_UNCOMPRESSED | X | Y
+    // where the length of the X and Y coordinates is the byte length of the key.
+    marshaledPubKeyLen = (short) (getKeyLengthBytes() * 2 + 1);
   }
 
   /**
@@ -86,62 +85,27 @@ public final class PIVKeyObjectECC extends PIVKeyObjectPKI {
    */
   @Override
   public void updateElement(byte element, byte[] buffer, short offset, short length) {
-    short keyLen = 0;
     switch (element) {
       case ELEMENT_ECC_POINT:
-        // ECC Public Key
-        switch (getMechanism()) {
-          case PIV.ID_ALG_ECC_P256:
-            if (length != CONST_MARSHALLED_PUB_KEY_LEN_P256) {
-              ISOException.throwIt(ISO7816.SW_WRONG_LENGTH);
-            }
-            keyLen = KeyBuilder.LENGTH_EC_FP_256;
-            break;
-
-          case PIV.ID_ALG_ECC_P384:
-            if (length != CONST_MARSHALLED_PUB_KEY_LEN_P384) {
-              ISOException.throwIt(ISO7816.SW_WRONG_LENGTH);
-            }
-            keyLen = KeyBuilder.LENGTH_EC_FP_384;
-            break;
-
-          default:
-            ISOException.throwIt(ISO7816.SW_WRONG_DATA);
-            break;
+        if (length != marshaledPubKeyLen) {
+          ISOException.throwIt(ISO7816.SW_WRONG_LENGTH);
         }
 
         // Only uncompressed points are supported
         if (buffer[offset] != CONST_POINT_UNCOMPRESSED) {
           ISOException.throwIt(ISO7816.SW_WRONG_DATA);
         }
-        allocatePublic(KeyBuilder.TYPE_EC_FP_PUBLIC, keyLen);
+        allocatePublic();
         ((ECPublicKey) publicKey).setW(buffer, offset, length);
-        setPublicParams();
         break;
 
       case ELEMENT_ECC_SECRET:
-        switch (getMechanism()) {
-          case PIV.ID_ALG_ECC_P256:
-            if (length != (short) (KeyBuilder.LENGTH_EC_FP_256 / 8)) {
-              ISOException.throwIt(ISO7816.SW_WRONG_LENGTH);
-            }
-            keyLen = KeyBuilder.LENGTH_EC_FP_256;
-            break;
-          case PIV.ID_ALG_ECC_P384:
-            if (length != (short) (KeyBuilder.LENGTH_EC_FP_384 / 8)) {
-              ISOException.throwIt(ISO7816.SW_WRONG_LENGTH);
-            }
-            keyLen = KeyBuilder.LENGTH_EC_FP_384;
-            break;
-          default:
-            ISOException.throwIt(ISO7816.SW_WRONG_DATA);
-            break;
+        if (length != getKeyLengthBytes()) {
+          ISOException.throwIt(ISO7816.SW_WRONG_LENGTH);
         }
-
         // ECC Private Key
-        allocatePrivate(KeyBuilder.TYPE_EC_FP_PRIVATE, keyLen);
+        allocatePrivate();
         ((ECPrivateKey) privateKey).setS(buffer, offset, length);
-        setPrivateParams();
         break;
 
         // Clear Key
@@ -153,31 +117,6 @@ public final class PIVKeyObjectECC extends PIVKeyObjectPKI {
         ISOException.throwIt(ISO7816.SW_WRONG_DATA);
         break;
     }
-  }
-
-  /**
-   * Allocates the public and private key objects.
-   *
-   * <p>Note: If the card does not support ObjectDeletion calling this method repeatedly may result
-   * in exhaustion of the cards NV RAM.
-   */
-  @Override
-  protected void allocate() {
-    short keyLength = (short) 0;
-    switch (header[HEADER_MECHANISM]) {
-      case PIV.ID_ALG_ECC_P256:
-        keyLength = KeyBuilder.LENGTH_EC_FP_256;
-        break;
-      case PIV.ID_ALG_ECC_P384:
-        keyLength = KeyBuilder.LENGTH_EC_FP_384;
-        break;
-      default:
-        ISOException.throwIt(ISO7816.SW_FUNC_NOT_SUPPORTED);
-        break;
-    }
-
-    allocate(KeyBuilder.TYPE_EC_FP_PUBLIC, KeyBuilder.TYPE_EC_FP_PRIVATE, keyLength);
-    setParams();
   }
 
   /**
@@ -198,21 +137,10 @@ public final class PIVKeyObjectECC extends PIVKeyObjectPKI {
       short inLength,
       byte[] outBuffer,
       short outOffset) {
-    switch (getMechanism()) {
-      case PIV.ID_ALG_ECC_P256:
-        if (CONST_MARSHALLED_PUB_KEY_LEN_P256 != inLength) {
-          ISOException.throwIt(ISO7816.SW_WRONG_LENGTH);
-        }
-        break;
-      case PIV.ID_ALG_ECC_P384:
-        if (CONST_MARSHALLED_PUB_KEY_LEN_P384 != inLength) {
-          ISOException.throwIt(ISO7816.SW_WRONG_LENGTH);
-        }
-        break;
-      default:
-        ISOException.throwIt(ISO7816.SW_WRONG_DATA);
-    }
 
+    if (inLength != marshaledPubKeyLen) {
+      ISOException.throwIt(ISO7816.SW_WRONG_LENGTH);
+    }
     csp.init(privateKey);
     return csp.generateSecret(inBuffer, inOffset, inLength, outBuffer, outOffset);
   }
@@ -244,35 +172,23 @@ public final class PIVKeyObjectECC extends PIVKeyObjectPKI {
   /**
    * The public key marshaled per ANSI X9.62
    *
+   * @param pubKey the publicKey to marshal
    * @param scratch the buffer to marshal the key to
    * @param offset the location of the first byte of the marshalled key
    * @return the length of the marshaled public key
    */
   @Override
-  public short marshalPublic(byte[] scratch, short offset) {
-    TLVWriter tlvWriter = new TLVWriter();
-
-    short keyLen = (short) 0;
-    switch (getMechanism()) {
-      case PIV.ID_ALG_ECC_P256:
-        keyLen = CONST_MARSHALLED_PUB_KEY_LEN_P256;
-        break;
-      case PIV.ID_ALG_ECC_P384:
-        keyLen = CONST_MARSHALLED_PUB_KEY_LEN_P384;
-        break;
-      default:
-        ISOException.throwIt(ISO7816.SW_WRONG_DATA);
-    }
-
+  public short marshalPublic(PublicKey pubKey, byte[] scratch, short offset) {
+    pubKeyWriter.reset();
     // adding 5 bytes to the marshaled key to account for other APDU overhead.
-    tlvWriter.init(scratch, offset, (short) (keyLen + 5), CONST_TAG_RESPONSE);
-    tlvWriter.writeTag(ELEMENT_ECC_POINT);
-    tlvWriter.writeLength(keyLen);
-    offset = tlvWriter.getOffset();
-    offset += ((ECPublicKey) publicKey).getW(scratch, offset);
+    pubKeyWriter.init(scratch, offset, (short) (marshaledPubKeyLen + 5), CONST_TAG_RESPONSE);
+    pubKeyWriter.writeTag(ELEMENT_ECC_POINT);
+    pubKeyWriter.writeLength(marshaledPubKeyLen);
+    offset = pubKeyWriter.getOffset();
+    offset += ((ECPublicKey) pubKey).getW(scratch, offset);
 
-    tlvWriter.setOffset(offset);
-    return tlvWriter.finish();
+    pubKeyWriter.setOffset(offset);
+    return pubKeyWriter.finish();
   }
 
   /**
@@ -283,7 +199,7 @@ public final class PIVKeyObjectECC extends PIVKeyObjectPKI {
    */
   @Override
   public short getBlockLength() {
-    return getKeyLength();
+    return getKeyLengthBytes();
   }
 
   /**
@@ -292,13 +208,13 @@ public final class PIVKeyObjectECC extends PIVKeyObjectPKI {
    * @return the length of the key
    */
   @Override
-  public short getKeyLength() {
+  public short getKeyLengthBits() {
     switch (getMechanism()) {
       case PIV.ID_ALG_ECC_P256:
-        return KeyBuilder.LENGTH_EC_FP_256 / 8;
+        return KeyBuilder.LENGTH_EC_FP_256;
 
       case PIV.ID_ALG_ECC_P384:
-        return KeyBuilder.LENGTH_EC_FP_384 / 8;
+        return KeyBuilder.LENGTH_EC_FP_384;
 
       default:
         ISOException.throwIt(ISO7816.SW_DATA_INVALID);
@@ -306,9 +222,21 @@ public final class PIVKeyObjectECC extends PIVKeyObjectPKI {
     }
   }
 
-  /** Set ECC domain parameters. */
-  private void setParams() {
+  /** Clears and reallocates a private key. */
+  @Override
+  protected void allocatePrivate() {
+    clearPrivate();
+    privateKey =
+        (PrivateKey) KeyBuilder.buildKey(KeyBuilder.TYPE_EC_FP_PRIVATE, getKeyLengthBits(), false);
     setPrivateParams();
+  }
+
+  /** Clears and if necessary reallocates a public key. */
+  @Override
+  protected void allocatePublic() {
+    clearPublic();
+    publicKey =
+        (PublicKey) KeyBuilder.buildKey(KeyBuilder.TYPE_EC_FP_PUBLIC, getKeyLengthBits(), false);
     setPublicParams();
   }
 
