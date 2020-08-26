@@ -1027,6 +1027,9 @@ public final class PIV {
     // Restore the offset in the TLV object
     tlvReader.setOffset(offset);
 
+    // Update our length to the block cipher length (Used for input validation in each case)
+    length = key.getBlockLength();
+
     //
     // STEP 2 - Process the appropriate GENERAL AUTHENTICATE case
     //
@@ -1059,8 +1062,15 @@ public final class PIV {
         ISOException.throwIt(ISO7816.SW_SECURITY_STATUS_NOT_SATISFIED);
       }
 
-      // Encrypt/Sign the CHALLENGE data
+      // Verify that the CHALLENGE tag length is the same as our block length
       tlvReader.setOffset(challengeOffset);
+      if (length != tlvReader.getLength()) {
+        authenticateReset();
+        PIVSecurityProvider.zeroise(scratch, (short) 0, LENGTH_SCRATCH);
+        ISOException.throwIt(ISO7816.SW_WRONG_DATA);
+      }
+
+      // Encrypt/Sign the CHALLENGE data
       try {
         if (key instanceof PIVKeyObjectPKI) {
           length =
@@ -1068,7 +1078,7 @@ public final class PIV {
                   key,
                   scratch,
                   tlvReader.getDataOffset(),
-                  tlvReader.getLength(),
+                  length,
                   buffer,
                   (short) 0);
         } else {
@@ -1077,7 +1087,7 @@ public final class PIV {
                   key,
                   scratch,
                   tlvReader.getDataOffset(),
-                  tlvReader.getLength(),
+                  length,
                   buffer,
                   (short) 0);
         }
@@ -1188,7 +1198,7 @@ public final class PIV {
       if (length != tlvReader.getLength()) {
         authenticateReset();
         PIVSecurityProvider.zeroise(scratch, (short) 0, LENGTH_SCRATCH);
-        ISOException.throwIt(ISO7816.SW_SECURITY_STATUS_NOT_SATISFIED);
+        ISOException.throwIt(ISO7816.SW_WRONG_DATA);
       }
 
       // Compare the authentication statuses
@@ -1302,7 +1312,7 @@ public final class PIV {
       if (length != tlvReader.getLength()) {
         authenticateReset();
         PIVSecurityProvider.zeroise(scratch, (short) 0, LENGTH_SCRATCH);
-        ISOException.throwIt(ISO7816.SW_SECURITY_STATUS_NOT_SATISFIED);
+        ISOException.throwIt(ISO7816.SW_WRONG_DATA);
       }
 
       // Compare the authentication statuses
@@ -1324,15 +1334,14 @@ public final class PIV {
       // key.
       // Verify that the CHALLENGE tag length is the same as our block length
       tlvReader.setOffset(challengeOffset);
-      length = tlvReader.getLength();
-      if (key.getBlockLength() != length) {
+      if (key.getBlockLength() != tlvReader.getLength()) {
         authenticateReset();
         PIVSecurityProvider.zeroise(scratch, (short) 0, LENGTH_SCRATCH);
         ISOException.throwIt(ISO7816.SW_WRONG_LENGTH);
       }
 
       // Encrypt the CHALLENGE data
-      length = cspPIV.encrypt(key, scratch, tlvReader.getDataOffset(), length, buffer, (short) 0);
+      length = cspPIV.encrypt(key, scratch, tlvReader.getDataOffset(), length, buffer, (short) 0);	      
 
       // Write out the response TLV, passing through the block length as an indicative maximum
       tlvWriter.init(scratch, (short) 0, length, CONST_TAG_TEMPLATE);
@@ -1381,7 +1390,15 @@ public final class PIV {
 
       // Verify that the EXPONENTIATION tag length is the same as a ECC public key
       tlvReader.setOffset(exponentiationOffset);
-      length = tlvReader.getLength();
+      
+      // TODO: Should put this into the PIVKeyObjectECC class
+      length = (short)(length * (short)2 + (short)1);
+      
+      if (length != tlvReader.getLength()) {
+        authenticateReset();
+        PIVSecurityProvider.zeroise(scratch, (short) 0, LENGTH_SCRATCH);
+        ISOException.throwIt(ISO7816.SW_WRONG_DATA);
+      }
 
       // Compute the shared secret
       length =
