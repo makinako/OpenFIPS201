@@ -1073,23 +1073,10 @@ public final class PIV {
       // Encrypt/Sign the CHALLENGE data
       try {
         if (key instanceof PIVKeyObjectPKI) {
-          length =
-              cspPIV.sign(
-                  key,
-                  scratch,
-                  tlvReader.getDataOffset(),
-                  length,
-                  buffer,
-                  (short) 0);
+          length = cspPIV.sign(key, scratch, tlvReader.getDataOffset(), length, buffer, (short) 0);
         } else {
           length =
-              cspPIV.encrypt(
-                  key,
-                  scratch,
-                  tlvReader.getDataOffset(),
-                  length,
-                  buffer,
-                  (short) 0);
+              cspPIV.encrypt(key, scratch, tlvReader.getDataOffset(), length, buffer, (short) 0);
         }
       } finally {
         PIVSecurityProvider.zeroise(scratch, (short) 0, LENGTH_SCRATCH);
@@ -1341,7 +1328,7 @@ public final class PIV {
       }
 
       // Encrypt the CHALLENGE data
-      length = cspPIV.encrypt(key, scratch, tlvReader.getDataOffset(), length, buffer, (short) 0);	      
+      length = cspPIV.encrypt(key, scratch, tlvReader.getDataOffset(), length, buffer, (short) 0);
 
       // Write out the response TLV, passing through the block length as an indicative maximum
       tlvWriter.init(scratch, (short) 0, length, CONST_TAG_TEMPLATE);
@@ -1390,10 +1377,10 @@ public final class PIV {
 
       // Verify that the EXPONENTIATION tag length is the same as a ECC public key
       tlvReader.setOffset(exponentiationOffset);
-      
+
       // TODO: Should put this into the PIVKeyObjectECC class
-      length = (short)(length * (short)2 + (short)1);
-      
+      length = (short) (length * (short) 2 + (short) 1);
+
       if (length != tlvReader.getLength()) {
         authenticateReset();
         PIVSecurityProvider.zeroise(scratch, (short) 0, LENGTH_SCRATCH);
