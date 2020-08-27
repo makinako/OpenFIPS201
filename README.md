@@ -13,7 +13,9 @@ OpenFIPS201 has attempted to maintain compatibility with Javacard 2.2.x, however
 
 Going forward, OpenFIPS201 will target Javacard SDK 3.0.4 as a minimum. To continue to support Javacard 2.2.x we have added a new repository [OpenFIPS201-jc22](https://github.com/makinako/OpenFIPS201-jc22), which will serve as the compatibility release going forward.
 
+---
 
+# OpenFIPS201
 
 This project has been commissioned and funded by the Australian Department of Defence, to provide an open source implementation of the card application for the NIST Personal Identity Verification (PIV) standard as specified by [FIPS PUB 201-2](https://en.wikipedia.org/wiki/FIPS_201) and [SP800-73-4](http://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-73-4.pdf). 
 
