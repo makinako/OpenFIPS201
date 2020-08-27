@@ -90,3 +90,19 @@ Icon
 Network Trash Folder
 Temporary Items
 .apdisk
+
+# JavaCardIDE Files
+.javacard
+.libraryCache
+.settings/*
+bin/*
+
+# IntelliJ Files
+.idea
+*.iml
+.metadata
+
+.jcop
+
+vendor_libs/*
+/.apt_generated/
