@@ -26,7 +26,6 @@ This project has been commissioned and funded by the Australian Department of De
 * It compiles to Javacard 3.0.4 as a minimum
 * Secure personalisation over SCP w/CEnc+CMac using the CHANGE REFERENCE DATA and PUT DATA commands
 * The following is out-of-scope at this time:
-  * Elliptic Curve Cryptography mechanisms
   * Virtual Contact Interface
   * Secure Messaging (Opacity)
   * Biometric On-Card Comparison (OCC)
