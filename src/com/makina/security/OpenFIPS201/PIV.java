@@ -26,7 +26,11 @@
 
 package com.makina.security.OpenFIPS201;
 
-import javacard.framework.*;
+import javacard.framework.ISO7816;
+import javacard.framework.ISOException;
+import javacard.framework.JCSystem;
+import javacard.framework.OwnerPIN;
+import javacard.framework.Util;
 
 /**
  * Implements FIPS201-2 according to NIST SP800-73-4.
@@ -357,8 +361,6 @@ public final class PIV {
     final byte CONST_TAG_NORMAL_1 = (byte) 0x5F;
     final byte CONST_TAG_NORMAL_2 = (byte) 0xC1;
 
-    final short CONST_LEN_DISCOVERY = (short) 0x01;
-    final short CONST_LEN_BIOMETRIC = (short) 0x02;
     final short CONST_LEN_NORMAL = (short) 0x03;
 
     //
@@ -421,6 +423,7 @@ public final class PIV {
           ISOException.throwIt(ISO7816.SW_WRONG_DATA);
         }
         break;
+      default: // fall out
     }
 
     // The offset now holds the correct position for writing the object, including the DATA tag
@@ -994,11 +997,14 @@ public final class PIV {
     //
     // STEP 1 - Traverse the TLV to determine what combination of elements exist
     //
-    short challengeOffset = 0, witnessOffset = 0, responseOffset = 0, exponentiationOffset = 0;
-    boolean challengeEmpty = false,
-        witnessEmpty = false,
-        responseEmpty = false,
-        exponentiationEmpty = false;
+    short challengeOffset = 0;
+    short witnessOffset = 0;
+    short responseOffset = 0;
+    short exponentiationOffset = 0;
+    boolean challengeEmpty = false;
+    boolean witnessEmpty = false;
+    boolean responseEmpty = false;
+    boolean exponentiationEmpty = false;
 
     // Save the offset in the TLV object
     offset = tlvReader.getOffset();
@@ -1516,7 +1522,7 @@ public final class PIV {
    * @param length The length of the PIN data
    * @return True if the supplied PIN conforms to the format requirements
    */
-  private boolean verifyPinFormat(byte id, byte[] buffer, short offset, short length) {
+  private static boolean verifyPinFormat(byte id, byte[] buffer, short offset, short length) {
 
     final byte CONST_PAD = (byte) 0xFF;
 
@@ -1758,10 +1764,9 @@ public final class PIV {
   public void changeReferenceDataAdmin(byte id, byte[] buffer, short offset, short length) {
 
     final byte CONST_TAG_SEQUENCE = (byte) 0x30;
-    final byte CONST_TAG_KEY = (byte) 0x80;
-    final byte CONST_TAG_RSA_N = (byte) 0x81; // RSA Modulus
-    final byte CONST_TAG_RSA_E = (byte) 0x82; // RSA Public Exponent
-    final byte CONST_TAG_RSA_D = (byte) 0x83; // RSA Private Exponent
+    // RSA Modulus
+    // RSA Public Exponent
+    // RSA Private Exponent
 
     // NOTE: Currently RSA CRT keys are not used, this is a placeholder
     // final short CONST_TAG_RSA_P				= (short)0x0084; // RSA Prime Exponent P

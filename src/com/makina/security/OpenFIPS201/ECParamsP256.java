@@ -33,7 +33,7 @@ package com.makina.security.OpenFIPS201;
 final class ECParamsP256 extends ECParams {
 
   // Curve polynomial element a
-  private static final byte[] a = {
+  private static byte[] a = {
     (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF,
     (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x01,
     (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00,
@@ -45,7 +45,7 @@ final class ECParamsP256 extends ECParams {
   };
 
   // Curve polynomial element b
-  private static final byte[] b = {
+  private static byte[] b = {
     (byte) 0x5A, (byte) 0xC6, (byte) 0x35, (byte) 0xD8,
     (byte) 0xAA, (byte) 0x3A, (byte) 0x93, (byte) 0xE7,
     (byte) 0xB3, (byte) 0xEB, (byte) 0xBD, (byte) 0x55,
@@ -57,7 +57,7 @@ final class ECParamsP256 extends ECParams {
   };
 
   // Base point
-  private static final byte[] G = {
+  private static byte[] g = {
     (byte) 0x04, (byte) 0x6B, (byte) 0x17, (byte) 0xD1,
     (byte) 0xF2, (byte) 0xE1, (byte) 0x2C, (byte) 0x42,
     (byte) 0x47, (byte) 0xF8, (byte) 0xBC, (byte) 0xE6,
@@ -78,7 +78,7 @@ final class ECParamsP256 extends ECParams {
   };
 
   // Field definition
-  private static final byte[] p = {
+  private static byte[] p = {
     (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF,
     (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x01,
     (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00,
@@ -90,7 +90,7 @@ final class ECParamsP256 extends ECParams {
   };
 
   // Order n of G
-  private static final byte[] n = {
+  private static byte[] n = {
     (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF,
     (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00,
     (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF,
@@ -105,7 +105,7 @@ final class ECParamsP256 extends ECParams {
 
   private ECParamsP256() {}
 
-  public static ECParams Instance() {
+  public static ECParams instance() {
     if (instance == null) {
       instance = new ECParamsP256();
     }
@@ -124,7 +124,7 @@ final class ECParamsP256 extends ECParams {
 
   @Override
   protected byte[] getG() {
-    return G;
+    return g;
   }
 
   @Override
@@ -139,6 +139,6 @@ final class ECParamsP256 extends ECParams {
 
   @Override
   protected short getH() {
-    return h;
+    return H;
   }
 }

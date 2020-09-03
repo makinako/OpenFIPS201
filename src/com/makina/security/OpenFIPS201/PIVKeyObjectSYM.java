@@ -95,7 +95,7 @@ public final class PIVKeyObjectSYM extends PIVKeyObject {
     PIVSecurityProvider.zeroise(buffer, offset, keyLengthBytes);
   }
 
-  protected void allocate() {
+  void allocate() {
 
     clear();
     switch (header[HEADER_MECHANISM]) {

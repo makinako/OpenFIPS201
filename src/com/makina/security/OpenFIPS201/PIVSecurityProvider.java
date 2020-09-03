@@ -26,7 +26,11 @@
 
 package com.makina.security.OpenFIPS201;
 
-import javacard.framework.*;
+import javacard.framework.ISO7816;
+import javacard.framework.ISOException;
+import javacard.framework.JCSystem;
+import javacard.framework.OwnerPIN;
+import javacard.framework.Util;
 import javacard.security.KeyAgreement;
 import javacard.security.MessageDigest;
 import javacard.security.RandomData;
@@ -278,7 +282,7 @@ public final class PIVSecurityProvider {
 
     // Select the appropriate access mode to check
     byte mode =
-        (securityFlags[FLAG_CONTACTLESS]) ? object.getModeContactless() : object.getModeContact();
+        securityFlags[FLAG_CONTACTLESS] ? object.getModeContactless() : object.getModeContact();
 
     if (mode == PIVObject.ACCESS_MODE_NEVER) {
       valid = false;
@@ -386,7 +390,7 @@ public final class PIVSecurityProvider {
       byte[] outBuffer,
       short outOffset) {
 
-    if (!(key.isAsymmetric())) {
+    if (!key.isAsymmetric()) {
       ISOException.throwIt(ISO7816.SW_FUNC_NOT_SUPPORTED);
     }
 
@@ -422,7 +426,7 @@ public final class PIVSecurityProvider {
       byte[] outBuffer,
       short outOffset) {
 
-    if (!(key.isAsymmetric())) {
+    if (!key.isAsymmetric()) {
       ISOException.throwIt(ISO7816.SW_FUNC_NOT_SUPPORTED);
     }
 

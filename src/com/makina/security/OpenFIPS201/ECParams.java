@@ -31,7 +31,7 @@ package com.makina.security.OpenFIPS201;
  */
 abstract class ECParams {
   // cofactor
-  protected static final short h = 0x01;
+  protected static final short H = 0x01;
 
   /*
    * Gets the curve polynomial a element
@@ -62,6 +62,6 @@ abstract class ECParams {
    * Gets the cofactor
    */
   protected short getH() {
-    return h;
+    return H;
   }
 }

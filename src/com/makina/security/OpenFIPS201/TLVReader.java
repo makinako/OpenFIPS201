@@ -144,6 +144,15 @@ public final class TLVReader {
   }
 
   /**
+   * Gets the length of the current tag's data element
+   *
+   * @return The length of the current tag's data element
+   */
+  public short getLength() {
+    return getLength((byte[]) dataPtr[0], context[CONTEXT_POSITION]);
+  }
+
+  /**
    * Gets the offset to the data element of the tag found at the requested offset
    *
    * @param data The buffer containing the TLV object
@@ -178,6 +187,15 @@ public final class TLVReader {
     offset++; // Skip the initial length byte
 
     return offset;
+  }
+
+  /**
+   * Gets the offset in the current tag to it's data element
+   *
+   * @return The data offset in the current tag
+   */
+  public short getDataOffset() {
+    return getDataOffset((byte[]) dataPtr[0], context[CONTEXT_POSITION]);
   }
 
   /**
@@ -321,16 +339,6 @@ public final class TLVReader {
   }
 
   /**
-   * Tests if the current tag matches the supplied one
-   *
-   * @param tag The tag to find
-   * @return True if the current tag matches the supplied one
-   */
-  private boolean match(short tag) {
-    return (tag == Util.getShort((byte[]) dataPtr[0], context[CONTEXT_POSITION]));
-  }
-
-  /**
    * Returns the tag identifier for the current tag
    *
    * @return The identifier for the current tag
@@ -359,15 +367,6 @@ public final class TLVReader {
   }
 
   /**
-   * Gets the length of the current tag's data element
-   *
-   * @return The length of the current tag's data element
-   */
-  public short getLength() {
-    return getLength((byte[]) dataPtr[0], context[CONTEXT_POSITION]);
-  }
-
-  /**
    * Returns true of the current tag has a zero-length (empty) data element
    *
    * @return Whether the current tag has a zero length element
@@ -392,15 +391,6 @@ public final class TLVReader {
    */
   public void setOffset(short offset) {
     context[CONTEXT_POSITION] = offset;
-  }
-
-  /**
-   * Gets the offset in the current tag to it's data element
-   *
-   * @return The data offset in the current tag
-   */
-  public short getDataOffset() {
-    return getDataOffset((byte[]) dataPtr[0], context[CONTEXT_POSITION]);
   }
 
   /**

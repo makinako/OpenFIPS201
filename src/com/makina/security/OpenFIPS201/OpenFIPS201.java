@@ -307,7 +307,6 @@ public final class OpenFIPS201 extends Applet {
     final byte P2 = (byte) 0xFF;
 
     byte[] buffer = apdu.getBuffer();
-    short length = (short) (buffer[ISO7816.OFFSET_LC] & 0xFF);
 
     /*
      * PRE-CONDITIONS
@@ -391,8 +390,6 @@ public final class OpenFIPS201 extends Applet {
 
     final byte CONST_P1_AUTH = (byte) 0x00;
     final byte CONST_P1_RESET = (byte) 0xFF;
-    final byte CONST_P2 = (byte) 0xFF;
-    final byte CONST_LC = (byte) 0x08;
 
     byte[] buffer = apdu.getBuffer();
     short length = (short) (buffer[ISO7816.OFFSET_LC] & 0xFF);
@@ -580,7 +577,6 @@ public final class OpenFIPS201 extends Applet {
     final byte CONST_P1 = (byte) 0x00;
 
     byte[] buffer = apdu.getBuffer();
-    short length = (short) (buffer[ISO7816.OFFSET_LC] & 0xFF);
 
     /*
      * PRE-CONDITIONS

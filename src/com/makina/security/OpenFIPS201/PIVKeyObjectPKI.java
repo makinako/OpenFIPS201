@@ -27,7 +27,10 @@
 package com.makina.security.OpenFIPS201;
 
 import javacard.framework.CardRuntimeException;
-import javacard.security.*;
+import javacard.security.KeyAgreement;
+import javacard.security.KeyPair;
+import javacard.security.PrivateKey;
+import javacard.security.PublicKey;
 
 public abstract class PIVKeyObjectPKI extends PIVKeyObject {
   protected static final byte ELEMENT_CLEAR = (byte) 0xFF;
@@ -72,8 +75,6 @@ public abstract class PIVKeyObjectPKI extends PIVKeyObject {
    *
    * <p>Note: If the card does not support Object deletion, repeatedly calling this method may
    * exhaust NV RAM.
-   *
-   * @throws Exception
    */
   public short generate(byte[] scratch, short offset) {
     KeyPair keyPair;

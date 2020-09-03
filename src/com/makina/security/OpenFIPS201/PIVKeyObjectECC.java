@@ -28,7 +28,13 @@ package com.makina.security.OpenFIPS201;
 
 import javacard.framework.ISO7816;
 import javacard.framework.ISOException;
-import javacard.security.*;
+import javacard.security.ECPrivateKey;
+import javacard.security.ECPublicKey;
+import javacard.security.KeyAgreement;
+import javacard.security.KeyBuilder;
+import javacard.security.PrivateKey;
+import javacard.security.PublicKey;
+import javacard.security.Signature;
 
 /** Provides functionality for ECC PIV key objects */
 public final class PIVKeyObjectECC extends PIVKeyObjectPKI {
@@ -49,10 +55,10 @@ public final class PIVKeyObjectECC extends PIVKeyObjectPKI {
 
     switch (getMechanism()) {
       case PIV.ID_ALG_ECC_P256:
-        params = ECParamsP256.Instance();
+        params = ECParamsP256.instance();
         break;
       case PIV.ID_ALG_ECC_P384:
-        params = ECParamsP384.Instance();
+        params = ECParamsP384.instance();
         break;
       default:
         params = null; // Keep the compiler happy
@@ -249,27 +255,27 @@ public final class PIVKeyObjectECC extends PIVKeyObjectPKI {
     byte[] p = params.getP();
     byte[] r = params.getN();
 
-    ((ECPrivateKey) privateKey).setA(a, (short) 0, (short) (a.length));
-    ((ECPrivateKey) privateKey).setB(b, (short) 0, (short) (b.length));
-    ((ECPrivateKey) privateKey).setG(g, (short) 0, (short) (g.length));
-    ((ECPrivateKey) privateKey).setR(r, (short) 0, (short) (r.length));
-    ((ECPrivateKey) privateKey).setFieldFP(p, (short) 0, (short) (p.length));
+    ((ECPrivateKey) privateKey).setA(a, (short) 0, (short) a.length);
+    ((ECPrivateKey) privateKey).setB(b, (short) 0, (short) b.length);
+    ((ECPrivateKey) privateKey).setG(g, (short) 0, (short) g.length);
+    ((ECPrivateKey) privateKey).setR(r, (short) 0, (short) r.length);
+    ((ECPrivateKey) privateKey).setFieldFP(p, (short) 0, (short) p.length);
     ((ECPrivateKey) privateKey).setK(params.getH());
   }
 
   /** Set ECC domain parameters. */
-  protected void setPublicParams() {
+  void setPublicParams() {
     byte[] a = params.getA();
     byte[] b = params.getB();
     byte[] g = params.getG();
     byte[] p = params.getP();
     byte[] r = params.getN();
 
-    ((ECPublicKey) publicKey).setA(a, (short) 0, (short) (a.length));
-    ((ECPublicKey) publicKey).setB(b, (short) 0, (short) (b.length));
-    ((ECPublicKey) publicKey).setG(g, (short) 0, (short) (g.length));
-    ((ECPublicKey) publicKey).setR(r, (short) 0, (short) (r.length));
-    ((ECPublicKey) publicKey).setFieldFP(p, (short) 0, (short) (p.length));
+    ((ECPublicKey) publicKey).setA(a, (short) 0, (short) a.length);
+    ((ECPublicKey) publicKey).setB(b, (short) 0, (short) b.length);
+    ((ECPublicKey) publicKey).setG(g, (short) 0, (short) g.length);
+    ((ECPublicKey) publicKey).setR(r, (short) 0, (short) r.length);
+    ((ECPublicKey) publicKey).setFieldFP(p, (short) 0, (short) p.length);
     ((ECPublicKey) publicKey).setK(params.getH());
   }
 }
