@@ -100,8 +100,6 @@ public abstract class PIVKeyObjectPKI extends PIVKeyObject {
       // We effectively new'd these objects so we will make sure the memory
       // is freed up.
       keyPair = null;
-      // Any existing public key is now invalid
-      clearPublic();
       runGc();
     }
     return length;
