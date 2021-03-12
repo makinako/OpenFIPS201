@@ -13,5 +13,5 @@ You will need to:
 1. Install and run the PIV Test Runner
 2. Open the configuration file
 3. Change the contact and contactless reader selections to your own
-4. Load, pre-personalise and [pre-personalise](https://github.com/makinako/OpenFIPS201/wiki/Pre-Personalisation) and [personalise](https://github.com/makinako/OpenFIPS201/wiki/Security-Personalisation) your applet.
+4. Load, [pre-personalise](https://github.com/makinako/OpenFIPS201/wiki/Pre-Personalisation) and [personalise](https://github.com/makinako/OpenFIPS201/wiki/Security-Personalisation) your applet.
 
