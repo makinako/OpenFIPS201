@@ -12,7 +12,9 @@ The (somewhat simplified) phases of accreditation are:
 - **Pre-Validation** - This a workshop, undertaken with our chosen lab to gain an external view of 
 - **Validation** - This is the main process where the lab performs the assessment, code review, etc and together with us produces the Security Policy document, which will ultimately be published on the NIST CMVP web site.
 - **Submission** - Once everything is in place and the lab has produced all the required documentary evidence, their report is formally submitted to NIST and we join the queue to become a validated product.
-- **Approval** - We are assigned a certificate from NIST and we are 
+- **Approval** - We are assigned a certificate from NIST and we pop the champagne.
+
+One additional aspect, because this is a PIV implementation is that we will also need to undergo NPIVP accreditation. This is effectively an interoperability and functional compliance test rather than security and as I understand it is largely about passing the PIV Test Runner test suite.
 
 If you have any specific questions or issues, please raise them on the issues list or contact us at piv@makina.com.au.
 
