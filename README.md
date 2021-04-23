@@ -1,5 +1,22 @@
 # OpenFIPS201 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
+### **<u>UPDATE - 23th April 2021</u>**
+Things have been a bit quiet here, but behind the scenes we are in the process of preparing OpenFIPS201 for CMVP / FIPS 140-3 accreditation! 
+
+This is a very steep learning curve, but out of the process is coming a number of changes that will need to be made to the applet in order to comply with direct requirements or smooth the way through the process. In the next few weeks, I'll be adding these to the issues register to open up the changes to discussion, as some of the changes will impact pre-personalisation and configuration (whilst of course maintaining compatibility with the actual PIV spec).
+
+The (somewhat simplified) phases of accreditation are:
+- **Feature Completion** - We are now implementing Secure Messaging, Pairing Code and VCI functionality. This will nearly complete all optional features of the PIV specification, with the notable exception of Biometric On-Card Comparison (OCC). The aim is to have as much as we can in, to avoid the need for re-validation.
+- **CMVP Research** - In parallel, we are in the process of understanding the CMVP/FIPS requirements, contacting labs and producing an internally generated gap analysis. 
+- **Design, Documentation and Testing** - There are specific documentary requirements for FIPS 140-3, some of which we won't know until we engage the lab.
+- **Pre-Validation** - This a workshop, undertaken with our chosen lab to gain an external view of 
+- **Validation** - This is the main process where the lab performs the assessment, code review, etc and together with us produces the Security Policy document, which will ultimately be published on the NIST CMVP web site.
+- **Submission** - Once everything is in place and the lab has produced all the required documentary evidence, their report is formally submitted to NIST and we join the queue to become a validated product.
+- **Approval** - We are assigned a certificate from NIST and we are 
+
+If you have any specific questions or issues, please raise them on the issues list or contact us at piv@makina.com.au.
+
+
 ### **<u>UPDATE - 27th August 2020</u>**
 Thanks largely to the efforts of [@dmercer-google](https://github.com/dmercer-google) we now have support for Elliptic Curve! You can now generate key objects with ECC256 (#11) and ECC384 (#14) mechanisms and make use of them in General Authenticate for authentication, signing and key establishment. VCI / SM is not yet included in this, but watch this space. Thanks Dave!
 
