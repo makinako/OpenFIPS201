@@ -36,7 +36,7 @@ final class ECParamsP384 extends ECParams {
 
   private ECParamsP384() {}
 
-  public static ECParams Instance() {
+  public static ECParams instance() {
     if (instance == null) {
       instance = new ECParamsP384();
     }
@@ -44,7 +44,7 @@ final class ECParamsP384 extends ECParams {
   }
 
   // Curve polynomial element a
-  public static final byte[] a = {
+  public static byte[] a = {
     (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF,
     (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF,
     (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF,
@@ -60,7 +60,7 @@ final class ECParamsP384 extends ECParams {
   };
 
   // Curve polynomial element b
-  public static final byte[] b = {
+  public static byte[] b = {
     (byte) 0xB3, (byte) 0x31, (byte) 0x2F, (byte) 0xA7,
     (byte) 0xE2, (byte) 0x3E, (byte) 0xE7, (byte) 0xE4,
     (byte) 0x98, (byte) 0x8E, (byte) 0x05, (byte) 0x6B,
@@ -76,7 +76,7 @@ final class ECParamsP384 extends ECParams {
   };
 
   // Base point
-  public static final byte[] G = {
+  public static byte[] g = {
     (byte) 0x04, (byte) 0xAA, (byte) 0x87, (byte) 0xCA,
     (byte) 0x22, (byte) 0xBE, (byte) 0x8B, (byte) 0x05,
     (byte) 0x37, (byte) 0x8E, (byte) 0xB1, (byte) 0xC7,
@@ -105,7 +105,7 @@ final class ECParamsP384 extends ECParams {
   };
 
   // Field Definition
-  public static final byte[] p = {
+  public static byte[] p = {
     (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF,
     (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF,
     (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF,
@@ -121,7 +121,7 @@ final class ECParamsP384 extends ECParams {
   };
 
   // Order of G
-  public static final byte[] n = {
+  public static byte[] n = {
     (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF,
     (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF,
     (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF,
@@ -148,7 +148,7 @@ final class ECParamsP384 extends ECParams {
 
   @Override
   protected byte[] getG() {
-    return G;
+    return g;
   }
 
   @Override
@@ -163,6 +163,6 @@ final class ECParamsP384 extends ECParams {
 
   @Override
   protected short getH() {
-    return h;
+    return H;
   }
 }

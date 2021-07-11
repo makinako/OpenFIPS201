@@ -59,6 +59,7 @@ public final class CVMPIN extends OwnerPIN implements PIN {
     return cvm.getTriesRemaining();
   }
 
+  @Override
   public boolean check(byte[] pin, short offset, byte length)
       throws ArrayIndexOutOfBoundsException, NullPointerException {
     return (CVM.CVM_SUCCESS == cvm.verify(pin, offset, length, CVM.FORMAT_HEX));
@@ -72,6 +73,7 @@ public final class CVMPIN extends OwnerPIN implements PIN {
     cvm.resetState();
   }
 
+  @Override
   public void update(byte[] pin, short offset, byte length) throws PINException {
     cvm.update(pin, offset, length, CVM.FORMAT_HEX);
   }
