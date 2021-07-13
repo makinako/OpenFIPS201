@@ -129,12 +129,16 @@ public abstract class PIVKeyObject extends PIVObject {
     return (securityFlags[FLAGS_AUTHENTICATED]);
   }
 
-  /** @return the length of the key in bytes */
+  /**
+   * @return the length of the key in bytes
+   */
   public final short getKeyLengthBytes() {
     return (short) (getKeyLengthBits() / 8);
   }
 
-  /** @return the length of the key in bits */
+  /**
+   * @return the length of the key in bits
+   */
   public abstract short getKeyLengthBits();
 
   public abstract short getBlockLength();

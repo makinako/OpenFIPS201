@@ -26,7 +26,11 @@
 
 package com.makina.security.OpenFIPS201;
 
-import javacard.framework.*;
+import javacard.framework.APDU;
+import javacard.framework.ISO7816;
+import javacard.framework.ISOException;
+import javacard.framework.JCSystem;
+import javacard.framework.Util;
 
 /**
  * ChainBuffer supports reading and writing of buffers larger than a single APDU frame. It takes
@@ -412,7 +416,7 @@ public final class ChainBuffer {
 
     // Validate that we are chaining for the correct command
     else if (context[CONTEXT_APDU_CLASS]
-            != (short) ((Util.getShort(buffer, ISO7816.OFFSET_CLA) & CLA_MASK))
+            != (short) (Util.getShort(buffer, ISO7816.OFFSET_CLA) & CLA_MASK)
         || context[CONTEXT_APDU_P1P2] != Util.getShort(buffer, ISO7816.OFFSET_P1)) {
 
       // Abort the data object write
