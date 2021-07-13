@@ -276,12 +276,12 @@ public final class OpenFIPS201 extends Applet {
 
     byte[] buffer = apdu.getBuffer();
     short length = (short) (buffer[ISO7816.OFFSET_LC] & 0xFF);
+    short ne = apdu.setOutgoing();
 
     /*
      * PRE-CONDITIONS
      */
 
-    // None
     if (!selectingApplet()) {
       ISOException.throwIt(ISO7816.SW_FILE_NOT_FOUND);
     }
@@ -290,10 +290,18 @@ public final class OpenFIPS201 extends Applet {
      * EXECUTION STEPS
      */
 
-    // STEP 1 - Call the PIV 'SELECT' command
-    length = piv.select(buffer, ISO7816.OFFSET_CDATA, length);
+    // STEP 1 - Call the PIV 'SELECT' command in all cases to handle the PIV SELECT rules
+    length = piv.select(buffer, (short) 0, length);
 
-    apdu.setOutgoingAndSend(ISO7816.OFFSET_CDATA, length);
+    // STEP 2 - Check the ne value
+    if (ne < length) {
+      // Caller requested less data than the length.  Return as much as caller requested.
+      length = ne;
+    }
+
+    // Step 3 - Return data from select command
+    apdu.setOutgoingLength(length);
+    apdu.sendBytes((short) 0, length);
   }
 
   /**
