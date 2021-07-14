@@ -28,7 +28,12 @@ package com.makina.security.OpenFIPS201;
 
 import javacard.framework.ISO7816;
 import javacard.framework.ISOException;
-import javacard.security.*;
+import javacard.security.KeyAgreement;
+import javacard.security.KeyBuilder;
+import javacard.security.PrivateKey;
+import javacard.security.PublicKey;
+import javacard.security.RSAPrivateKey;
+import javacard.security.RSAPublicKey;
 import javacardx.crypto.Cipher;
 
 public final class PIVKeyObjectRSA extends PIVKeyObjectPKI {
