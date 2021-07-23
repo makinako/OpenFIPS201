@@ -9,10 +9,10 @@
   <property name="gp.home" value="${basedir}/tools/sdk/${gp.version}"/>
   <property name="gp.exportjar" value="${gp.home}/${gp.version}.jar"/>
   
-  <property name="build.version" value="1.0"/>
+  <property name="build.version" value="1.2"/>
   <property name="build.sourcepath" value="src"/>
   <property name="build.outputpath" value="build/bin"/>
-  <property name="build.outputfile" value="OpenFIPS201.cap"/>
+  <property name="build.outputfile" value="OpenFIPS201-v${build.version}.cap"/>
 
   <property name="docs.outputpath" value="build/docs"/>
   <property name="docs.classpath" value="${jc.home}/lib/api_classic.jar;${gp.exportjar}"/>

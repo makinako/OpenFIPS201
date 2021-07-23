@@ -1,0 +1,22 @@
+Certificate Request:
+    Data:
+        Version: 0 (0x0)
+        Subject: C=AU, ST=NSW, L=Ocean Shores, O=Makina, CN=Example 04 Key/emailAddress=piv@makina.com.au
+        Subject Public Key Info:
+            Public Key Algorithm: id-ecPublicKey
+                Public-Key: (256 bit)
+                pub: 
+                    04:95:31:b9:ae:25:c9:e0:75:7b:57:91:9e:e5:5a:
+                    98:97:17:fc:75:fa:1c:18:66:61:05:50:ad:a1:33:
+                    2e:43:04:b9:37:e1:58:3f:e8:15:2f:56:73:8a:4b:
+                    9d:2b:0e:37:b5:7e:78:00:56:90:93:15:ff:b8:82:
+                    7e:65:c3:46:f3
+                ASN1 OID: prime256v1
+                NIST CURVE: P-256
+        Attributes:
+            unstructuredName         :unable to print attribute
+    Signature Algorithm: ecdsa-with-SHA256
+         30:46:02:21:00:fe:77:d8:10:1c:62:bc:f8:84:b1:7f:b7:91:
+         51:55:3a:fa:f9:7f:76:50:83:73:17:7b:f3:9a:86:57:17:65:
+         06:02:21:00:8f:de:68:49:36:41:2b:86:cb:8b:5f:ef:91:56:
+         3a:c2:7c:f4:b7:0c:33:6c:7e:cd:03:7b:90:17:e0:f7:67:97
