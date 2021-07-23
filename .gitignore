@@ -106,3 +106,4 @@ bin/*
 
 vendor_libs/*
 /.apt_generated/
+tools/format.bat
