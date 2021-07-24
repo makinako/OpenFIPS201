@@ -14,7 +14,7 @@ Below is a summary of changes, with wiki updates to follow shortly:
 - Numerous minor fixes and changes (none breaking the PIV interoperability)
 - Namespace change to all-lowercase
 
-Note that because of [issue #29](https://github.com/makinako/OpenFIPS201/issues/29) there is a minor breaking change to the pre-personalisation interface. Details are in the comments and will be updated. Feedback is still sought on whether this can be improved as things are flexible up until validation starts.
+Note that because of [issue #29](https://github.com/makinako/OpenFIPS201/issues/29) there is a minor breaking change to the pre-personalisation interface. Details are in the comments and will be updated in the documentation. Feedback is still sought on whether this can be improved as things are flexible up until validation starts.
 
 ### **<u>UPDATE - 23th April 2021</u>**
 Things have been a bit quiet here, but behind the scenes we are in the process of preparing OpenFIPS201 for CMVP / FIPS 140-3 accreditation! 
