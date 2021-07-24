@@ -1,5 +1,21 @@
 # OpenFIPS201 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
+### **<u>UPDATE - 25th July 2021</u>**
+The applet has been updated (and will continue to be) over the next few months for accreditation.
+Below is a summary of changes, with wiki updates to follow shortly:
+- General review for FIPS 140-3 + Static analysis + all General Authenticate cases
+- Splitting of General Authenticate, which was getting too complex.
+- Changes to Key Roles and addition of Key Attributes (compatibility break for pre-perso!)
+- Beginning of support for multi-byte data object id's (pre-perso only, not breaking compatibility yet)
+- Addition of GET VERSION command to get major/minor/revision/debug status
+- Addition of GET STATUS command (more to be added to this)
+- Removal of FEATURE_PIV_TEST_VECTORS and all test data (FIPS 140-3 doesn't permit it)
+- SSP Deletion - Key and data objects can now be properly zeroised/cleared
+- Numerous minor fixes and changes (none breaking the PIV interoperability)
+- Namespace change to all-lowercase
+
+Note that because of issue #29 there is a minor breaking change to the pre-personalisation interface. Details are in the comments and will be updated. Feedback is still sought on whether this can be improved as things are flexible up until validation starts.
+
 ### **<u>UPDATE - 23th April 2021</u>**
 Things have been a bit quiet here, but behind the scenes we are in the process of preparing OpenFIPS201 for CMVP / FIPS 140-3 accreditation! 
 
