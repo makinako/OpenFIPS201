@@ -57,11 +57,11 @@ public abstract class Config {
   // has no causal relationship with commits, so the value should only be trusted when read from
   // a release.
   //
-  
-  public static final byte VERSION_MAJOR = (byte)1;
-  public static final byte VERSION_MINOR = (byte)8;
-  public static final byte VERSION_REVISION = (byte)0;
-  public static final byte VERSION_DEBUG = (byte)1; // If set to 1, this build is considered DEBUG
+
+  public static final byte VERSION_MAJOR = (byte) 1;
+  public static final byte VERSION_MINOR = (byte) 8;
+  public static final byte VERSION_REVISION = (byte) 0;
+  public static final byte VERSION_DEBUG = (byte) 1; // If set to 1, this build is considered DEBUG
 
   // Minor version
 

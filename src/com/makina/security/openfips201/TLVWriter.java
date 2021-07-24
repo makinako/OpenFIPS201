@@ -53,12 +53,12 @@ public final class TLVWriter {
   // The original offset in the buffer
   private static final short CONTEXT_OFFSET_RESET = (short) 3;
   // The lock status of the TLV Writer
-  private static final short CONTEXT_LOCKED = (short) 4;
+  //private static final short CONTEXT_LOCKED = (short) 4;
 
   private static final short LENGTH_CONTEXT = (short) 5;
 
-  private static final short STATUS_UNLOCKED = (short) 0;
-  private static final short STATUS_LOCKED = (short) 1;
+  //private static final short STATUS_UNLOCKED = (short) 0;
+  //private static final short STATUS_LOCKED = (short) 1;
 
   //
   // CONSTANTS
@@ -95,13 +95,13 @@ public final class TLVWriter {
   public void init(byte[] buffer, short offset, short maxLength, short tag) throws ISOException {
 
     // RULE: This object must not have another unfinished operation
-    //if (context[CONTEXT_LOCKED] == STATUS_LOCKED) {
+    // if (context[CONTEXT_LOCKED] == STATUS_LOCKED) {
     //  ISOException.throwIt(ISO7816.SW_CONDITIONS_NOT_SATISFIED);
-    //}
-    //context[CONTEXT_LOCKED] = STATUS_LOCKED;
+    // }
+    // context[CONTEXT_LOCKED] = STATUS_LOCKED;
 
-	// Force the parent tag to be constructed
-	tag |= TLV.MASK_CONSTRUCTED;
+    // Force the parent tag to be constructed
+    tag |= TLV.MASK_CONSTRUCTED;
 
     if (maxLength < (short) 0) ISOException.throwIt(ISO7816.SW_WRONG_LENGTH);
 
@@ -147,9 +147,9 @@ public final class TLVWriter {
   public short finish() throws ISOException {
 
     // RULE: This object must be have an outstanding operation
-    //if (context[CONTEXT_LOCKED] != STATUS_LOCKED) {
+    // if (context[CONTEXT_LOCKED] != STATUS_LOCKED) {
     //  ISOException.throwIt(ISO7816.SW_CONDITIONS_NOT_SATISFIED);
-    //}
+    // }
 
     // Write the length to the data object tag field
     if (dataPtr[0] == null) ISOException.throwIt(ISO7816.SW_DATA_INVALID);
@@ -194,7 +194,7 @@ public final class TLVWriter {
     context[CONTEXT_OFFSET] = (short) 0;
     context[CONTEXT_LENGTH_PTR] = (short) 0;
     context[CONTEXT_LENGTH_MAX] = (short) 0;
-    //context[CONTEXT_LOCKED] = STATUS_UNLOCKED;
+    // context[CONTEXT_LOCKED] = STATUS_UNLOCKED;
   }
 
   /**

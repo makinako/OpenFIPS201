@@ -96,16 +96,16 @@ public final class PIV {
    */
   public static final short SW_REFERENCE_NOT_FOUND = (short) 0x6A88;
   public static final short SW_OPERATION_BLOCKED = (short) 0x6983;
-  
+
   // The current authentication stage
   private static final short OFFSET_AUTH_STATE = (short) 0;
-  
+
   // The key id used in the current authentication
   private static final short OFFSET_AUTH_ID = (short) 1;
-  
+
   // The key mechanism used in the current authentication
   private static final short OFFSET_AUTH_MECHANISM = (short) 2;
-  
+
   // The GENERAL AUTHENTICATE challenge buffer
   private static final short OFFSET_AUTH_CHALLENGE = (short) 3;
 
@@ -347,7 +347,7 @@ public final class PIV {
     // PRE-CONDITION 1 - The 'TAG' data element must be present
     // NOTE: This is parsed manually rather than going through a TLV parser
     if (buffer[offset++] != CONST_TAG) {
-    	ISOException.throwIt(ISO7816.SW_WRONG_DATA); // Check SW12
+      ISOException.throwIt(ISO7816.SW_WRONG_DATA); // Check SW12
     }
 
     //
@@ -390,7 +390,7 @@ public final class PIV {
         if (buffer[offset] != CONST_TAG_NORMAL_1) ISOException.throwIt(ISO7816.SW_FILE_NOT_FOUND);
         offset++; // Move to the 2nd byte
         if (buffer[offset] != CONST_TAG_NORMAL_2) ISOException.throwIt(ISO7816.SW_FILE_NOT_FOUND);
-        
+
         offset++; // Move to the 3rd byte
         id = buffer[offset]; // Store it as our object ID
         break;
@@ -759,7 +759,8 @@ public final class PIV {
    * @param offset The starting offset of the CDATA element
    * @param length The length of the CDATA element
    */
-  public void changeReferenceData(byte id, byte[] buffer, short offset, short length) throws ISOException {
+  public void changeReferenceData(byte id, byte[] buffer, short offset, short length)
+      throws ISOException {
 
     //
     // PRE-CONDITIONS
@@ -847,7 +848,8 @@ public final class PIV {
     // intermediate retry value (see Section 3.2.1),
     // then the reference data associated with the key reference shall not be changed and the PIV
     // Card Application shall return the status word '69 83'.
-    if (cspPIV.getIsContactless() && (pin.getTriesRemaining()) <= intermediateLimit) ISOException.throwIt(SW_OPERATION_BLOCKED);
+    if (cspPIV.getIsContactless() && (pin.getTriesRemaining()) <= intermediateLimit)
+      ISOException.throwIt(SW_OPERATION_BLOCKED);
 
     // If the authentication data in the command data field does not match the current value of the
     // reference data or if either the authentication data or the new reference data in the command
@@ -880,7 +882,7 @@ public final class PIV {
     // 80'.
 
     // Ensure the supplied length is exactly two PIN maximum lengths
-    if (length != ((short)(Config.PIN_LENGTH_MAX + Config.PIN_LENGTH_MAX))) {
+    if (length != ((short) (Config.PIN_LENGTH_MAX + Config.PIN_LENGTH_MAX))) {
       ISOException.throwIt(ISO7816.SW_WRONG_DATA);
     }
 
@@ -934,7 +936,8 @@ public final class PIV {
    * @param offset The starting offset of the CDATA element
    * @param length The length of the CDATA element
    */
-  public void resetRetryCounter(byte id, byte[] buffer, short offset, short length) throws ISOException {
+  public void resetRetryCounter(byte id, byte[] buffer, short offset, short length)
+      throws ISOException {
 
     //
     // PRE-CONDITIONS
@@ -1029,7 +1032,8 @@ public final class PIV {
    * @param isSecureChannel Sets whether the current command was issued over a GlobalPlatform Secure
    *     Channel
    */
-  public void updateSecurityStatus(boolean isContactless, boolean isSecureChannel) throws ISOException {
+  public void updateSecurityStatus(boolean isContactless, boolean isSecureChannel)
+      throws ISOException {
     cspPIV.setIsContactless(isContactless);
     cspPIV.setIsSecureChannel(isSecureChannel);
   }
@@ -1357,9 +1361,9 @@ public final class PIV {
       PIVSecurityProvider.zeroise(scratch, (short) 0, LENGTH_SCRATCH);
       ISOException.throwIt(ISO7816.SW_WRONG_DATA);
     }
-    
-    // Done    
-    return (short)0; // Keep compiler happy
+
+    // Done
+    return (short) 0; // Keep compiler happy
   }
 
   // Variant A - Secure Messaging
@@ -1842,7 +1846,8 @@ public final class PIV {
       short witnessOffset,
       short witnessLength,
       short challengeOffset,
-      short challengeLength) throws ISOException {
+      short challengeLength)
+      throws ISOException {
 
     //
     // CASE 5 - MUTUAL AUTHENTICATE RESPONSE
@@ -1933,7 +1938,8 @@ public final class PIV {
   }
 
   private short generalAuthenticateCase6(
-      PIVKeyObjectECC key, short exponentiationOffset, short exponentiationLength) throws ISOException {
+      PIVKeyObjectECC key, short exponentiationOffset, short exponentiationLength)
+      throws ISOException {
 
     //
     // CASE 6 - EXPONENTIATION AUTHENTICATE RESPONSE
@@ -2078,7 +2084,8 @@ public final class PIV {
    * @param length The length of the PIN data
    * @return True if the supplied PIN conforms to the format requirements
    */
-  private boolean verifyPinFormat(byte id, byte[] buffer, short offset, short length) throws ISOException {
+  private boolean verifyPinFormat(byte id, byte[] buffer, short offset, short length)
+      throws ISOException {
 
     final byte CONST_PAD = (byte) 0xFF;
 
@@ -2237,10 +2244,9 @@ public final class PIV {
     byte id;
     if (CONST_OP_KEY == operation) {
       // PRE-CONDITION 6a - For keys, the 'ID' length must be 1
-      if (reader.getLength() != (short)1) ISOException.throwIt(ISO7816.SW_WRONG_LENGTH);
+      if (reader.getLength() != (short) 1) ISOException.throwIt(ISO7816.SW_WRONG_LENGTH);
       id = reader.toByte();
-    }
-    else if (CONST_OP_DATA == operation) {
+    } else if (CONST_OP_DATA == operation) {
       //
       // IMPLEMENTATION NOTE:
       // We are progressing through to supporting multi-byte definition of data objects, so until
@@ -2248,10 +2254,10 @@ public final class PIV {
       // byte as the identifier. This means if you pass through '5FC101' and '6FC101' it will fail
       // until we support the 3-bytes internally.
       //
-      
+
       // PRE-CONDITION 6b - The data objects, the 'ID' length must be between 1 and 3
-      if (reader.getLength() > (short)3) ISOException.throwIt(ISO7816.SW_WRONG_LENGTH);
-      
+      if (reader.getLength() > (short) 3) ISOException.throwIt(ISO7816.SW_WRONG_LENGTH);
+
       // Use the last byte of the value as the identifier
       offset = reader.getDataOffset();
       offset += reader.getLength();
@@ -2259,7 +2265,7 @@ public final class PIV {
       id = scratch[offset];
     } else {
       // Invalid operation identifier
-      ISOException.throwIt(ISO7816.SW_WRONG_DATA);   
+      ISOException.throwIt(ISO7816.SW_WRONG_DATA);
       return; // Keep compiler happy
     }
 
@@ -2309,7 +2315,6 @@ public final class PIV {
 
       // PRE-CONDITION 8c - If the operation is CONST_OP_KEY, then the 'KEY ATTRIBUTE' tag
       //					 may be present with length 1
-
       if (!reader.match(CONST_TAG_KEY_ATTRIBUTE)) ISOException.throwIt(ISO7816.SW_WRONG_DATA);
       if (reader.getLength() != (short) 1) ISOException.throwIt(ISO7816.SW_WRONG_LENGTH);
       keyAttribute = reader.toByte();
@@ -2360,7 +2365,8 @@ public final class PIV {
    *     NOT require the old value to be supplied in order to change a key - It also supports
    *     updating the PIN/PUK values, without requiring knowledge of the old value
    */
-  public void changeReferenceDataAdmin(byte id, byte[] buffer, short offset, short length) throws ISOException {
+  public void changeReferenceDataAdmin(byte id, byte[] buffer, short offset, short length)
+      throws ISOException {
 
     final byte CONST_TAG_SEQUENCE = (byte) 0x30;
 
@@ -2481,20 +2487,20 @@ public final class PIV {
 
     final short CONST_DO_GET_VERSION = (short) 0x4756; // GV
     final short CONST_DO_GET_STATUS = (short) 0x4753; // GS
-    //final short CONST_DO_GET_CONFIG = (short) 0x4743; // GC
-    //final short CONST_DO_GET_FIRST_DO = (short) 0x4644; // FD
-    //final short CONST_DO_GET_NEXT_DO = (short) 0x4E44; // ND
-    //final short CONST_DO_GET_FIRST_KEY = (short) 0x464B; // FK
-    //final short CONST_DO_GET_NEXT_KEY = (short) 0x4E4B; // NK
+    // final short CONST_DO_GET_CONFIG = (short) 0x4743; // GC
+    // final short CONST_DO_GET_FIRST_DO = (short) 0x4644; // FD
+    // final short CONST_DO_GET_NEXT_DO = (short) 0x4E44; // ND
+    // final short CONST_DO_GET_FIRST_KEY = (short) 0x464B; // FK
+    // final short CONST_DO_GET_NEXT_KEY = (short) 0x4E4B; // NK
 
     //
     // PRE-CONDITIONS
     //
-    
+
     // Copy the APDU buffer to the scratch buffer so that we can reference it with our TLVReader
-    Util.arrayCopyNonAtomic(buffer, offset, scratch, (short)0, length);
+    Util.arrayCopyNonAtomic(buffer, offset, scratch, (short) 0, length);
     TLVReader reader = TLVReader.getInstance();
-    reader.init(scratch, (short)0, length);
+    reader.init(scratch, (short) 0, length);
 
     // PRE-CONDITION 1 - The 'TAG' data element must be present
     if (!reader.match(CONST_TAG)) {
@@ -2510,12 +2516,12 @@ public final class PIV {
     if (!reader.matchData(CONST_TAG_EXTENDED)) {
       ISOException.throwIt(ISO7816.SW_FILE_NOT_FOUND);
     }
-    
+
     // Retrieve the 2-byte extended data identifier
     offset = reader.getDataOffset();
     offset++; // Move to the 2nd data byte
     short id = Util.getShort(scratch, offset);
-    
+
     //
     // EXECUTION
     //
@@ -2524,108 +2530,106 @@ public final class PIV {
     // so we put a sanity check at the end to make sure this is the case.
     //
 
-	// Prepare the writer to start at offset 2 to allow for the CONST_TAG_DATA tag and length
-	// NOTE: We write it later when we know what the actual length is
+    // Prepare the writer to start at offset 2 to allow for the CONST_TAG_DATA tag and length
+    // NOTE: We write it later when we know what the actual length is
     TLVWriter writer = TLVWriter.getInstance();
-	writer.init(scratch, (short)2, TLV.LENGTH_1BYTE_MAX, TLV.ASN1_SEQUENCE);
-    
+    writer.init(scratch, (short) 2, TLV.LENGTH_1BYTE_MAX, TLV.ASN1_SEQUENCE);
+
     switch (id) {
-	    
-	case CONST_DO_GET_VERSION:
-	  /*
-       # The ASN.1 format of this response is:
-       GetVersionResponse ::= SEQUENCE       
-       {
-         major    INTEGER,
-         minor    INTEGER,
-         revision INTEGER,
-         debug    BOOLEAN
-       }                                                     
+      case CONST_DO_GET_VERSION:
+        /*
+         # The ASN.1 format of this response is:
+         GetVersionResponse ::= SEQUENCE
+         {
+           major    INTEGER,
+           minor    INTEGER,
+           revision INTEGER,
+           debug    BOOLEAN
+         }
 
-       # So, the following data:
-       value GetVersionResponse ::= {
-         major 1,
-         minor 2,
-         revision 3,
-         debug FALSE
-       }
-      
-       # Would be encoded using DER-TLV as:
-       300C8001 01810102 82010383 0100       
-      */
-      writer.write(TLV.ASN1_INTEGER, Config.VERSION_MAJOR);
-      writer.write(TLV.ASN1_INTEGER, Config.VERSION_MINOR);
-      writer.write(TLV.ASN1_INTEGER, Config.VERSION_REVISION);
-      writer.write(TLV.ASN1_BOOLEAN, Config.VERSION_DEBUG);		
-      length = writer.finish();
-      break;		
-		
-	case CONST_DO_GET_STATUS:
-	  /*
-       # The ASN.1 format of this response is:       
-	   AppletState ::= ENUMERATED {
-	     installed (3),
-         selectable (1),
-	     secured (15),
-	     terminated (127)
- 	   }
-	   GetStatusResponse ::= SEQUENCE       
-       {
-         appletState   AppletState
-       }
-       
-       # So, the following data:
-       value GetStatusResponse ::= {
-         appletState secured
-       }
-      
-       # Would be encoded using DER-TLV as:
-       300380010F
-      */
-  
-      // TODO: Additional status items
-      // # of keys defined
-      // # of keys initialised
-      // # of data objects defined
-      // # of data objects initialised
-      // PIN retries remaining
-      // PIN retries total
-      // PIN always status
-      // PUK retries remaining
-      // PUK retries total
-      // Total volatile memory
-      // Available volatile memory
-      // Total non-volatile memory
-      // Available non-volatile memory
+         # So, the following data:
+         value GetVersionResponse ::= {
+           major 1,
+           minor 2,
+           revision 3,
+           debug FALSE
+         }
 
-      // Calculate the number of keys initialised      
-      writer.write(TLV.ASN1_ENUMERATED, GPSystem.getCardContentState());
-      length = writer.finish();
-      break;
+         # Would be encoded using DER-TLV as:
+         300C8001 01810102 82010383 0100
+        */
+        writer.write(TLV.ASN1_INTEGER, Config.VERSION_MAJOR);
+        writer.write(TLV.ASN1_INTEGER, Config.VERSION_MINOR);
+        writer.write(TLV.ASN1_INTEGER, Config.VERSION_REVISION);
+        writer.write(TLV.ASN1_BOOLEAN, Config.VERSION_DEBUG);
+        length = writer.finish();
+        break;
 
-	default:
-      ISOException.throwIt(ISO7816.SW_FILE_NOT_FOUND);	    
+      case CONST_DO_GET_STATUS:
+        /*
+           # The ASN.1 format of this response is:
+        AppletState ::= ENUMERATED {
+          installed (3),
+             selectable (1),
+          secured (15),
+          terminated (127)
+         }
+        GetStatusResponse ::= SEQUENCE
+           {
+             appletState   AppletState
+           }
+
+           # So, the following data:
+           value GetStatusResponse ::= {
+             appletState secured
+           }
+
+           # Would be encoded using DER-TLV as:
+           300380010F
+          */
+
+        // TODO: Additional status items
+        // # of keys defined
+        // # of keys initialised
+        // # of data objects defined
+        // # of data objects initialised
+        // PIN retries remaining
+        // PIN retries total
+        // PIN always status
+        // PUK retries remaining
+        // PUK retries total
+        // Total volatile memory
+        // Available volatile memory
+        // Total non-volatile memory
+        // Available non-volatile memory
+
+        // Calculate the number of keys initialised
+        writer.write(TLV.ASN1_ENUMERATED, GPSystem.getCardContentState());
+        length = writer.finish();
+        break;
+
+      default:
+        ISOException.throwIt(ISO7816.SW_FILE_NOT_FOUND);
     }
-    
+
     // Length sanity check (I should never construct a length larger than a short length)
     if (length > TLV.LENGTH_1BYTE_MAX) {
-	    ISOException.throwIt(ISO7816.SW_DATA_INVALID);
+      ISOException.throwIt(ISO7816.SW_DATA_INVALID);
     }
-    
+
     // Reset to the start of the buffer to write the response tag
-    offset = (short)0;
+    offset = (short) 0;
     scratch[offset++] = CONST_TAG_DATA;
-	length ++;
-    scratch[offset] = (byte)length;    
-	length ++;
+    length++;
+    scratch[offset] = (byte) length;
+    length++;
 
     // STEP 1 - Set up the outgoing chainbuffer
     chainBuffer.setOutgoing(scratch, (short) 0, length, false);
 
     // Done - return how many bytes we will process
-  	return length;
+    return length;
   }
-
 
   /**
    * Searches for a data object within the local data store
@@ -2661,14 +2665,12 @@ public final class PIV {
     PIVDataObject dataObject = new PIVDataObject(id, modeContact, modeContactless);
 
     // Add it to our linked list
-    // NOTE: If this is the first key added, just set our firstKey. Otherwise add it to the head 
+    // NOTE: If this is the first key added, just set our firstKey. Otherwise add it to the head
     // to save a traversal (inspired by having no good answer to Steve Paik's question why we
     // add it to the end).
     if (firstDataObject == null) {
       firstDataObject = dataObject;
-    }
-    else 
-    {
+    } else {
       // Insert at the head of the list
       dataObject.nextObject = firstDataObject;
       firstDataObject = dataObject;

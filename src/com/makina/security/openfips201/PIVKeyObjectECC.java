@@ -65,22 +65,22 @@ public final class PIVKeyObjectECC extends PIVKeyObjectPKI {
   private static Cipher cipherAES = null;
 
   protected PIVKeyObjectECC(
-      byte id, byte modeContact, byte modeContactless, byte mechanism, byte role, byte attributes) throws ISOException {
+      byte id, byte modeContact, byte modeContactless, byte mechanism, byte role, byte attributes)
+      throws ISOException {
     super(id, modeContact, modeContactless, mechanism, role, attributes);
 
     // MECHANISM CHECK - SIGN
-    if ( hasRole(PIVKeyObject.ROLE_SIGN) && 
-		(signerSHA1 == null)
-		&& (signerSHA256 == null)
-		&& (signerSHA384 == null)
-		&& (signerSHA512 == null)
-		) {
+    if (hasRole(PIVKeyObject.ROLE_SIGN)
+        && (signerSHA1 == null)
+        && (signerSHA256 == null)
+        && (signerSHA384 == null)
+        && (signerSHA512 == null)) {
       ISOException.throwIt(ISO7816.SW_FUNC_NOT_SUPPORTED);
     }
-    
+
     // MECHANISM CHECK - KEY_ESTABLISH and SECURE_MESSAGING
-    if ( (hasRole(PIVKeyObject.ROLE_KEY_ESTABLISH) || hasRole(PIVKeyObject.ROLE_SECURE_MESSAGING)) 
-		  && keyAgreement == null) {
+    if ((hasRole(PIVKeyObject.ROLE_KEY_ESTABLISH) || hasRole(PIVKeyObject.ROLE_SECURE_MESSAGING))
+        && keyAgreement == null) {
       ISOException.throwIt(ISO7816.SW_FUNC_NOT_SUPPORTED);
     }
 
@@ -194,7 +194,8 @@ public final class PIVKeyObjectECC extends PIVKeyObjectPKI {
    * @param length the length of the element
    */
   @Override
-  public void updateElement(byte element, byte[] buffer, short offset, short length) throws ISOException {
+  public void updateElement(byte element, byte[] buffer, short offset, short length)
+      throws ISOException {
 
     switch (element) {
       case ELEMENT_ECC_POINT:
@@ -405,7 +406,8 @@ public final class PIVKeyObjectECC extends PIVKeyObjectPKI {
    */
   @Override
   public short keyAgreement(
-      byte[] inBuffer, short inOffset, short inLength, byte[] outBuffer, short outOffset) throws ISOException {
+      byte[] inBuffer, short inOffset, short inLength, byte[] outBuffer, short outOffset)
+      throws ISOException {
 
     if (inLength != marshaledPubKeyLen) {
       ISOException.throwIt(ISO7816.SW_WRONG_LENGTH);
@@ -427,7 +429,8 @@ public final class PIVKeyObjectECC extends PIVKeyObjectPKI {
    */
   @Override
   public short sign(
-      byte[] inBuffer, short inOffset, short inLength, byte[] outBuffer, short outOffset) throws ISOException {
+      byte[] inBuffer, short inOffset, short inLength, byte[] outBuffer, short outOffset)
+      throws ISOException {
 
     Signature signer = null;
 

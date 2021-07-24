@@ -67,10 +67,9 @@ public final class PIVKeyObjectRSA extends PIVKeyObjectPKI {
   protected PIVKeyObjectRSA(
       byte id, byte modeContact, byte modeContactless, byte mechanism, byte role, byte attributes) {
     super(id, modeContact, modeContactless, mechanism, role, attributes);
-    
+
     // Check if this mechanism is supported
-    if (cipher == null) ISOException.throwIt(ISO7816.SW_FUNC_NOT_SUPPORTED);    
-    
+    if (cipher == null) ISOException.throwIt(ISO7816.SW_FUNC_NOT_SUPPORTED);
   }
 
   /*
@@ -104,7 +103,8 @@ public final class PIVKeyObjectRSA extends PIVKeyObjectPKI {
    * @param length the length og the element
    */
   @Override
-  public void updateElement(byte element, byte[] buffer, short offset, short length) throws ISOException {
+  public void updateElement(byte element, byte[] buffer, short offset, short length)
+      throws ISOException {
 
     switch (element) {
 
@@ -224,7 +224,8 @@ public final class PIVKeyObjectRSA extends PIVKeyObjectPKI {
    */
   @Override
   public short sign(
-      byte[] inBuffer, short inOffset, short inLength, byte[] outBuffer, short outOffset) throws ISOException {
+      byte[] inBuffer, short inOffset, short inLength, byte[] outBuffer, short outOffset)
+      throws ISOException {
     if (inLength != getBlockLength()) {
       ISOException.throwIt(ISO7816.SW_WRONG_LENGTH);
     }
@@ -283,12 +284,11 @@ public final class PIVKeyObjectRSA extends PIVKeyObjectPKI {
 
       // Create the TLV response with the appropriate expected length for public key + header
       if (getMechanism() == PIV.ID_ALG_RSA_1024) {
-      	// We can fit within a 2-byte length (128-255)
-	    writer.init(outBuffer, outOffset, TLV.LENGTH_2BYTE_MAX, CONST_TAG_RESPONSE);
-      } 
-      else { // Mechanism == PIV.ID_ALG_RSA_2048
-      	// We require a 3-byte length (255-32767)
-	    writer.init(outBuffer, outOffset, TLV.LENGTH_3BYTE_MAX, CONST_TAG_RESPONSE);
+        // We can fit within a 2-byte length (128-255)
+        writer.init(outBuffer, outOffset, TLV.LENGTH_2BYTE_MAX, CONST_TAG_RESPONSE);
+      } else { // Mechanism == PIV.ID_ALG_RSA_2048
+        // We require a 3-byte length (255-32767)
+        writer.init(outBuffer, outOffset, TLV.LENGTH_3BYTE_MAX, CONST_TAG_RESPONSE);
       }
 
       // Modulus
@@ -309,13 +309,13 @@ public final class PIVKeyObjectRSA extends PIVKeyObjectPKI {
       writer.setOffset(outOffset); // Move the current position forward
 
       // Done, return the response length
-      return writer.finish();      
+      return writer.finish();
     } catch (CardRuntimeException ex) {
       // At this point we are in a nondeterministic state so we will
       // clear both the public and private keys if they exist
       clear();
       CardRuntimeException.throwIt(ex.getReason());
-      return (short)0; // Keep compiler happy
+      return (short) 0; // Keep compiler happy
     } finally {
       // We new'd the keyPair, so we make sure the memory is freed up once it is out of scope.
       runGc();

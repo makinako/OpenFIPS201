@@ -83,7 +83,7 @@ public abstract class PIVKeyObject extends PIVObject {
   //
   // Key Attributes
   //
-  
+
   // Undefined attribute
   public static final byte ATTR_NONE = (byte) 0x00;
 
@@ -150,7 +150,8 @@ public abstract class PIVKeyObject extends PIVObject {
   }
 
   public static PIVKeyObject create(
-      byte id, byte modeContact, byte modeContactless, byte mechanism, byte role, byte attributes) throws ISOException {
+      byte id, byte modeContact, byte modeContactless, byte mechanism, byte role, byte attributes)
+      throws ISOException {
 
     PIVKeyObject key;
 
@@ -160,18 +161,18 @@ public abstract class PIVKeyObject extends PIVObject {
       case PIV.ID_ALG_AES_128:
       case PIV.ID_ALG_AES_192:
       case PIV.ID_ALG_AES_256:
-      	// Role Check - The SIGN role is invalid
-      	if ((role & ROLE_SIGN) != (byte)0) {
+        // Role Check - The SIGN role is invalid
+        if ((role & ROLE_SIGN) != (byte) 0) {
           ISOException.throwIt(ISO7816.SW_WRONG_DATA);
-      	}
-      	// Role Check - The KEY_ESTABLISH role is invalid
-      	if ((role & ROLE_KEY_ESTABLISH) != (byte)0) {
+        }
+        // Role Check - The KEY_ESTABLISH role is invalid
+        if ((role & ROLE_KEY_ESTABLISH) != (byte) 0) {
           ISOException.throwIt(ISO7816.SW_WRONG_DATA);
-      	}
-      	// Role Check - The SECURE_MESSAGING role is invalid
-      	if ((role & ROLE_SECURE_MESSAGING) != (byte)0) {
+        }
+        // Role Check - The SECURE_MESSAGING role is invalid
+        if ((role & ROLE_SECURE_MESSAGING) != (byte) 0) {
           ISOException.throwIt(ISO7816.SW_WRONG_DATA);
-      	}
+        }
         // Attribute Check - The IMPORTABLE attribute must be set for symmetric keys
         if ((attributes & ATTR_IMPORTABLE) == (byte) 0) {
           ISOException.throwIt(ISO7816.SW_WRONG_DATA);
@@ -257,7 +258,7 @@ public abstract class PIVKeyObject extends PIVObject {
 
   /** @return the length of the key in bytes */
   public final short getKeyLengthBytes() {
-    return (short) (getKeyLengthBits() / 8);    
+    return (short) (getKeyLengthBits() / 8);
   }
 
   /** @return the length of the key in bits */

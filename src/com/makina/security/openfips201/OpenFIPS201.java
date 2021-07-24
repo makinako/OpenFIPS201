@@ -128,8 +128,7 @@ public final class OpenFIPS201 extends Applet {
       secureChannel = GPSystem.getSecureChannel();
     }
 
-    // c;\
-
+    //
     // Handle incoming APDUs
     //
     // Process any commands that are wrapped by a GlobalPlatform Secure Channel
@@ -333,7 +332,7 @@ public final class OpenFIPS201 extends Applet {
     // PRE-CONDITION 2 - The P2 value must be equal to the constant 'FF'
     boolean extended = false;
     if (buffer[ISO7816.OFFSET_P2] == P2_EXTENDED) {
-	    extended = true;
+      extended = true;
     } else if (buffer[ISO7816.OFFSET_P2] != P2) {
       ISOException.throwIt(ISO7816.SW_INCORRECT_P1P2);
     }
@@ -346,7 +345,7 @@ public final class OpenFIPS201 extends Applet {
     if (extended) {
       piv.getDataExtended(buffer, ISO7816.OFFSET_CDATA, length);
     } else {
-      piv.getData(buffer, ISO7816.OFFSET_CDATA);	    
+      piv.getData(buffer, ISO7816.OFFSET_CDATA);
     }
 
     // NOTE: If no exception occurred during processing, the ChainBuffer now contains a reference

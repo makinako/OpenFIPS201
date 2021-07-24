@@ -38,7 +38,7 @@ import javacard.framework.Util;
  * class, no constructed flag, no length formatting)
  */
 public final class TLVReader {
-  
+
   // The length of the entire TLV buffer for boundary checking
   private static final short CONTEXT_LENGTH = (short) 0;
   // The current position in the buffer
@@ -46,7 +46,7 @@ public final class TLVReader {
   // The offset given when the data was set, allowing for a reset
   private static final short CONTEXT_POSITION_RESET = (short) 2;
   private static final short LENGTH_CONTEXT = (short) 4;
-  
+
   //
   // CONSTANTS
   //
@@ -303,7 +303,7 @@ public final class TLVReader {
    * @return True if the first byte of the data matches the comparison
    */
   public boolean matchData(byte value) {
-  	return matchData(value, (short)0);
+    return matchData(value, (short) 0);
   }
 
   /**
@@ -326,7 +326,7 @@ public final class TLVReader {
    * @return True if the first two bytes of the data matches the comparison
    */
   public boolean matchData(short value) {
-  	return matchData(value, (short)0);
+    return matchData(value, (short) 0);
   }
 
   /**

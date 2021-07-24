@@ -26,8 +26,7 @@
 
 package com.makina.security.openfips201;
 
-public final class TLV  
-{
+public final class TLV {
   private TLV() {
     // Prevent instantiation
   }
@@ -37,7 +36,6 @@ public final class TLV
   public static final byte CLASS_APPLICATION = (byte) 0x40;
   public static final byte CLASS_CONTEXT = (byte) 0x80;
   public static final byte CLASS_PRIVATE = (byte) 0xC0;
-
 
   // Length Constants
   public static final short LENGTH_1BYTE = (short) 1;
@@ -70,6 +68,5 @@ public final class TLV
   public static final byte ASN1_PRINT_STRING = (byte) 0x13;
   public static final byte ASN1_T61_STRING = (byte) 0x14;
   public static final byte ASN1_IA5_STRING = (byte) 0x16;
-  public static final byte ASN1_UTC_TIME = (byte) 0x17;	
-
+  public static final byte ASN1_UTC_TIME = (byte) 0x17;
 }

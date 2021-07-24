@@ -198,18 +198,16 @@ public final class PIVSecurityProvider {
         PIVKeyObject.create(id, modeContact, modeContactless, mechanism, role, attributes);
 
     // Add it to our linked list
-    // NOTE: If this is the first key added, just set our firstKey. Otherwise add it to the head 
+    // NOTE: If this is the first key added, just set our firstKey. Otherwise add it to the head
     // to save a traversal (inspired by having no good answer to Steve Paik's question why we
     // add it to the end).
     if (firstKey == null) {
       firstKey = key;
-    }
-    else 
-    {
+    } else {
       // Insert at the head of the list
       key.nextObject = firstKey;
-      firstKey = key;	    
-    }    
+      firstKey = key;
+    }
   }
 
   /**
@@ -270,14 +268,12 @@ public final class PIVSecurityProvider {
     // Check for special ALWAYS condition, which ignores PIN_ALWAYS
     if (mode == PIVObject.ACCESS_MODE_ALWAYS) {
       valid = true;
-    }
-    else {
+    } else {
       // Check for PIN and GLOBAL PIN
-      if ( (mode & PIVObject.ACCESS_MODE_PIN) == PIVObject.ACCESS_MODE_PIN
-		   || (mode & PIVObject.ACCESS_MODE_PIN_ALWAYS) == PIVObject.ACCESS_MODE_PIN_ALWAYS) {
+      if ((mode & PIVObject.ACCESS_MODE_PIN) == PIVObject.ACCESS_MODE_PIN
+          || (mode & PIVObject.ACCESS_MODE_PIN_ALWAYS) == PIVObject.ACCESS_MODE_PIN_ALWAYS) {
         // At least one PIN type must be both Enabled and Validated or we fail
-        if (Config.FEATURE_PIN_CARD_ENABLED && cardPIN.isValidated())
-        {
+        if (Config.FEATURE_PIN_CARD_ENABLED && cardPIN.isValidated()) {
           valid = true;
         }
         if (Config.FEATURE_PIN_GLOBAL_ENABLED && globalPIN.isValidated()) {
@@ -285,14 +281,14 @@ public final class PIVSecurityProvider {
         }
       }
 
-      // Check for PIN ALWAYS    
+      // Check for PIN ALWAYS
       if ((mode & PIVObject.ACCESS_MODE_PIN_ALWAYS) == PIVObject.ACCESS_MODE_PIN_ALWAYS
           && !securityFlags[FLAG_PIN_ALWAYS]) {
         valid = false;
       }
 
       // Now that we have performed a security check, clear the pinAlways flag
-      securityFlags[FLAG_PIN_ALWAYS] = false;    
+      securityFlags[FLAG_PIN_ALWAYS] = false;
     }
 
     // Done

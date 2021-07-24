@@ -239,7 +239,8 @@ public final class ChainBuffer {
    *     the header.
    */
   public short processIncomingAPDU(
-      byte[] apdu, short inOffset, short inLength, byte[] outBuffer, short outOffset) throws ISOException {
+      byte[] apdu, short inOffset, short inLength, byte[] outBuffer, short outOffset)
+      throws ISOException {
 
     //
     // STATE VALIDATION
