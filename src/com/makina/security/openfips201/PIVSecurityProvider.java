@@ -263,7 +263,7 @@ public final class PIVSecurityProvider {
 
     // Select the appropriate access mode to check
     byte mode =
-        (securityFlags[FLAG_CONTACTLESS]) ? object.getModeContactless() : object.getModeContact();
+        securityFlags[FLAG_CONTACTLESS] ? object.getModeContactless() : object.getModeContact();
 
     // Check for special ALWAYS condition, which ignores PIN_ALWAYS
     if (mode == PIVObject.ACCESS_MODE_ALWAYS) {

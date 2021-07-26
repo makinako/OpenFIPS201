@@ -370,11 +370,11 @@ public final class PIVKeyObjectECC extends PIVKeyObjectPKI {
     byte[] p = params.getP();
     byte[] r = params.getN();
 
-    ((ECPrivateKey) privateKey).setA(a, (short) 0, (short) (a.length));
-    ((ECPrivateKey) privateKey).setB(b, (short) 0, (short) (b.length));
-    ((ECPrivateKey) privateKey).setG(g, (short) 0, (short) (g.length));
-    ((ECPrivateKey) privateKey).setR(r, (short) 0, (short) (r.length));
-    ((ECPrivateKey) privateKey).setFieldFP(p, (short) 0, (short) (p.length));
+    ((ECPrivateKey) privateKey).setA(a, (short) 0, (short) a.length);
+    ((ECPrivateKey) privateKey).setB(b, (short) 0, (short) b.length);
+    ((ECPrivateKey) privateKey).setG(g, (short) 0, (short) g.length);
+    ((ECPrivateKey) privateKey).setR(r, (short) 0, (short) r.length);
+    ((ECPrivateKey) privateKey).setFieldFP(p, (short) 0, (short) p.length);
     ((ECPrivateKey) privateKey).setK(params.getH());
   }
 
@@ -386,11 +386,11 @@ public final class PIVKeyObjectECC extends PIVKeyObjectPKI {
     byte[] p = params.getP();
     byte[] r = params.getN();
 
-    ((ECPublicKey) publicKey).setA(a, (short) 0, (short) (a.length));
-    ((ECPublicKey) publicKey).setB(b, (short) 0, (short) (b.length));
-    ((ECPublicKey) publicKey).setG(g, (short) 0, (short) (g.length));
-    ((ECPublicKey) publicKey).setR(r, (short) 0, (short) (r.length));
-    ((ECPublicKey) publicKey).setFieldFP(p, (short) 0, (short) (p.length));
+    ((ECPublicKey) publicKey).setA(a, (short) 0, (short) a.length);
+    ((ECPublicKey) publicKey).setB(b, (short) 0, (short) b.length);
+    ((ECPublicKey) publicKey).setG(g, (short) 0, (short) g.length);
+    ((ECPublicKey) publicKey).setR(r, (short) 0, (short) r.length);
+    ((ECPublicKey) publicKey).setFieldFP(p, (short) 0, (short) p.length);
     ((ECPublicKey) publicKey).setK(params.getH());
   }
 
