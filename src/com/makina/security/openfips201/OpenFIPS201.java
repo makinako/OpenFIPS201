@@ -60,7 +60,7 @@ public final class OpenFIPS201 extends Applet {
   private static final byte INS_PIV_RESET_RETRY_COUNTER = (byte) 0x2C;
   private static final byte INS_PIV_GENERAL_AUTHENTICATE = (byte) 0x87;
   private static final byte INS_PIV_PUT_DATA = (byte) 0xDB;
-  private static final byte INS_PIV_GENERATE_ASSYMETRIC_KEYPAIR = (byte) 0x47;
+  private static final byte INS_PIV_GENERATE_ASYMMETRIC_KEYPAIR = (byte) 0x47;
   // Helper constants
   private static final short ZERO_SHORT = (short) 0;
   private static final byte SC_MASK =
@@ -229,8 +229,8 @@ public final class OpenFIPS201 extends Applet {
         processPIV_PUT_DATA(apdu);
         break;
 
-      case INS_PIV_GENERATE_ASSYMETRIC_KEYPAIR:
-        processPIV_GENERATE_ASSYMETRIC_KEYPAIR(apdu);
+      case INS_PIV_GENERATE_ASYMMETRIC_KEYPAIR:
+        processPIV_GENERATE_ASYMMETRIC_KEYPAIR(apdu);
         break;
 
       default:
@@ -586,7 +586,7 @@ public final class OpenFIPS201 extends Applet {
    *
    * @param apdu The incoming APDU object
    */
-  private void processPIV_GENERATE_ASSYMETRIC_KEYPAIR(APDU apdu) {
+  private void processPIV_GENERATE_ASYMMETRIC_KEYPAIR(APDU apdu) {
 
     final byte CONST_P1 = (byte) 0x00;
 
@@ -608,7 +608,7 @@ public final class OpenFIPS201 extends Applet {
      * EXECUTION STEPS
      */
 
-    // STEP 1 - Call the PIV GENERATE ASSYMETRIC KEY command
+    // STEP 1 - Call the PIV GENERATE ASYMMETRIC KEY command
     piv.generateAsymmetricKeyPair(buffer, ISO7816.OFFSET_CDATA);
 
     // STEP 2 - Process the first frame of the chainBuffer for this response

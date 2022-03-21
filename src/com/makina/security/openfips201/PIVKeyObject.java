@@ -182,15 +182,15 @@ public abstract class PIVKeyObject extends PIVObject {
 
       case PIV.ID_ALG_RSA_1024:
       case PIV.ID_ALG_RSA_2048:
-        // Attribute Check - The ADMIN attribute MUST NOT be set for assymetric keys
+        // Attribute Check - The ADMIN attribute MUST NOT be set for asymmetric keys
         if ((attributes & ATTR_ADMIN) != (byte) 0) {
           ISOException.throwIt(ISO7816.SW_WRONG_DATA);
         }
-        // Attribute Check - The INTERNAL attribute MUST NOT be set for assymetric keys
+        // Attribute Check - The INTERNAL attribute MUST NOT be set for asymmetric keys
         if ((attributes & ATTR_PERMIT_INTERNAL) != (byte) 0) {
           ISOException.throwIt(ISO7816.SW_WRONG_DATA);
         }
-        // Attribute Check - The EXTERNAL attribute MUST NOT be set for assymetric keys
+        // Attribute Check - The EXTERNAL attribute MUST NOT be set for asymmetric keys
         if ((attributes & ATTR_PERMIT_EXTERNAL) != (byte) 0) {
           ISOException.throwIt(ISO7816.SW_WRONG_DATA);
         }

@@ -2054,7 +2054,7 @@ public final class PIV {
       }
     }
 
-    // PRE-CONDITION 6 - The key must be an assymetric key (key pair)
+    // PRE-CONDITION 6 - The key must be an asymmetric key (key pair)
     if (!(key instanceof PIVKeyObjectPKI)) {
       ISOException.throwIt(ISO7816.SW_INCORRECT_P1P2);
       return (short) 0; // Keep static analyser happy

@@ -70,7 +70,7 @@ public abstract class PIVKeyObjectPKI extends PIVKeyObject {
       byte[] inBuffer, short inOffset, short inLength, byte[] outBuffer, short outOffset);
 
   /**
-   * Generates a new assymetric key pair and returns the public component.
+   * Generates a new asymmetric key pair and returns the public component.
    *
    * @param scratch the output buffer to hold the generated public component
    * @param offset the starting position of the output buffer
