@@ -29,20 +29,13 @@ package com.makina.security.openfips201;
 import javacard.framework.CardRuntimeException;
 import javacard.framework.ISO7816;
 import javacard.framework.ISOException;
-import javacard.security.CryptoException;
 import javacard.security.ECPrivateKey;
 import javacard.security.ECPublicKey;
-import javacard.security.KeyAgreement;
 import javacard.security.KeyBuilder;
 import javacard.security.KeyPair;
-import javacard.security.MessageDigest;
-import javacard.security.PrivateKey;
-import javacard.security.PublicKey;
-import javacard.security.Signature;
-import javacardx.crypto.Cipher;
 
 /** Provides functionality for ECC PIV key objects */
-public final class PIVKeyObjectECC extends PIVKeyObjectPKI {
+final class PIVKeyObjectECC extends PIVKeyObjectPKI {
   private static final byte CONST_POINT_UNCOMPRESSED = (byte) 0x04;
 
   // The ECC public key element tag
@@ -51,38 +44,23 @@ public final class PIVKeyObjectECC extends PIVKeyObjectPKI {
   // The ECC private key element tag
   private static final byte ELEMENT_ECC_SECRET = (byte) 0x87;
 
+  private ECPrivateKey privateKey = null;
+  private ECPublicKey publicKey = null;
+
+  // TODO: Refactor to remove the need for a permanent ECParams object
   private final ECParams params;
   private final short marshaledPubKeyLen;
 
-  // Cipher implementations (static so they are shared with all instances of PIVKeyObjectECC)
-  private static KeyAgreement keyAgreement = null;
-  private static Signature signerSHA1 = null;
-  private static Signature signerSHA256 = null;
-  private static Signature signerSHA384 = null;
-  private static Signature signerSHA512 = null;
-  private static MessageDigest digestSHA256 = null;
-  private static MessageDigest digestSHA384 = null;
-  private static Cipher cipherAES = null;
-
-  protected PIVKeyObjectECC(
-      byte id, byte modeContact, byte modeContactless, byte mechanism, byte role, byte attributes)
+  PIVKeyObjectECC(
+      byte id,
+      byte modeContact,
+      byte modeContactless,
+      byte adminKey,
+      byte mechanism,
+      byte role,
+      byte attributes)
       throws ISOException {
-    super(id, modeContact, modeContactless, mechanism, role, attributes);
-
-    // MECHANISM CHECK - SIGN
-    if (hasRole(PIVKeyObject.ROLE_SIGN)
-        && (signerSHA1 == null)
-        && (signerSHA256 == null)
-        && (signerSHA384 == null)
-        && (signerSHA512 == null)) {
-      ISOException.throwIt(ISO7816.SW_FUNC_NOT_SUPPORTED);
-    }
-
-    // MECHANISM CHECK - KEY_ESTABLISH and SECURE_MESSAGING
-    if ((hasRole(PIVKeyObject.ROLE_KEY_ESTABLISH) || hasRole(PIVKeyObject.ROLE_SECURE_MESSAGING))
-        && keyAgreement == null) {
-      ISOException.throwIt(ISO7816.SW_FUNC_NOT_SUPPORTED);
-    }
+    super(id, modeContact, modeContactless, adminKey, mechanism, role, attributes);
 
     switch (getMechanism()) {
       case PIV.ID_ALG_ECC_P256:
@@ -105,76 +83,6 @@ public final class PIVKeyObjectECC extends PIVKeyObjectPKI {
     marshaledPubKeyLen = (short) (getKeyLengthBytes() * 2 + 1);
   }
 
-  /*
-   * Allows safe allocation of cryptographic service providers at applet instantiation
-   */
-  public static void createProviders() {
-
-    if (keyAgreement == null) {
-      try {
-        keyAgreement = KeyAgreement.getInstance(KeyAgreement.ALG_EC_SVDP_DH_PLAIN, false);
-      } catch (CryptoException ex) {
-        keyAgreement = null;
-      }
-    }
-
-    if (signerSHA1 == null) {
-      try {
-        signerSHA1 = Signature.getInstance(Signature.ALG_ECDSA_SHA, false);
-      } catch (CryptoException ex) {
-        signerSHA1 = null;
-      }
-    }
-
-    if (signerSHA256 == null) {
-      try {
-        signerSHA256 = Signature.getInstance(Signature.ALG_ECDSA_SHA_256, false);
-      } catch (CryptoException ex) {
-        signerSHA256 = null;
-      }
-    }
-
-    if (signerSHA384 == null) {
-      try {
-        signerSHA384 = Signature.getInstance(Signature.ALG_ECDSA_SHA_384, false);
-      } catch (CryptoException ex) {
-        signerSHA384 = null;
-      }
-    }
-
-    if (signerSHA512 == null) {
-      try {
-        signerSHA512 = Signature.getInstance(Signature.ALG_ECDSA_SHA_512, false);
-      } catch (CryptoException ex) {
-        signerSHA512 = null;
-      }
-    }
-
-    if (digestSHA256 == null) {
-      try {
-        digestSHA256 = MessageDigest.getInstance(MessageDigest.ALG_SHA_256, false);
-      } catch (CryptoException ex) {
-        digestSHA256 = null;
-      }
-    }
-
-    if (digestSHA384 == null) {
-      try {
-        digestSHA384 = MessageDigest.getInstance(MessageDigest.ALG_SHA_384, false);
-      } catch (CryptoException ex) {
-        digestSHA384 = null;
-      }
-    }
-
-    if (cipherAES == null) {
-      try {
-        cipherAES = Cipher.getInstance(Cipher.ALG_AES_BLOCK_128_CBC_NOPAD, false);
-      } catch (CryptoException ex) {
-        cipherAES = null;
-      }
-    }
-  }
-
   /**
    * Updates the elements of the keypair with new values.
    *
@@ -194,8 +102,7 @@ public final class PIVKeyObjectECC extends PIVKeyObjectPKI {
    * @param length the length of the element
    */
   @Override
-  public void updateElement(byte element, byte[] buffer, short offset, short length)
-      throws ISOException {
+  void updateElement(byte element, byte[] buffer, short offset, short length) throws ISOException {
 
     switch (element) {
       case ELEMENT_ECC_POINT:
@@ -212,7 +119,7 @@ public final class PIVKeyObjectECC extends PIVKeyObjectPKI {
 
         allocatePublic();
 
-        ((ECPublicKey) publicKey).setW(buffer, offset, length);
+        publicKey.setW(buffer, offset, length);
         break;
 
       case ELEMENT_ECC_SECRET:
@@ -223,7 +130,7 @@ public final class PIVKeyObjectECC extends PIVKeyObjectPKI {
 
         allocatePrivate();
 
-        ((ECPrivateKey) privateKey).setS(buffer, offset, length);
+        privateKey.setS(buffer, offset, length);
         break;
 
         // Clear all key parts
@@ -241,7 +148,7 @@ public final class PIVKeyObjectECC extends PIVKeyObjectPKI {
   private void allocatePrivate() {
     if (privateKey == null) {
       privateKey =
-          (PrivateKey)
+          (ECPrivateKey)
               KeyBuilder.buildKey(KeyBuilder.TYPE_EC_FP_PRIVATE, getKeyLengthBits(), false);
       setPrivateParams();
     }
@@ -251,13 +158,14 @@ public final class PIVKeyObjectECC extends PIVKeyObjectPKI {
   private void allocatePublic() {
     if (publicKey == null) {
       publicKey =
-          (PublicKey) KeyBuilder.buildKey(KeyBuilder.TYPE_EC_FP_PUBLIC, getKeyLengthBits(), false);
+          (ECPublicKey)
+              KeyBuilder.buildKey(KeyBuilder.TYPE_EC_FP_PUBLIC, getKeyLengthBits(), false);
       setPublicParams();
     }
   }
 
   @Override
-  public short generate(byte[] scratch, short offset) throws CardRuntimeException {
+  short generate(byte[] scratch, short offset) throws CardRuntimeException {
 
     KeyPair keyPair;
     short length = 0;
@@ -280,7 +188,7 @@ public final class PIVKeyObjectECC extends PIVKeyObjectPKI {
       writer.writeTag(ELEMENT_ECC_POINT);
       writer.writeLength(marshaledPubKeyLen);
       offset = writer.getOffset();
-      offset += ((ECPublicKey) publicKey).getW(scratch, offset);
+      offset += (publicKey).getW(scratch, offset);
 
       writer.setOffset(offset);
       length = writer.finish();
@@ -304,7 +212,7 @@ public final class PIVKeyObjectECC extends PIVKeyObjectPKI {
    * @return the block length equal to the key length
    */
   @Override
-  public short getBlockLength() {
+  short getBlockLength() {
     return getKeyLengthBytes();
   }
 
@@ -314,7 +222,7 @@ public final class PIVKeyObjectECC extends PIVKeyObjectPKI {
    * @return the length of the key
    */
   @Override
-  public short getKeyLengthBits() throws ISOException {
+  short getKeyLengthBits() throws ISOException {
     switch (getMechanism()) {
       case PIV.ID_ALG_ECC_P256:
       case PIV.ID_ALG_ECC_CS2:
@@ -330,9 +238,11 @@ public final class PIVKeyObjectECC extends PIVKeyObjectPKI {
     }
   }
 
-  /** @return true if the privateKey exists and is initialized. */
+  /**
+   * @return true if the privateKey exists and is initialized.
+   */
   @Override
-  public boolean isInitialised() {
+  boolean isInitialised() {
 
     switch (getMechanism()) {
       case PIV.ID_ALG_ECC_P256:
@@ -350,7 +260,7 @@ public final class PIVKeyObjectECC extends PIVKeyObjectPKI {
   }
 
   @Override
-  public void clear() {
+  void clear() {
     if (publicKey != null) {
       publicKey.clearKey();
       publicKey = null;
@@ -370,12 +280,12 @@ public final class PIVKeyObjectECC extends PIVKeyObjectPKI {
     byte[] p = params.getP();
     byte[] r = params.getN();
 
-    ((ECPrivateKey) privateKey).setA(a, (short) 0, (short) a.length);
-    ((ECPrivateKey) privateKey).setB(b, (short) 0, (short) b.length);
-    ((ECPrivateKey) privateKey).setG(g, (short) 0, (short) g.length);
-    ((ECPrivateKey) privateKey).setR(r, (short) 0, (short) r.length);
-    ((ECPrivateKey) privateKey).setFieldFP(p, (short) 0, (short) p.length);
-    ((ECPrivateKey) privateKey).setK(params.getH());
+    privateKey.setA(a, (short) 0, (short) a.length);
+    privateKey.setB(b, (short) 0, (short) b.length);
+    privateKey.setG(g, (short) 0, (short) g.length);
+    privateKey.setR(r, (short) 0, (short) r.length);
+    privateKey.setFieldFP(p, (short) 0, (short) p.length);
+    privateKey.setK(params.getH());
   }
 
   /** Set ECC domain parameters. */
@@ -386,12 +296,12 @@ public final class PIVKeyObjectECC extends PIVKeyObjectPKI {
     byte[] p = params.getP();
     byte[] r = params.getN();
 
-    ((ECPublicKey) publicKey).setA(a, (short) 0, (short) a.length);
-    ((ECPublicKey) publicKey).setB(b, (short) 0, (short) b.length);
-    ((ECPublicKey) publicKey).setG(g, (short) 0, (short) g.length);
-    ((ECPublicKey) publicKey).setR(r, (short) 0, (short) r.length);
-    ((ECPublicKey) publicKey).setFieldFP(p, (short) 0, (short) p.length);
-    ((ECPublicKey) publicKey).setK(params.getH());
+    publicKey.setA(a, (short) 0, (short) a.length);
+    publicKey.setB(b, (short) 0, (short) b.length);
+    publicKey.setG(g, (short) 0, (short) g.length);
+    publicKey.setR(r, (short) 0, (short) r.length);
+    publicKey.setFieldFP(p, (short) 0, (short) p.length);
+    publicKey.setK(params.getH());
   }
 
   /**
@@ -405,21 +315,15 @@ public final class PIVKeyObjectECC extends PIVKeyObjectPKI {
    * @return the length of the computed secret
    */
   @Override
-  public short keyAgreement(
+  short keyAgreement(
       byte[] inBuffer, short inOffset, short inLength, byte[] outBuffer, short outOffset)
       throws ISOException {
-
-    if (inLength != marshaledPubKeyLen) {
-      ISOException.throwIt(ISO7816.SW_WRONG_LENGTH);
-    }
-    keyAgreement.init(privateKey);
-    return keyAgreement.generateSecret(inBuffer, inOffset, inLength, outBuffer, outOffset);
+    return PIVCrypto.doKeyAgreement(privateKey, inBuffer, inOffset, inLength, outBuffer, outOffset);
   }
 
   /**
    * Signs the passed precomputed hash
    *
-   * @param csp the csp that does the signing.
    * @param inBuffer contains the precomputed hash
    * @param inOffset the location of the first byte of the hash
    * @param inLength the length of the computed hash
@@ -428,31 +332,8 @@ public final class PIVKeyObjectECC extends PIVKeyObjectPKI {
    * @return the length of the signature
    */
   @Override
-  public short sign(
-      byte[] inBuffer, short inOffset, short inLength, byte[] outBuffer, short outOffset)
+  short sign(byte[] inBuffer, short inOffset, short inLength, byte[] outBuffer, short outOffset)
       throws ISOException {
-
-    Signature signer = null;
-
-    switch (inLength) {
-      case MessageDigest.LENGTH_SHA:
-        signer = signerSHA1;
-        break;
-      case MessageDigest.LENGTH_SHA_256:
-        signer = signerSHA256;
-        break;
-      case MessageDigest.LENGTH_SHA_384:
-        signer = signerSHA384;
-        break;
-      case MessageDigest.LENGTH_SHA_512:
-        signer = signerSHA512;
-        break;
-      default:
-        ISOException.throwIt(ISO7816.SW_WRONG_LENGTH);
-        return (short) 0; // Keep compiler happy
-    }
-
-    signer.init(privateKey, Signature.MODE_SIGN);
-    return signer.signPreComputedHash(inBuffer, inOffset, inLength, outBuffer, outOffset);
+    return PIVCrypto.doSign(privateKey, inBuffer, inOffset, inLength, outBuffer, outOffset);
   }
 }

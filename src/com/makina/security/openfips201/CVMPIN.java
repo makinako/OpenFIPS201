@@ -33,9 +33,9 @@ import org.globalplatform.CVM;
 import org.globalplatform.GPSystem;
 
 /** Provides an OwnerPIN proxy to the CVM class to allow uniform handling */
-public final class CVMPIN extends OwnerPIN implements PIN {
+final class CVMPIN extends OwnerPIN implements PIN {
 
-  final CVM cvm;
+  private final CVM cvm;
 
   /**
    * Constructor
@@ -43,7 +43,7 @@ public final class CVMPIN extends OwnerPIN implements PIN {
    * @param tryLimit The number of incorrect attempts before blocking
    * @param maxPINSize The maximum length of the PIN
    */
-  public CVMPIN(byte tryLimit, byte maxPINSize) throws PINException {
+  CVMPIN(byte tryLimit, byte maxPINSize) throws PINException {
 
     super(tryLimit, maxPINSize);
 
@@ -52,22 +52,31 @@ public final class CVMPIN extends OwnerPIN implements PIN {
 
     // Map the try limit to the CVM
     // NOTE: If the applet does not have the CVM MANAGEMENT privilege, this will fail
-    if (Config.FEATURE_PIN_GLOBAL_CHANGE) cvm.setTryLimit(tryLimit);
+    try {
+      cvm.setTryLimit(tryLimit);
+    } catch (Exception ex) {
+      // Do nothing, since the API gives us no way to know if we have this permission
+      // all we can do is try.
+    }
   }
 
+  @Override
   public byte getTriesRemaining() {
     return cvm.getTriesRemaining();
   }
 
+  @Override
   public boolean check(byte[] pin, short offset, byte length)
       throws ArrayIndexOutOfBoundsException, NullPointerException {
     return (CVM.CVM_SUCCESS == cvm.verify(pin, offset, length, CVM.FORMAT_HEX));
   }
 
+  @Override
   public boolean isValidated() {
     return cvm.isVerified();
   }
 
+  @Override
   public void reset() {
     cvm.resetState();
   }

@@ -1,0 +1,21 @@
+OpenFIPS201_GET_STATUS_Schema DEFINITIONS IMPLICIT TAGS ::= 
+BEGIN
+
+AppletState ::= ENUMERATED {
+	selectable	 	(0),
+	personalised	(1),
+	blocked 		(2),
+	terminated  	(127)
+}
+
+GetStatusResponse ::= [APPLICATION 19] SEQUENCE {
+	appletState		[0] AppletState,
+	pinVerified		[1] BOOLEAN,
+	pinAlways		[2] BOOLEAN,
+	smState			[3] BOOLEAN,
+	vciState		[4] BOOLEAN,
+	scpState		[5] BOOLEAN,
+	contactless		[6] BOOLEAN
+}
+
+END

@@ -26,25 +26,24 @@
 
 package com.makina.security.openfips201;
 
-import javacard.security.PrivateKey;
-import javacard.security.PublicKey;
-
-public abstract class PIVKeyObjectPKI extends PIVKeyObject {
+abstract class PIVKeyObjectPKI extends PIVKeyObject {
 
   protected static final short CONST_TAG_RESPONSE = (short) 0x7F49;
 
-  protected PrivateKey privateKey = null;
-  protected PublicKey publicKey = null;
-
   protected PIVKeyObjectPKI(
-      byte id, byte modeContact, byte modeContactless, byte mechanism, byte role, byte attributes) {
-    super(id, modeContact, modeContactless, mechanism, role, attributes);
+      byte id,
+      byte modeContact,
+      byte modeContactless,
+      byte adminKey,
+      byte mechanism,
+      byte role,
+      byte attributes) {
+    super(id, modeContact, modeContactless, adminKey, mechanism, role, attributes);
   }
 
   /**
    * Signs the passed precomputed hash
    *
-   * @param csp the csp that will do the signing.
    * @param inBuffer contains the precomputed hash
    * @param inOffset the location of the first byte of the hash
    * @param inLength the length og the computed hash
@@ -52,13 +51,12 @@ public abstract class PIVKeyObjectPKI extends PIVKeyObject {
    * @param outOffset the location of the first byte of the signature
    * @return the length of the signature
    */
-  public abstract short sign(
+  abstract short sign(
       byte[] inBuffer, short inOffset, short inLength, byte[] outBuffer, short outOffset);
 
   /**
    * Performs a key agreement
    *
-   * @param csp the csp to do the key agreement.
    * @param inBuffer the input to the key agreement operation
    * @param inOffset the the location of first byte of the key agreement input
    * @param inLength the length of the key agreement input
@@ -66,14 +64,15 @@ public abstract class PIVKeyObjectPKI extends PIVKeyObject {
    * @param outOffset the location of the first byte of the key agreement output
    * @return the length of the key agreement output
    */
-  public abstract short keyAgreement(
+  abstract short keyAgreement(
       byte[] inBuffer, short inOffset, short inLength, byte[] outBuffer, short outOffset);
 
   /**
    * Generates a new asymmetric key pair and returns the public component.
    *
-   * @param scratch the output buffer to hold the generated public component
-   * @param offset the starting position of the output buffer
+   * @param outBuffer the output buffer to hold the generated public component
+   * @param outOffset the starting position of the output buffer
+   * @return The length of the generated key
    */
-  public abstract short generate(byte[] outBuffer, short outOffset);
+  abstract short generate(byte[] outBuffer, short outOffset);
 }

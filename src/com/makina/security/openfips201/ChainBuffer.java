@@ -39,19 +39,19 @@ import javacard.framework.Util;
  * to support chained reads or writes simply calls this method with a buffer to act on and
  * ChainBuffer will do the rest.
  */
-public final class ChainBuffer {
+final class ChainBuffer {
 
   // The chain context is inactive and buffer does not point to anything
-  public static final short STATE_NONE = (short) 0x00;
+  static final short STATE_NONE = (short) 0x00;
 
   // The chain context is reading (supporting multiple GET RESPONSE commands)
-  public static final short STATE_OUTGOING = (short) 0x01;
+  static final short STATE_OUTGOING = (short) 0x01;
 
   // The chain context is writing (supporting chained commands of whatever INS started it)
-  public static final short STATE_INCOMING_OBJECT = (short) 0x02;
+  static final short STATE_INCOMING_OBJECT = (short) 0x02;
 
   // The chain context is writing (supporting chained commands of whatever INS started it)
-  public static final short STATE_INCOMING_APDU = (short) 0x03;
+  static final short STATE_INCOMING_APDU = (short) 0x03;
 
   // The chain state
   private static final short CONTEXT_STATE = (short) 0;
@@ -93,10 +93,11 @@ public final class ChainBuffer {
   // Holds transient context information about the current chain
   private final short[] context;
 
-  public ChainBuffer() {
-
+  ChainBuffer() {
     dataPtr = JCSystem.makeTransientObjectArray((short) 1, JCSystem.CLEAR_ON_DESELECT);
     context = JCSystem.makeTransientShortArray(LENGTH_CONTEXT, JCSystem.CLEAR_ON_DESELECT);
+
+    reset();
   }
 
   /** Resets the ChainBuffer, aborting any outstanding transaction */
@@ -124,7 +125,7 @@ public final class ChainBuffer {
   }
 
   /** Resets the ChainBuffer and clears any internal buffer and state tracking values */
-  public void reset() {
+  void reset() {
 
     // Have we been asked to clear the buffer?
     if (dataPtr[0] != null && context[CONTEXT_CLEAR_ON_COMPLETE] != (short) 0) {
@@ -155,7 +156,7 @@ public final class ChainBuffer {
    * @param length The total number of bytes to read
    * @param clearOnCompletion If true, the buffer will be wiped when the chain operation ends
    */
-  public void setOutgoing(byte[] buffer, short offset, short length, boolean clearOnCompletion) {
+  void setOutgoing(byte[] buffer, short offset, short length, boolean clearOnCompletion) {
 
     reset();
 
@@ -177,7 +178,7 @@ public final class ChainBuffer {
    * @param length The length to expect to be written
    * @param atomic If true, this operation will be conducted inside a transaction
    */
-  public void setIncomingObject(byte[] destination, short offset, short length, boolean atomic) {
+  void setIncomingObject(byte[] destination, short offset, short length, boolean atomic) {
 
     reset();
 
@@ -195,38 +196,6 @@ public final class ChainBuffer {
   }
 
   /**
-   * Used to pre-validate an incoming APDU, to support cancelling mid-command. Note that this
-   * function does not process the APDU at all, it simply checks whether the command has been
-   * changed before completion. If so, it cancels and optionally allows the APDU the continue being
-   * processed by the applet.
-   *
-   * @param apdu The incoming APDU buffer
-   */
-  public void checkIncomingAPDU(byte[] apdu) throws ISOException {
-
-    final short CLA_MASK = ~(short) 0x1000;
-
-    // Check if we have anything to do
-    if (context[CONTEXT_STATE] != STATE_INCOMING_APDU) return;
-
-    // If the command has changed, cancel the previous incoming APDU and continue.
-    if ((context[CONTEXT_APDU_CLASS] & CLA_MASK) != Util.getShort(apdu, ISO7816.OFFSET_CLA)
-        || context[CONTEXT_APDU_P1P2] != Util.getShort(apdu, ISO7816.OFFSET_P1)) {
-      // Cancel the previous incoming APDU
-      reset();
-
-      if (Config.FEATURE_STRICT_APDU_CHAINING) {
-        // For implementations that wish to force the completion of chained commands,
-        // this optionally throws an exception.
-        ISOException.throwIt(ISO7816.SW_LAST_COMMAND_EXPECTED);
-      }
-    }
-
-    // If we have passed, the applet will continue and direct this APDU to the appropriate
-    // handler, which will then call processIncomingAPDU() to complete this.
-  }
-
-  /**
    * Configures the ChainBuffer class to process a large incoming APDU
    *
    * @param apdu The first incoming APDU buffer
@@ -238,7 +207,7 @@ public final class ChainBuffer {
    *     is more to come NOTE: The destination will contain only the command data of the APDU, not
    *     the header.
    */
-  public short processIncomingAPDU(
+  short processIncomingAPDU(
       byte[] apdu, short inOffset, short inLength, byte[] outBuffer, short outOffset)
       throws ISOException {
 
@@ -399,7 +368,7 @@ public final class ChainBuffer {
    * @param offset The starting offset to read from
    * @param length The length of the data to read
    */
-  public void processIncomingObject(byte[] buffer, short offset, short length) throws ISOException {
+  void processIncomingObject(byte[] buffer, short offset, short length) throws ISOException {
 
     // Check if we have anything to do
     if (context[CONTEXT_STATE] != STATE_INCOMING_OBJECT) return;
@@ -421,14 +390,8 @@ public final class ChainBuffer {
       // Abort the data object write
       resetAbort();
 
-      if (Config.FEATURE_STRICT_APDU_CHAINING) {
-        // For implementations that wish to force the completion of chained commands,
-        // this optionally throws an exception.
-        ISOException.throwIt(ISO7816.SW_LAST_COMMAND_EXPECTED);
-      } else {
-        // Ignore this and let the applet handle as a new APDU
-        return;
-      }
+      // Ignore this and let the applet handle as a new APDU
+      return;
     }
 
     // Check if we are chaining or not (we don't use the in-built APDU.isCommandChainingCLA() call
@@ -490,10 +453,28 @@ public final class ChainBuffer {
    *
    * @param apdu The current APDU buffer to transmit with
    */
-  public void processOutgoing(APDU apdu) throws ISOException {
+  void processOutgoing(APDU apdu) throws ISOException {
 
-    // Check if we have anything to do
-    if (context[CONTEXT_STATE] != STATE_OUTGOING) return;
+    //
+    // NOTE:
+    // In previous implementations, this command was intended to be executed every time process()
+    // was called and it would decide if it did anything or not. This has now changed to be only
+    // executed when a GET RESPONSE is explicitly requested.
+    //
+    // The implication of this is that instead of silently leaving, this will throw an exception
+    // if it is in the wrong state because it indicates the user requested more data intentionally
+    // in the wrong state.
+    //
+    // The NIST SP-33 reference database uses ID One PIV 2.4 cards and this implementation
+    // returns 9000 if you try to issue a GET RESPONSE when there was nothing to get. Yubikey
+    // however returns SW_WRONG_DATA. I believe Yubikey is handling it the more correct way and
+    // so we will raise an error unless someone out there provides a compelling reason not to.
+    //
+
+    // Check if we are in the correct state
+    if (context[CONTEXT_STATE] != STATE_OUTGOING) {
+      ISOException.throwIt(ISO7816.SW_WRONG_DATA);
+    }
 
     byte[] apduBuffer = apdu.getBuffer();
 
@@ -506,14 +487,8 @@ public final class ChainBuffer {
       // Clear the apdu buffer
       reset();
 
-      if (Config.FEATURE_STRICT_APDU_CHAINING) {
-        // For implementations that wish to force the completion of chained commands,
-        // this optionally throws an exception.
-        ISOException.throwIt(ISO7816.SW_LAST_COMMAND_EXPECTED);
-      } else {
-        // Ignore this and let the applet handle this as a new command
-        return;
-      }
+      // Ignore this and let the applet handle this as a new command
+      return;
     }
 
     //
@@ -547,7 +522,9 @@ public final class ChainBuffer {
     // Otherwise, notify the caller we have xx remaining bytes (up to 255)
     else {
       short sw2 =
-          (context[CONTEXT_REMAINING] > (short) 0xFF) ? (short) 0xFF : context[CONTEXT_REMAINING];
+          (context[CONTEXT_REMAINING] > (short) 0x00FF)
+              ? (short) 0x00FF
+              : context[CONTEXT_REMAINING];
       ISOException.throwIt((short) (ISO7816.SW_BYTES_REMAINING_00 | sw2));
     }
   }

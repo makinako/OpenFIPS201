@@ -36,7 +36,7 @@ final class ECParamsP384 extends ECParams {
 
   private ECParamsP384() {}
 
-  public static ECParams getInstance() {
+  static ECParams getInstance() {
     if (instance == null) {
       instance = new ECParamsP384();
     }

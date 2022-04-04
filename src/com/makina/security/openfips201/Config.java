@@ -26,30 +26,14 @@
 
 package com.makina.security.openfips201;
 
+import javacard.framework.ISO7816;
+import javacard.framework.ISOException;
+
 /**
  * Defines all configurable elements of the PIV applet in one place. This allows customisation of
  * the data and key file system as well as controlling the behaviour of the applet.
  */
-public abstract class Config {
-
-  private Config() {
-    // Prevent instantiation
-  }
-
-  ///////////////////////////////////////////////////////////////////////////
-  //
-  // APPLET CONFIGURATION
-  //
-  // NOTE: These flags describe various features that can enable optional functionality
-  // within the PIV standard or to govern applet behaviour. Care must be taken when setting
-  // these as there can be serious security and functional repercussions for incorrect values.
-  // Because these are all marked as 'static final', the compiler should remove any code relating
-  // to disabled features as an optimisation (if code optimisation is used).
-  //
-  // Any change to these features should be considered a software change and re-testing should
-  // then apply.
-  //
-  ///////////////////////////////////////////////////////////////////////////
+final class Config {
 
   //
   // BUILD VERSION INFORMATION
@@ -57,127 +41,13 @@ public abstract class Config {
   // has no causal relationship with commits, so the value should only be trusted when read from
   // a release.
   //
-
-  public static final byte VERSION_MAJOR = (byte) 1;
-  public static final byte VERSION_MINOR = (byte) 8;
-  public static final byte VERSION_REVISION = (byte) 0;
-  public static final byte VERSION_DEBUG = (byte) 1; // If set to 1, this build is considered DEBUG
-
-  // Minor version
-
-  /// Indicates that the mandatory PIV Card Application PIN satisfies the PIV Access Control
-  /// Rules (ACRs) for command execution and data object access.
-  /// NOTE: This also sets the corresponding bit in the Discovery object
-  /// (See SP800-73-4 Part1 - 3.3.2 Discovery Object)
-  /// SP800-73-4 Requirement: Issuer-defined
-  public static final boolean FEATURE_PIN_CARD_ENABLED = true;
-
-  /// Indicates that the optional Global PIN feature of PIV is enabled
-  /// NOTE: This also sets the corresponding bit in the default Discovery object
-  /// (See SP800-73-4 Part1 - 3.3.2 Discovery Object)
-  /// SP800-73-4 Requirement: Issuer-defined
-  public static final boolean FEATURE_PIN_GLOBAL_ENABLED = false;
-
-  /// Indicates that the Global PIN is the primary PIN used to satisfy the
-  /// PIV ACRs for command execution and object access.
-  ///
-  /// NOTE: This ONLY sets the the default value in the default Discovery object
-  /// and DOES NOT prevent this being overwritten by a CMS
-  /// (See SP800-73-4 Part1 - 3.3.2 Discovery Object)
-  /// SP800-73-4 Requirement: Issuer-defined
-  public static final boolean FEATURE_PIN_GLOBAL_PREFERRED = false;
-
-  /// Indicates that the Global PIN may be updated by the PIV applet.
-  /// NOTE: If enabled the applet must be installed with the GlobalPlatform CVM MANAGEMENT
-  /// flag set, or the functionality will not work.
-  /// SP800-73-4 Requirement: Issuer-defined
-  public static final boolean FEATURE_PIN_GLOBAL_CHANGE = false;
-
-  /// Indicates that the PIN will be set to a random value at applet instantiation.
-  /// If this is not set, the PIN will be initialised to a default value
-  /// SP800-73-4 Requirement: Issuer-defined
-  public static final boolean FEATURE_PIN_INIT_RANDOM = true;
-
-  /// Indicates that the PUK may be updated by the PIV applet.
-  /// (See SP800-73-4 Part2 - 3.2.2 CHANGE REFERENCE DATA Card Command)
-  /// NOTE: Regardless of this setting, the PUK can be changed via a GP SCP session
-  /// SP800-73-4 Requirement: Issuer-defined
-  public static final boolean FEATURE_PUK_CHANGE = true;
-
-  /// Indicates that the PUK will be set to a random value at applet instantiation.
-  /// If this is not set, the PUK will be initialised to a default value
-  /// SP800-73-4 Requirement: Issuer-defined
-  public static final boolean FEATURE_PUK_INIT_RANDOM = true;
-
-  /// Permits the PIN to be used over contactless without the need for the VCI condition.
-  /// SP800-73-4 Requirement: Must be set to false
-  public static final boolean FEATURE_PIN_OVER_CONTACTLESS = false;
-
-  /// Permits the PUK to be used over contactless without the need for the VCI condition.
-  /// SP800-73-4 Requirement: Must be set to false
-  public static final boolean FEATURE_PUK_OVER_CONTACTLESS = false;
-
-  /// If set to true, authentication to GlobalPlatform will fail on the contactless
-  /// interface.
-  /// NOTE: This does not restrict the usage of keys with the ROLE_ADMIN role set (i.e. 9B),
-  ///		 which must be configured individually during pre-personalization.
-  /// SP800-73-4 Requirement: Must be set to true
-  public static final boolean FEATURE_RESTRICT_SCP_TO_CONTACT = true;
-
-  /// If set to true, a call to GET DATA for an object that exists in the file system,
-  /// but which has not been initialised with data will result in SW_FILE_NOT_FOUND.
-  /// If set to false, it will return an empty data field with SW_OK.
-  /// SP800-73-4 Requirement: Not clearly defined, suggest true
-  public static final boolean FEATURE_ERROR_ON_EMPTY_DATA_OBJECT = true;
-
-  /// If set to true, when the discovery object is created it will automatically
-  /// be populated with a default value based on the configured parameters (specifically
-  /// the PIN policy element dynamic elements).
-  /// NOTE: This does not prevent the card management system from overwriting this
-  /// object, including with an incorrect value
-  /// SP800-73-4 Requirement: Not specified under PIV (extension functionality)
-  public static final boolean FEATURE_DISCOVERY_OBJECT_DEFAULT = true;
-
-  // If set to true, the applet will return SW_LAST_COMMAND_EXPECTED if a chained APDU is
-  // not completed. The implication of this is that if a chained INCOMING or OUTGOING
-  // APDU is cancelled by the host by starting a new APDU, an error will be produced.
-  //
-  /// SP800-73-4 Requirement: Not specified under PIV (extension functionality)
-  public static final boolean FEATURE_STRICT_APDU_CHAINING = false;
-
-  ///////////////////////////////////////////////////////////////////////////
-  //
-  // PIN and PUK CONFIGURATION
-  //
-  ///////////////////////////////////////////////////////////////////////////
-
-  /// The number of retries before the PIN object is blocked
-  /// SP800-73-4 Requirement: Issuer-defined
-  public static final byte PIN_RETRIES = (byte) 6;
-
-  /// The number of retries that the PIN object will not be permitted to go below over
-  /// the contactless interface. Setting to zero effectively disables this option.
-  /// SP800-73-4 Requirement: Issuer-defined
-  public static final byte PIN_RETRIES_INTERMEDIATE = (byte) 1;
-
-  /// The number of retries before the PUK object is blocked
-  /// SP800-73-4 Requirement: Issuer-defined
-  public static final byte PUK_RETRIES = (byte) 6;
-
-  /// The number of retries that the PUK object will not be permitted to go below over
-  /// the contactless interface. Setting to zero effectively disables this option.
-  /// SP800-73-4 Requirement: Issuer-defined
-  public static final byte PUK_RETRIES_INTERMEDIATE = (byte) 1;
-
-  /// The minimum length of the PIN value (SP800-73-4 default is '6')
-  /// NOTE: Changing this value from its default will break PIV compliance
-  /// SP800-73-4 Requirement: Must be set to 6
-  public static final byte PIN_LENGTH_MIN = (byte) 6;
-
-  /// The maximum length of the PIN value (SP800-73-4 default is '8')
-  /// NOTE: Changing this value from its default will break PIV compliance
-  /// SP800-73-4 Requirement: Must be set to 8
-  public static final byte PIN_LENGTH_MAX = (byte) 8;
+  static final byte[] APPLICATION_NAME =
+      new byte[] {'O', 'p', 'e', 'n', 'F', 'I', 'P', 'S', '2', '0', '1'};
+  static final short LENGTH_APPLICATION_NAME = (short) 11;
+  static final byte VERSION_MAJOR = (byte) 1;
+  static final byte VERSION_MINOR = (byte) 10;
+  static final byte VERSION_REVISION = (byte) 0;
+  static final byte VERSION_DEBUG = (byte) 0; // If set to 1, this build is considered DEBUG
 
   ///////////////////////////////////////////////////////////////////////////
   //
@@ -189,22 +59,8 @@ public abstract class Config {
   //
   ///////////////////////////////////////////////////////////////////////////
 
-  /// If FEATURE_PIN_INIT_RANDOM is not set, this will be the default value for the Card PIN object
-  protected static final byte[] DEFAULT_PIN =
-      new byte[] {
-        (byte) 0x31, (byte) 0x32, (byte) 0x33, (byte) 0x34,
-        (byte) 0x35, (byte) 0x36, (byte) 0xFF, (byte) 0xFF
-      };
-
-  /// If FEATURE_PUK_INIT_RANDOM is not set, this will be the default value for the Card PUK object
-  protected static final byte[] DEFAULT_PUK =
-      new byte[] {
-        (byte) 0x31, (byte) 0x32, (byte) 0x33, (byte) 0x34,
-        (byte) 0x35, (byte) 0x36, (byte) 0x37, (byte) 0x38
-      };
-
-  /// The default value for the special DISCOVERY object
-  protected static final byte[] DEFAULT_DISCOVERY =
+  // The default value for the special DISCOVERY object
+  static final byte[] TEMPLATE_DISCOVERY =
       new byte[] {
 
         /// 2 bytes - Discovery Object (TAG '7E')
@@ -230,53 +86,14 @@ public abstract class Config {
         (byte) 0x5F,
         (byte) 0x2F,
         (byte) 0x02,
-
-        // Tag 0x5F2F encodes the PIN Usage Policy in two bytes:
-
-        // FIRST BYTE
-        // -----------------------------
-
-        // Bit 8 of the first byte shall be set to zero
-
-        // Bit 7 is set to 1 to indicate that the mandatory PIV Card Application PIN
-        // satisfies the PIV Access Control Rules (ACRs) for command
-        // execution and data object access.
-        (FEATURE_PIN_CARD_ENABLED ? (byte) (1 << 6) : (byte) 0)
-
-            // Bit 6 indicates whether the optional Global PIN satisfies the PIV ACRs for
-            // command execution and PIV data object access.
-            | (FEATURE_PIN_GLOBAL_ENABLED ? (byte) (1 << 5) : (byte) 0)
-
-            // Bit 5 indicates whether the optional OCC satisfies the PIV ACRs for
-            // command execution and PIV data object access
-            | (byte) (0 << 4)
-
-            // Bit 4 indicates whether the optional VCI is implemented
-            | (byte) (0 << 3)
-
-            // Bit 3 is set to zero if the pairing code is required to establish a VCI and is
-            // set to one if a VCI is established without pairing code
-            | (byte) (0 << 2)
-
-            // Bits 2 and 1 of the first byte shall be set to zero
-            | (byte) (0 << 1)
-            | (byte) (0 << 0),
-
-        // SECOND BYTE
-        // -----------------------------
-        // The second byte of the PIN Usage Policy encodes the cardholder's PIN preference for
-        // PIV Cards with both the PIV Card Application PIN and the Global PIN enabled:
-
-        // 0x10 indicates that the PIV Card Application PIN is the primary PIN used
-        // 	 	to satisfy the PIV ACRs for command execution and object access.
-        // 0x20 indicates that the Global PIN is the primary PIN used to satisfy the
-        // 		PIV ACRs for command execution and object access.
-        (FEATURE_PIN_GLOBAL_PREFERRED ? (byte) 0x20 : (byte) 0x10)
+        // NOTE: The remaining 2 policy bytes are set
+        (byte) 0x00,
+        (byte) 0x00
       };
 
   /// The default value for the PIV Application Property Template (APT), which is returned
   /// when the applet is selected (this represents the FCI parameter as per ISO-7816)
-  protected static final byte[] DEFAULT_APT =
+  protected static final byte[] TEMPLATE_APT =
       new byte[] {
 
         // 2 bytes - Application Property Template (TAG '61')
@@ -443,4 +260,512 @@ public abstract class Config {
         (byte) 0x01,
         (byte) 0x00
       };
+
+  ////////////////////////////////////////////////////////////////////////////////
+  //
+  // Configuration Elements
+  //
+  // This section defines all configurable parameters within the OpenFIPS201
+  // applet. The numbering system here defines the internal storage (array offset)
+  // for each parameter, not the ASN.1 definition.
+  //
+  // The takeaway from this is, don't rely at all on the integer value of these
+  // constants to provide meaning across versions, use the ASN.1 instead!
+  ////////////////////////////////////////////////////////////////////////////////
+
+  // The number of records in the configuration table.
+  private static final short LENGTH_CONFIG = (short) 27;
+
+  // PIN Policy
+
+  static final byte CONFIG_PIN_ENABLE_LOCAL = (byte) 0;
+  static final byte CONFIG_PIN_ENABLE_GLOBAL = (byte) 1;
+  static final byte CONFIG_PIN_PREFER_GLOBAL = (byte) 2;
+  static final byte CONFIG_PIN_PERMIT_CONTACTLESS = (byte) 3;
+  static final byte CONFIG_PIN_MIN_LENGTH = (byte) 4;
+  static final byte CONFIG_PIN_MAX_LENGTH = (byte) 5;
+  static final byte CONFIG_PIN_RETRIES_CONTACT = (byte) 6;
+  static final byte CONFIG_PIN_RETRIES_CONTACTLESS = (byte) 7;
+  static final byte CONFIG_PIN_CHARSET = (byte) 8;
+  static final byte CONFIG_PIN_HISTORY = (byte) 9;
+  static final byte CONFIG_PIN_RULE_SEQUENCE = (byte) 10;
+  static final byte CONFIG_PIN_RULE_DISTINCT = (byte) 11;
+
+  // PUK Policy
+
+  static final byte CONFIG_PUK_ENABLED = (byte) 12;
+  static final byte CONFIG_PUK_PERMIT_CONTACTLESS = (byte) 13;
+  static final byte CONFIG_PUK_LENGTH = (byte) 14;
+  static final byte CONFIG_PUK_RETRIES_CONTACT = (byte) 15;
+  static final byte CONFIG_PUK_RETRIES_CONTACTLESS = (byte) 16;
+  static final byte CONFIG_PUK_RESTRICT_UPDATE = (byte) 17;
+
+  // VCI Policy
+
+  static final byte CONFIG_VCI_MODE = (byte) 18;
+  static final byte CONFIG_OCC_MODE = (byte) 19;
+
+  // Options
+  static final byte OPTION_RESTRICT_CONTACTLESS_GLOBAL = (byte) 20;
+  static final byte OPTION_RESTRICT_CONTACTLESS_ADMIN = (byte) 21;
+  static final byte OPTION_RESTRICT_ENUMERATION = (byte) 22;
+  static final byte OPTION_RESTRICT_SINGLE_KEY = (byte) 23;
+  static final byte OPTION_IGNORE_CONTACTLESS_ACL = (byte) 24;
+  static final byte OPTION_READ_EMPTY_DATA_OBJECT = (byte) 25;
+  static final byte OPTION_USE_RSA_CRT = (byte) 26;
+
+  //
+  // Defaults and Limits
+  //
+  static final byte LIMIT_PIN_MIN_LENGTH = (byte) 4;
+  static final byte LIMIT_PIN_MAX_LENGTH = (byte) 16;
+  static final byte LIMIT_PIN_MAX_RETRIES = (byte) 127;
+  static final byte LIMIT_PIN_HISTORY = (byte) 12;
+
+  static final byte LIMIT_PUK_MIN_LENGTH = (byte) 6;
+  static final byte LIMIT_PUK_MAX_LENGTH = (byte) 16;
+  static final byte LIMIT_PUK_MAX_RETRIES = (byte) 127;
+
+  private static final byte DEFAULT_PIN_ENABLE_LOCAL = TLV.TRUE;
+  private static final byte DEFAULT_PIN_MIN_LENGTH = (byte) 6;
+  private static final byte DEFAULT_PIN_MAX_LENGTH = (byte) 8;
+  private static final byte DEFAULT_PIN_RETRIES_CONTACT = (byte) 6;
+  private static final byte DEFAULT_PIN_RETRIES_CONTACTLESS = (byte) 5;
+
+  private static final byte DEFAULT_PUK_ENABLED = TLV.TRUE;
+  private static final byte DEFAULT_PUK_LENGTH = (byte) 8;
+  private static final byte DEFAULT_PUK_RETRIES_CONTACT = (byte) 10;
+  private static final byte DEFAULT_PUK_RETRIES_CONTACTLESS = (byte) 9;
+
+  //
+  // Enumeration - PIN Mode
+  //
+  static final byte PIN_MODE_DISABLED = (byte) 0;
+  static final byte PIN_MODE_LOCAL_ONLY = (byte) 1;
+  static final byte PIN_MODE_GLOBAL_ONLY = (byte) 2;
+  static final byte PIN_MODE_LOCAL_PREFERRED = (byte) 3;
+  static final byte PIN_MODE_GLOBAL_PREFERRED = (byte) 4;
+
+  //
+  // Enumeration - PIN Character Set
+  //
+  static final byte PIN_CHARSET_NUMERIC = (byte) 0;
+  static final byte PIN_CHARSET_ALPHA = (byte) 1;
+  static final byte PIN_CHARSET_ALPHA_INVARIANT = (byte) 2;
+  static final byte PIN_CHARSET_RAW = (byte) 3;
+
+  //
+  // Enumeration - VCI Mode
+  //
+  static final byte VCI_MODE_DISABLED = (byte) 0;
+  static final byte VCI_MODE_ENABLED = (byte) 1;
+  static final byte VCI_MODE_PAIRING_CODE = (byte) 2;
+
+  //
+  // Enumeration - OCC Mode
+  //
+  static final byte OCC_MODE_DISABLED = (byte) 0;
+
+  //
+  // ASN.1 TAGS - Constructed (Container)
+  //
+  private static final byte TAG_PIN_POLICY = (byte) 0xA0;
+  private static final byte TAG_PUK_POLICY = (byte) 0xA1;
+  private static final byte TAG_VCI_POLICY = (byte) 0xA2;
+  private static final byte TAG_OCC_POLICY = (byte) 0xA3;
+  private static final byte TAG_OPTIONS = (byte) 0xA4;
+
+  //
+  // ASN.1 TAGS - Primitive (Elements)
+  //
+  private static final byte TAG_PIN_ENABLE_LOCAL = (byte) 0x80;
+  private static final byte TAG_PIN_ENABLE_GLOBAL = (byte) 0x81;
+  private static final byte TAG_PIN_PREFER_GLOBAL = (byte) 0x82;
+  private static final byte TAG_PIN_PERMIT_CONTACTLESS = (byte) 0x83;
+  private static final byte TAG_PIN_MIN_LENGTH = (byte) 0x84;
+  private static final byte TAG_PIN_MAX_LENGTH = (byte) 0x85;
+  private static final byte TAG_PIN_RETRIES_CONTACT = (byte) 0x86;
+  private static final byte TAG_PIN_RETRIES_CONTACTLESS = (byte) 0x87;
+  private static final byte TAG_PIN_CHARSET = (byte) 0x88;
+  private static final byte TAG_PIN_HISTORY = (byte) 0x89;
+  private static final byte TAG_PIN_RULE_SEQUENCE = (byte) 0x8A;
+  private static final byte TAG_PIN_RULE_DISTINCT = (byte) 0x8B;
+
+  private static final byte TAG_PUK_ENABLED = (byte) 0x80;
+  private static final byte TAG_PUK_PERMIT_CONTACTLESS = (byte) 0x81;
+  private static final byte TAG_PUK_LENGTH = (byte) 0x82;
+  private static final byte TAG_PUK_RETRIES_CONTACT = (byte) 0x83;
+  private static final byte TAG_PUK_RETRIES_CONTACTLESS = (byte) 0x84;
+  private static final byte TAG_PUK_RESTRICT_UPDATE = (byte) 0x85;
+
+  private static final byte TAG_VCI_MODE = (byte) 0x80;
+  private static final byte TAG_OCC_MODE = (byte) 0x80;
+
+  private static final byte TAG_RESTRICT_CONTACTLESS_GLOBAL = (byte) 0x80;
+  private static final byte TAG_RESTRICT_CONTACTLESS_ADMIN = (byte) 0x81;
+  private static final byte TAG_RESTRICT_ENUMERATION = (byte) 0x82;
+  private static final byte TAG_RESTRICT_SINGLE_KEY = (byte) 0x83;
+  private static final byte TAG_IGNORE_CONTACTLESS_ACL = (byte) 0x84;
+  private static final byte TAG_READ_EMPTY_DATA_OBJECT = (byte) 0x85;
+  private static final byte TAG_USE_RSA_CRT = (byte) 0x86;
+
+  //
+  // Storage members
+  //
+
+  // PERSISTENT - Internal configuration table
+  private final byte[] config;
+
+  Config() {
+
+    config = new byte[LENGTH_CONFIG];
+
+    //
+    // DEFAULT VALUES
+    //
+    // NOTE:
+    // Most configuration values are left at their initialised (zero/false) value,
+    // so the defaults below represent only those that required explicit initialisation
+    // in order to achieve compliance with the NIST FIPS 201 or NIST SP 800-73-4.
+
+    // PIN
+    config[CONFIG_PIN_ENABLE_LOCAL] = DEFAULT_PIN_ENABLE_LOCAL;
+    config[CONFIG_PIN_MIN_LENGTH] = DEFAULT_PIN_MIN_LENGTH;
+    config[CONFIG_PIN_MAX_LENGTH] = DEFAULT_PIN_MAX_LENGTH;
+    config[CONFIG_PIN_RETRIES_CONTACT] = DEFAULT_PIN_RETRIES_CONTACT;
+    config[CONFIG_PIN_RETRIES_CONTACTLESS] = DEFAULT_PIN_RETRIES_CONTACTLESS;
+
+    // PUK
+    config[CONFIG_PUK_ENABLED] = DEFAULT_PUK_ENABLED;
+    config[CONFIG_PUK_LENGTH] = DEFAULT_PUK_LENGTH;
+    config[CONFIG_PUK_RETRIES_CONTACT] = DEFAULT_PUK_RETRIES_CONTACT;
+    config[CONFIG_PUK_RETRIES_CONTACTLESS] = DEFAULT_PUK_RETRIES_CONTACTLESS;
+  }
+
+  byte readValue(byte address) {
+    return config[address];
+  }
+
+  boolean readFlag(byte address) {
+    return (config[address] != (byte) 0);
+  }
+
+  byte getIntermediatePIN() {
+    return (byte) (config[CONFIG_PIN_RETRIES_CONTACT] - config[CONFIG_PIN_RETRIES_CONTACTLESS]);
+  }
+
+  byte getIntermediatePUK() {
+    return (byte) (config[CONFIG_PUK_RETRIES_CONTACT] - config[CONFIG_PUK_RETRIES_CONTACTLESS]);
+  }
+
+  private void setBoolean(byte address, byte value) {
+    config[address] = (value != (byte) 0 ? TLV.TRUE : TLV.FALSE);
+  }
+
+  void update(TLVReader reader) {
+
+    // NOTES:
+    // - Due to all configuration parameters being optional, pre-conditions are evaluated
+    //   in each section on-the-fly rather than all prior to execution.
+    // - To save on validation code, any boolean value is just stored as a byte and any
+    //   non-zero value is considered True.
+
+    //
+    // PIN POLICY
+    //
+    if (reader.match(TAG_PIN_POLICY)) {
+
+      // Sanity check for empty constructed tag
+      if (reader.isNull()) {
+        ISOException.throwIt(ISO7816.SW_DATA_INVALID);
+      }
+      reader.moveInto();
+
+      // Enable Local
+      if (reader.match(TAG_PIN_ENABLE_LOCAL)) {
+        setBoolean(CONFIG_PIN_ENABLE_LOCAL, reader.toByte());
+        reader.moveNext();
+      }
+
+      // Enable Global
+      if (reader.match(TAG_PIN_ENABLE_GLOBAL)) {
+        setBoolean(CONFIG_PIN_ENABLE_GLOBAL, reader.toByte());
+        reader.moveNext();
+      }
+
+      // Prefer Global
+      if (reader.match(TAG_PIN_PREFER_GLOBAL)) {
+        setBoolean(CONFIG_PIN_PREFER_GLOBAL, reader.toByte());
+        reader.moveNext();
+      }
+
+      // Permit Contactless
+      if (reader.match(TAG_PIN_PERMIT_CONTACTLESS)) {
+        setBoolean(CONFIG_PIN_PERMIT_CONTACTLESS, reader.toByte());
+        reader.moveNext();
+      }
+
+      //
+      // PIN LENGTH NOTES:
+      // We need to enforce a rule where the minimum length is <= to the maximum, so we
+      // record both first and evaluate at the end.
+      //
+
+      // Min Length
+      boolean lengthChanged = false;
+      byte minLength = config[CONFIG_PIN_MIN_LENGTH];
+      if (reader.match(TAG_PIN_MIN_LENGTH)) {
+        byte value = reader.toByte();
+        if (value < LIMIT_PIN_MIN_LENGTH || value > LIMIT_PIN_MAX_LENGTH) {
+          ISOException.throwIt(ISO7816.SW_DATA_INVALID);
+        }
+        minLength = value;
+        lengthChanged = true;
+        reader.moveNext();
+      }
+
+      // Max Length
+      byte maxLength = config[CONFIG_PIN_MAX_LENGTH];
+      if (reader.match(TAG_PIN_MAX_LENGTH)) {
+        byte value = reader.toByte();
+        if (value < LIMIT_PIN_MIN_LENGTH || value > LIMIT_PIN_MAX_LENGTH) {
+          ISOException.throwIt(ISO7816.SW_DATA_INVALID);
+        }
+        maxLength = value;
+        lengthChanged = true;
+        reader.moveNext();
+      }
+
+      // Validate and update the PIN values if necessary
+      if (lengthChanged) {
+        if (minLength > maxLength) {
+          ISOException.throwIt(ISO7816.SW_DATA_INVALID);
+        }
+        config[CONFIG_PIN_MIN_LENGTH] = minLength;
+        config[CONFIG_PIN_MAX_LENGTH] = maxLength;
+      }
+
+      // Retries Contact
+      if (reader.match(TAG_PIN_RETRIES_CONTACT)) {
+        byte value = reader.toByte();
+        if (value < (byte) 0 || value > LIMIT_PIN_MAX_RETRIES) {
+          ISOException.throwIt(ISO7816.SW_DATA_INVALID);
+        }
+        config[CONFIG_PIN_RETRIES_CONTACT] = value;
+        reader.moveNext();
+      }
+
+      // Retries Contactless
+      if (reader.match(TAG_PIN_RETRIES_CONTACTLESS)) {
+        byte value = reader.toByte();
+        // Pre-condition - Boundary check
+        if (value < (byte) 0 || value > LIMIT_PIN_MAX_RETRIES) {
+          ISOException.throwIt(ISO7816.SW_DATA_INVALID);
+        }
+        // Pre-condition - Must be less than RETRIES_CONTACT
+        if (value >= config[CONFIG_PIN_RETRIES_CONTACT]) {
+          ISOException.throwIt(ISO7816.SW_DATA_INVALID);
+        }
+        config[CONFIG_PIN_RETRIES_CONTACTLESS] = value;
+        reader.moveNext();
+      }
+
+      // Charset
+      if (reader.match(TAG_PIN_CHARSET)) {
+        byte value = reader.toByte();
+        if (value < PIN_CHARSET_NUMERIC || value > PIN_CHARSET_RAW) {
+          ISOException.throwIt(ISO7816.SW_DATA_INVALID);
+        }
+        config[CONFIG_PIN_CHARSET] = value;
+        reader.moveNext();
+      }
+
+      // History
+      if (reader.match(TAG_PIN_HISTORY)) {
+        byte value = reader.toByte();
+        if (value < (byte) 0 || value > LIMIT_PIN_HISTORY) {
+          ISOException.throwIt(ISO7816.SW_DATA_INVALID);
+        }
+        config[CONFIG_PIN_HISTORY] = value;
+        reader.moveNext();
+      }
+
+      // Rule - Sequence
+      if (reader.match(TAG_PIN_RULE_SEQUENCE)) {
+        byte value = reader.toByte();
+        if (value < (byte) 0 || value > LIMIT_PIN_MAX_LENGTH) {
+          ISOException.throwIt(ISO7816.SW_DATA_INVALID);
+        }
+        config[CONFIG_PIN_RULE_SEQUENCE] = value;
+        reader.moveNext();
+      }
+
+      // Rule - Distinctiveness
+      if (reader.match(TAG_PIN_RULE_DISTINCT)) {
+        byte value = reader.toByte();
+        if (value < (byte) 0 || value > LIMIT_PIN_MAX_LENGTH) {
+          ISOException.throwIt(ISO7816.SW_DATA_INVALID);
+        }
+        config[CONFIG_PIN_RULE_DISTINCT] = value;
+        reader.moveNext();
+      }
+    }
+
+    //
+    // PUK POLICY
+    //
+    if (reader.match(TAG_PUK_POLICY)) {
+
+      // Sanity check for empty constructed tag
+      if (reader.isNull()) {
+        ISOException.throwIt(ISO7816.SW_DATA_INVALID);
+      }
+      reader.moveInto();
+
+      // PUK Enabled
+      if (reader.match(TAG_PUK_ENABLED)) {
+        setBoolean(CONFIG_PUK_ENABLED, reader.toByte());
+        reader.moveNext();
+      }
+
+      // Permit Contactless
+      if (reader.match(TAG_PUK_PERMIT_CONTACTLESS)) {
+        setBoolean(CONFIG_PUK_PERMIT_CONTACTLESS, reader.toByte());
+        reader.moveNext();
+      }
+
+      // Length
+      if (reader.match(TAG_PUK_LENGTH)) {
+        byte value = reader.toByte();
+        if (value < LIMIT_PUK_MIN_LENGTH || value > LIMIT_PUK_MAX_LENGTH) {
+          ISOException.throwIt(ISO7816.SW_DATA_INVALID);
+        }
+        config[CONFIG_PUK_LENGTH] = value;
+        reader.moveNext();
+      }
+
+      // Retries Contact
+      if (reader.match(TAG_PUK_RETRIES_CONTACT)) {
+        byte value = reader.toByte();
+        if (value < (byte) 0 || value > LIMIT_PUK_MAX_RETRIES) {
+          ISOException.throwIt(ISO7816.SW_DATA_INVALID);
+        }
+        config[CONFIG_PUK_RETRIES_CONTACT] = value;
+        reader.moveNext();
+      }
+
+      // Retries Contactless
+      if (reader.match(TAG_PUK_RETRIES_CONTACTLESS)) {
+        byte value = reader.toByte();
+        // Pre-condition - Boundary check
+        if (value < (byte) 0 || value > LIMIT_PUK_MAX_RETRIES) {
+          ISOException.throwIt(ISO7816.SW_DATA_INVALID);
+        }
+        // Pre-condition - Must be less than PUK_RETRIES_CONTACT
+        if (value >= config[CONFIG_PUK_RETRIES_CONTACT]) {
+          ISOException.throwIt(ISO7816.SW_DATA_INVALID);
+        }
+        config[CONFIG_PUK_RETRIES_CONTACTLESS] = value;
+        reader.moveNext();
+      }
+
+      // Updateable
+      if (reader.match(TAG_PUK_RESTRICT_UPDATE)) {
+        setBoolean(CONFIG_PUK_RESTRICT_UPDATE, reader.toByte());
+        reader.moveNext();
+      }
+    }
+
+    //
+    // VCI POLICY
+    //
+    if (reader.match(TAG_VCI_POLICY)) {
+
+      // Sanity check for empty constructed tag
+      if (reader.isNull()) {
+        ISOException.throwIt(ISO7816.SW_DATA_INVALID);
+      }
+      reader.moveInto();
+
+      // Mode
+      if (reader.match(TAG_VCI_MODE)) {
+        // TODO: Validation
+        config[CONFIG_VCI_MODE] = reader.toByte();
+        reader.moveNext();
+      }
+    }
+
+    //
+    // OCC POLICY
+    //
+    if (reader.match(TAG_OCC_POLICY)) {
+
+      // Sanity check for empty constructed tag
+      if (reader.isNull()) {
+        ISOException.throwIt(ISO7816.SW_DATA_INVALID);
+      }
+      reader.moveInto();
+
+      // Mode
+      if (reader.match(TAG_OCC_MODE)) {
+        // TODO: Validation
+        config[CONFIG_OCC_MODE] = reader.toByte();
+        reader.moveNext();
+      }
+    }
+
+    //
+    // OPTIONS
+    //
+    if (reader.match(TAG_OPTIONS)) {
+
+      // Sanity check for empty constructed tag
+      if (reader.isNull()) {
+        ISOException.throwIt(ISO7816.SW_DATA_INVALID);
+      }
+      reader.moveInto();
+
+      // Restrict Contactless - Global
+      if (reader.match(TAG_RESTRICT_CONTACTLESS_GLOBAL)) {
+        setBoolean(OPTION_RESTRICT_CONTACTLESS_GLOBAL, reader.toByte());
+        reader.moveNext();
+      }
+
+      // Restrict Contactless - Admin
+      if (reader.match(TAG_RESTRICT_CONTACTLESS_ADMIN)) {
+        setBoolean(OPTION_RESTRICT_CONTACTLESS_ADMIN, reader.toByte());
+        reader.moveNext();
+      }
+
+      // Restrict Enumeration
+      if (reader.match(TAG_RESTRICT_ENUMERATION)) {
+        setBoolean(OPTION_RESTRICT_ENUMERATION, reader.toByte());
+        reader.moveNext();
+      }
+
+      // Restrict Single Key
+      if (reader.match(TAG_RESTRICT_SINGLE_KEY)) {
+        setBoolean(OPTION_RESTRICT_SINGLE_KEY, reader.toByte());
+        reader.moveNext();
+      }
+
+      // Ignore Contactless ACL
+      if (reader.match(TAG_IGNORE_CONTACTLESS_ACL)) {
+        setBoolean(OPTION_IGNORE_CONTACTLESS_ACL, reader.toByte());
+        reader.moveNext();
+      }
+
+      // Error On Empty Data Object
+      if (reader.match(TAG_READ_EMPTY_DATA_OBJECT)) {
+        setBoolean(OPTION_READ_EMPTY_DATA_OBJECT, reader.toByte());
+        reader.moveNext();
+      }
+
+      // Use RSA CRT
+      if (reader.match(TAG_USE_RSA_CRT)) {
+        setBoolean(OPTION_USE_RSA_CRT, reader.toByte());
+        reader.moveNext();
+      }
+    }
+  }
 }

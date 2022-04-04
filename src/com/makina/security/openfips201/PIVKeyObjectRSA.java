@@ -29,16 +29,12 @@ package com.makina.security.openfips201;
 import javacard.framework.CardRuntimeException;
 import javacard.framework.ISO7816;
 import javacard.framework.ISOException;
-import javacard.security.CryptoException;
 import javacard.security.KeyBuilder;
 import javacard.security.KeyPair;
-import javacard.security.PrivateKey;
-import javacard.security.PublicKey;
 import javacard.security.RSAPrivateKey;
 import javacard.security.RSAPublicKey;
-import javacardx.crypto.Cipher;
 
-public final class PIVKeyObjectRSA extends PIVKeyObjectPKI {
+final class PIVKeyObjectRSA extends PIVKeyObjectPKI {
 
   // RSA Modulus Element
   private static final byte ELEMENT_RSA_N = (byte) 0x81;
@@ -61,29 +57,19 @@ public final class PIVKeyObjectRSA extends PIVKeyObjectPKI {
   private static final byte CONST_TAG_EXPONENT = (byte) 0x82; // RSA - The public exponent
   private static final short CONST_LENGTH_EXPONENT = (short) 3; // RSA - The public exponent length
 
-  // Cipher implementations (static so they are shared with all instances of PIVKeyObjectRSA)
-  private static Cipher cipher = null;
+  // The key values
+  protected RSAPrivateKey privateKey;
+  protected RSAPublicKey publicKey;
 
-  protected PIVKeyObjectRSA(
-      byte id, byte modeContact, byte modeContactless, byte mechanism, byte role, byte attributes) {
-    super(id, modeContact, modeContactless, mechanism, role, attributes);
-
-    // Check if this mechanism is supported
-    if (cipher == null) ISOException.throwIt(ISO7816.SW_FUNC_NOT_SUPPORTED);
-  }
-
-  /*
-   * Allows safe allocation of cryptographic service providers at applet instantiation
-   */
-  public static void createProviders() {
-    if (cipher == null) {
-      try {
-        cipher = Cipher.getInstance(Cipher.ALG_RSA_NOPAD, false);
-      } catch (CryptoException ex) {
-        // We couldn't create this algorithm, the card may not support it!
-        cipher = null;
-      }
-    }
+  PIVKeyObjectRSA(
+      byte id,
+      byte modeContact,
+      byte modeContactless,
+      byte adminKey,
+      byte mechanism,
+      byte role,
+      byte attributes) {
+    super(id, modeContact, modeContactless, adminKey, mechanism, role, attributes);
   }
 
   /**
@@ -103,8 +89,7 @@ public final class PIVKeyObjectRSA extends PIVKeyObjectPKI {
    * @param length the length og the element
    */
   @Override
-  public void updateElement(byte element, byte[] buffer, short offset, short length)
-      throws ISOException {
+  void updateElement(byte element, byte[] buffer, short offset, short length) throws ISOException {
 
     switch (element) {
 
@@ -135,10 +120,11 @@ public final class PIVKeyObjectRSA extends PIVKeyObjectPKI {
   }
 
   /** Clears and reallocates a private key. */
-  protected void allocatePrivate() {
+  private void allocatePrivate() {
     if (privateKey == null) {
       privateKey =
-          (PrivateKey) KeyBuilder.buildKey(KeyBuilder.TYPE_RSA_PRIVATE, getKeyLengthBits(), false);
+          (RSAPrivateKey)
+              KeyBuilder.buildKey(KeyBuilder.TYPE_RSA_PRIVATE, getKeyLengthBits(), false);
     }
   }
 
@@ -146,18 +132,20 @@ public final class PIVKeyObjectRSA extends PIVKeyObjectPKI {
   private void allocatePublic() {
     if (publicKey == null) {
       publicKey =
-          (PublicKey) KeyBuilder.buildKey(KeyBuilder.TYPE_RSA_PUBLIC, getKeyLengthBits(), false);
+          (RSAPublicKey) KeyBuilder.buildKey(KeyBuilder.TYPE_RSA_PUBLIC, getKeyLengthBits(), false);
     }
   }
 
-  /** @return true if the privateKey exists and is initialized. */
+  /**
+   * @return true if the privateKey exists and is initialized.
+   */
   @Override
-  public boolean isInitialised() {
+  boolean isInitialised() {
     return (privateKey != null && privateKey.isInitialized());
   }
 
   @Override
-  public void clear() {
+  void clear() {
     if (publicKey != null) {
       publicKey.clearKey();
       privateKey = null;
@@ -179,7 +167,7 @@ public final class PIVKeyObjectRSA extends PIVKeyObjectPKI {
    */
   private void setPrivateExponent(byte[] buffer, short offset, short length) {
     if (privateKey == null) allocatePrivate();
-    ((RSAPrivateKey) privateKey).setExponent(buffer, offset, length);
+    privateKey.setExponent(buffer, offset, length);
   }
 
   /**
@@ -189,9 +177,9 @@ public final class PIVKeyObjectRSA extends PIVKeyObjectPKI {
    * @param offset The starting offset to write to
    * @param length The length of the exponent to write
    */
-  public void setPublicExponent(byte[] buffer, short offset, short length) {
+  void setPublicExponent(byte[] buffer, short offset, short length) {
     if (publicKey == null) allocatePublic();
-    ((RSAPublicKey) publicKey).setExponent(buffer, offset, length);
+    publicKey.setExponent(buffer, offset, length);
   }
 
   /**
@@ -201,20 +189,19 @@ public final class PIVKeyObjectRSA extends PIVKeyObjectPKI {
    * @param offset The starting offset to write to
    * @param length The length of the modulus to write
    */
-  public void setModulus(byte[] buffer, short offset, short length) {
+  void setModulus(byte[] buffer, short offset, short length) {
     if (length != getKeyLengthBytes()) ISOException.throwIt(ISO7816.SW_WRONG_LENGTH);
 
     if (privateKey == null) allocatePrivate();
-    ((RSAPrivateKey) privateKey).setModulus(buffer, offset, length);
+    privateKey.setModulus(buffer, offset, length);
 
     if (publicKey == null) allocatePublic();
-    ((RSAPublicKey) publicKey).setModulus(buffer, offset, length);
+    publicKey.setModulus(buffer, offset, length);
   }
 
   /**
    * Signs the passed precomputed hash
    *
-   * @param csp the csp to do the signing.
    * @param inBuffer contains the precomputed hash
    * @param inOffset the location of the first byte of the hash
    * @param inLength the length og the computed hash
@@ -223,49 +210,25 @@ public final class PIVKeyObjectRSA extends PIVKeyObjectPKI {
    * @return the length of the signature
    */
   @Override
-  public short sign(
-      byte[] inBuffer, short inOffset, short inLength, byte[] outBuffer, short outOffset)
+  short sign(byte[] inBuffer, short inOffset, short inLength, byte[] outBuffer, short outOffset)
       throws ISOException {
-    if (inLength != getBlockLength()) {
-      ISOException.throwIt(ISO7816.SW_WRONG_LENGTH);
-    }
-
-    //
-    // IMPLEMENTATION NOTE:
-    // If you think the operation below looks insane, that's OK. This requires explanation.
-    // The PIV standard implements RSA digital signatures in a way that does not force you
-    // to choose a specific padding scheme (though they recomend PKCS#1.5 or OAEP). This means
-    // the client does not send the data to be signed, or even just the hash value. Instead,
-    // it sends a fully-formatted block including the hash and all padding.
-    //
-    // The problem here is that the Javacard Signature object can only sign in two ways.
-    // 1) Pass all data to update() and/or sign() which generates the hash, pads and encrypts.
-    // 2) Pass the hash to signPreComputedHash() which validates the length, pads and encrypts.
-    //
-    // Neither of the above is suited to taking a fully-formed block, so we are left with the
-    // only remaining option, which is to perform a private key encryption operation, which makes
-    // us feel awkward and wrong.
-    //
-    // Yep, that's it.
-    //
-    cipher.init(privateKey, Cipher.MODE_ENCRYPT);
-    return cipher.doFinal(inBuffer, inOffset, inLength, outBuffer, outOffset);
+    return PIVCrypto.doSign(privateKey, inBuffer, inOffset, inLength, outBuffer, outOffset);
   }
 
   /* Implements RSA Key Transport, which is just a private decrypt operation */
   @Override
-  public short keyAgreement(
+  short keyAgreement(
       byte[] inBuffer, short inOffset, short inLength, byte[] outBuffer, short outOffset) {
 
     if (inLength != getBlockLength()) {
       ISOException.throwIt(ISO7816.SW_WRONG_LENGTH);
     }
-    cipher.init(privateKey, Cipher.MODE_DECRYPT);
-    return cipher.doFinal(inBuffer, inOffset, inLength, outBuffer, outOffset);
+
+    return PIVCrypto.doKeyTransport(privateKey, inBuffer, inOffset, inLength, outBuffer, outOffset);
   }
 
   @Override
-  public short generate(byte[] outBuffer, short outOffset) throws CardRuntimeException {
+  short generate(byte[] outBuffer, short outOffset) throws CardRuntimeException {
 
     KeyPair keyPair;
     try {
@@ -297,7 +260,7 @@ public final class PIVKeyObjectRSA extends PIVKeyObjectPKI {
 
       // The modulus data must be written manually because of how RSAPublicKey works
       outOffset = writer.getOffset();
-      outOffset += ((RSAPublicKey) publicKey).getModulus(outBuffer, outOffset);
+      outOffset += (publicKey).getModulus(outBuffer, outOffset);
       writer.setOffset(outOffset); // Move the current position forward
 
       // Exponent
@@ -305,7 +268,7 @@ public final class PIVKeyObjectRSA extends PIVKeyObjectPKI {
       writer.writeLength(CONST_LENGTH_EXPONENT);
 
       outOffset = writer.getOffset();
-      outOffset += ((RSAPublicKey) publicKey).getExponent(outBuffer, outOffset);
+      outOffset += (publicKey).getExponent(outBuffer, outOffset);
       writer.setOffset(outOffset); // Move the current position forward
 
       // Done, return the response length
@@ -322,16 +285,20 @@ public final class PIVKeyObjectRSA extends PIVKeyObjectPKI {
     }
   }
 
-  /** @return the block length of the key. */
+  /**
+   * @return the block length of the key.
+   */
   @Override
-  public short getBlockLength() {
+  short getBlockLength() {
     // RSA blocks are the same length as their keys
     return getKeyLengthBytes();
   }
 
-  /** @return The length, in bytes, of the key */
+  /**
+   * @return The length, in bytes, of the key
+   */
   @Override
-  public short getKeyLengthBits() throws ISOException {
+  short getKeyLengthBits() throws ISOException {
     switch (getMechanism()) {
       case PIV.ID_ALG_RSA_1024:
         return KeyBuilder.LENGTH_RSA_1024;

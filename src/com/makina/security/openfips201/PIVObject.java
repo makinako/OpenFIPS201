@@ -29,42 +29,76 @@ package com.makina.security.openfips201;
 import javacard.framework.JCSystem;
 
 /** Provides common functionality for all PIV objects (data and security) */
-public abstract class PIVObject {
+abstract class PIVObject {
 
   //
   // Access Rule for Read/Usage (SP800-73-4 3.5)
   // NOTES:
   // - This is a control flag bitmap, so multiple access rules can be combined.
-  // - NEVER and ALWAYS are special values, not considered part of the bitmap
-  // - The VCI and OCC options are out-of-scope in this implementation.
+  // - NEVER and ALWAYS are special values, not considered part of the bitmap and cannot be
+  //   combined with any other values.
 
   // The object may be read / key may be used under no circumstances
-  public static final byte ACCESS_MODE_NEVER = (byte) 0x00;
+  static final byte ACCESS_MODE_NEVER = (byte) 0x00;
 
   // The object may be accessed only after PIN authentication
-  public static final byte ACCESS_MODE_PIN = (byte) 0x01;
+  static final byte ACCESS_MODE_PIN = (byte) 0x01;
 
   // The object may be accessed only IMMEDIATELY after PIN authentication
-  public static final byte ACCESS_MODE_PIN_ALWAYS = (byte) 0x02;
+  static final byte ACCESS_MODE_PIN_ALWAYS = (byte) 0x02;
+
+  // The object may be accessed after OCC authentication
+  static final byte ACCESS_MODE_OCC = (byte) 0x04;
+
+  // The object may be managed to by a user who has satisfied the access conditions
+  // NOTES:
+  // - For data objects, this is used by PUT DATA to permit writing
+  // - For key objects, this permits GENERATE ASSYMMETRIC KEYPAIR only.
+  static final byte ACCESS_MODE_USER_ADMIN = (byte) 0x10;
 
   // The object may be accessed ALWAYS
-  public static final byte ACCESS_MODE_ALWAYS = (byte) 0x7F; // Special value rather than a bitmap
+  static final byte ACCESS_MODE_ALWAYS = (byte) 0x7F; // Special value rather than a bitmap
+
+  // The default administrative key reference
+  static final byte DEFAULT_ADMIN_KEY = (byte) 0x9B;
+
   protected static final short HEADER_ID = (short) 0;
   protected static final short HEADER_MODE_CONTACT = (short) 1;
   protected static final short HEADER_MODE_CONTACTLESS = (short) 2;
+  protected static final short HEADER_ADMIN_KEY = (short) 3;
+
   // We allocate some spare header space for derived attributes
+  // TODO: Could improve this header creation by defining length in derived classes.
   protected static final short LENGTH_HEADER = (short) 8;
+
   // Linked list element
-  public PIVObject nextObject;
+  // TODO: This needs to be abstracted out of the public eye
+  PIVObject nextObject;
   protected final byte[] header;
 
-  protected PIVObject(byte id, byte modeContact, byte modeContactless) {
+  /**
+   * Constructs an instance of the base PIVObject object.
+   *
+   * @param id The object identifier
+   * @param modeContact The access conditions for the contact interface.
+   * @param modeContactless The access conditions for the contact interface.
+   * @param adminKey The access conditions for the contact interface.
+   * @param extendedHeaders The number of additional headers to allocate (used by derived classes)
+   */
+  protected PIVObject(
+      byte id, byte modeContact, byte modeContactless, byte adminKey, short extendedHeaders) {
 
-    header = new byte[LENGTH_HEADER];
+    header = new byte[(short) (LENGTH_HEADER + extendedHeaders)];
+
+    // If the administrative key is not specified, use the default (9B) key.
+    if (adminKey == (byte) 0) {
+      adminKey = PIVObject.DEFAULT_ADMIN_KEY;
+    }
 
     header[HEADER_ID] = id;
     header[HEADER_MODE_CONTACT] = modeContact;
     header[HEADER_MODE_CONTACTLESS] = modeContactless;
+    header[HEADER_ADMIN_KEY] = adminKey;
   }
 
   /**
@@ -73,7 +107,7 @@ public abstract class PIVObject {
    * @param id The id to search for
    * @return True if the object matches
    */
-  public boolean match(byte id) {
+  boolean match(byte id) {
     return (header[HEADER_ID] == id);
   }
 
@@ -82,7 +116,7 @@ public abstract class PIVObject {
    *
    * @return The object identifier
    */
-  public byte getId() {
+  byte getId() {
     return header[HEADER_ID];
   }
 
@@ -91,7 +125,7 @@ public abstract class PIVObject {
    *
    * @return The access mode for the contact interface
    */
-  public byte getModeContact() {
+  byte getModeContact() {
     return header[HEADER_MODE_CONTACT];
   }
 
@@ -100,8 +134,12 @@ public abstract class PIVObject {
    *
    * @return The access mode for the contactless interface
    */
-  public byte getModeContactless() {
+  byte getModeContactless() {
     return header[HEADER_MODE_CONTACTLESS];
+  }
+
+  byte getAdminKey() {
+    return header[HEADER_ADMIN_KEY];
   }
 
   /** Requests object deletion if supported by the card. */
@@ -118,10 +156,10 @@ public abstract class PIVObject {
    * <p>Note: If the card does not support ObjectDeletion, repeatedly calling this method may
    * exhaust NV RAM.
    */
-  public abstract void clear();
+  abstract void clear();
 
   /**
    * @return returns true if the object has been initialized
    */
-  public abstract boolean isInitialised();
+  abstract boolean isInitialised();
 }

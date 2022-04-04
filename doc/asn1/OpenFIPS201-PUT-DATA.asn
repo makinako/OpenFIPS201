@@ -1,0 +1,262 @@
+--<OSS.PDU OpenFIPS201_PUT_DATA_Schema.PutDataRequest>--
+OpenFIPS201_PUT_DATA_Schema DEFINITIONS IMPLICIT TAGS ::= 
+BEGIN
+
+PutDataRequest ::= CHOICE {
+	legacyRequest		PutDataLegacyRequest,
+	createObjectRequest	[APPLICATION 4] PutDataCreateObjectRequest,
+	deleteObjectRequest	[APPLICATION 5] PutDataDeleteObjectRequest,
+	createKeyRequest 	[APPLICATION 6] PutDataCreateKeyRequest,
+	deleteKeyRequest 	[APPLICATION 7] PutDataDeleteKeyRequest,
+	configRequest		[APPLICATION 8] PutDataUpdateConfigRequest
+}
+
+PutDataBulkRequest ::= [APPLICATION 10] SEQUENCE OF PutDataRequest
+
+PutDataLegacyRequest ::= SEQUENCE {
+	operation		[10] LegacyOperation,
+	id				[11] OCTET STRING (SIZE(1..3)),
+	modeContact		[12] AccessMode,
+	modeContactless	[13] AccessMode,
+
+    -- Required for Keys only
+	keyMechanism	[14] KeyMechanism OPTIONAL,
+	keyRole			[15] KeyRole OPTIONAL,
+	keyAttribute	[16] OCTET STRING (SIZE(1)) OPTIONAL
+}
+
+PutDataCreateObjectRequest ::= SEQUENCE {
+	id				[11] OCTET STRING (SIZE(1..3)),
+
+	modeContact		[12] AccessMode,
+	modeContactless	[13] AccessMode,
+	adminKey		[17] OCTET STRING (SIZE(1)) OPTIONAL
+}
+
+PutDataDeleteObjectRequest ::= SEQUENCE {
+	id				[11] OCTET STRING (SIZE(1..3))
+}
+
+PutDataCreateKeyRequest ::= SEQUENCE {
+	id				[11] OCTET STRING (SIZE(1)),
+
+	modeContact		[12] AccessMode,
+	modeContactless	[13] AccessMode,
+	keyAdmin		[17] OCTET STRING (SIZE(1)) OPTIONAL,
+
+	keyMechanism	[14] KeyMechanism,
+	keyRole			[15] KeyRole,
+	keyAttribute	[16] OCTET STRING (SIZE(1))
+}
+
+PutDataDeleteKeyRequest ::= SEQUENCE {
+	id				[11] OCTET STRING (SIZE(1)),
+	keyMechanism	[14] KeyMechanism OPTIONAL
+}
+
+PutDataUpdateConfigRequest ::= SEQUENCE {
+	pinPolicy			[0] PinPolicyParameter OPTIONAL,
+	pukPolicy 			[1] PukPolicyParameter OPTIONAL,
+	vciPolicy 			[2] VciPolicyParameter OPTIONAL,
+	occPolicy 			[3] OccPolicyParameter OPTIONAL,
+	options				[4] OptionsParameter OPTIONAL
+}
+
+LegacyOperation ::= ENUMERATED {
+	undefined	(0),		
+	dataObject	(1),
+	key			(2)
+}  
+
+AccessMode ::= ENUMERATED {
+	-- This object may never be accessed (typically used for restricting contactless)
+	never		(0),
+
+	-- PIN verification can be used to access this object
+	pin			(1),  
+	
+	-- PIN verification must immediately precede every access to this object
+	pinAlways	(2),
+
+	-- Biometric On-Card Comparison may be used to access this object
+   	occ			(4),  
+
+    -- The object may be managed to by a cardholder who has satisfied the access conditions
+	userAdmin	(16),
+	
+	-- This object may be accessed without any verification (free access).
+	always		(127)
+}
+
+KeyRole ::= ENUMERATED {
+
+	undefined	(0),
+
+	-- This key can be used for card/host authentication
+	--   SYM: Supported for all types
+	--   RSA: Not supported (RSA authentication is just signing)
+	--   ECC: Not supported (ECC authentication is just signing)
+	--    SM: Not supported
+	authenticate	(1),
+	
+	-- This key can be used for key establishment schemes
+	--   SYM: Not supported
+	--   RSA: RSA Key Management (decryption)
+	--   ECC: ECDH
+	--   SM: Opacity ZKM
+	keyEstablish	(2),
+
+	-- This key can be used for digital signature generation
+	--   SYM: Not supported (Could be a CMAC mechanism in the future?)
+	--   RSA: RSA Digital Signature
+	--   ECC: ECDSA
+	--    SM: Not supported
+	sign		(4),
+
+   	-- RFU
+	verify		(8),
+	
+	-- RFU
+	encrypt		(16),
+	
+	-- RFU
+	decrypt		(32)
+}
+  
+KeyAttribute ::= ENUMERATED {
+
+	-- No special attributes are defined
+	none			(0),
+
+   	-- This symmetric key permits INTERNAL authentication (encrypting a challenge).
+   	-- NOTE: Don't ever use this as it opens up oracle attacks! See SECURITY.MD
+   	-- SYM: Supported
+   	-- RSA: Not supported
+   	-- ECC: Not supported
+	permitInternal	(2),
+
+   	-- This symmetric key permits EXTERNAL authentication (host authentication).
+	-- NOTE: Using this method does not provide any authentication of the card,
+	--       so it is recommended to use MUTUAL authentication only.
+   	--   SYM: Supported
+   	--   RSA: Not supported
+   	--   ECC: Not supported
+	permitExternal	(4),
+
+   	-- This symmetric key permits MUTUAL authentication (host authentication).
+   	--   SYM: Supported
+   	--   RSA: Not supported
+  	--   ECC: Not supported
+	permitMutual	(8),
+	
+	-- Permits this key to be imported (as opposed to generated)
+	-- Applies To: All keys (this MUST be set for symmetric keys)
+	importable	(16)
+}
+
+KeyMechanism ::= ENUMERATED {
+	undefined (0),
+    tdea192 (3),
+	rsa1024 (6),
+	rsa2048 (7),
+	aes128 (8),
+	aes192 (10),
+	aes256 (12),
+	ecc256 (17),
+	ecc384 (20),
+	cs2 (39),
+	cs7 (46)
+}
+
+PinCharSet ::= ENUMERATED {
+
+	-- Only numeric digits (30h to 39h) permitted (NIST Default)
+	numeric				(0),
+
+	-- All printable alphanumeric characters permitted, case sensitive
+	alphaCaseVariant 	(1),
+
+	-- All printable alphanumeric characters permitted, case insensitive
+	alphaCaseInvariant	(2),
+
+	-- All binary values permitted (00 to FFh)
+	raw					(3)
+
+}
+
+PinPolicyParameter ::= SEQUENCE {
+
+	-- PIN verification is enabled using the local (application) PIN
+	enableLocal				[0] BOOLEAN OPTIONAL,	
+
+	-- PIN verification is enabled using the global (card) PIN only
+	enableGlobal			[1] BOOLEAN OPTIONAL,
+
+	-- The discovery object will indicate a preference for the global PIN, if enabled
+	preferGlobal			[2] BOOLEAN OPTIONAL,
+
+	-- PIN verification may occur over the contactless interface
+	permitContactless 		[3] BOOLEAN OPTIONAL,
+	minLength				[4] INTEGER (4..32) OPTIONAL,
+	maxLength				[5] INTEGER (4..32) OPTIONAL,
+	maxRetriesContact 		[6] INTEGER (1..127) OPTIONAL,
+	maxRetriesContactless 	[7] INTEGER (1..127) OPTIONAL,	
+	charset					[8] PinCharSet OPTIONAL,
+	history					[9] INTEGER (0..12) OPTIONAL,
+	ruleSequence			[10] INTEGER (0..32) OPTIONAL,
+	ruleDistinct			[11] INTEGER (0..32) OPTIONAL
+}
+
+PukPolicyParameter ::= SEQUENCE {
+	enabled				[0] BOOLEAN OPTIONAL,
+	permitContactless 	[1] BOOLEAN OPTIONAL,
+	length				[2]	INTEGER (4..32) OPTIONAL,
+	retriesContact		[3] INTEGER (1..127) OPTIONAL,
+	retriesContactless	[4] INTEGER (1..127) OPTIONAL,
+	restrictUpdate		[5] BOOLEAN OPTIONAL
+}
+
+VciMode ::= ENUMERATED {
+	disabled (0),
+	enabled (1),
+	requirePairing (2)
+}
+
+OccMode ::= ENUMERATED {
+	disabled (0),
+	enabled (1)
+}
+
+VciPolicyParameter ::= SEQUENCE {
+	mode				[0] VciMode OPTIONAL
+}
+
+OccPolicyParameter ::= SEQUENCE {
+	mode				[0] OccMode OPTIONAL
+}
+
+OptionsParameter ::= SEQUENCE {
+
+	-- If enabled, the PIV applet will not be selectable over the contactless interface.
+	restrictContactlessGlobal	[0] BOOLEAN OPTIONAL,
+
+	-- If enabled, the PIV applet will not permit secure channel administration over the 
+	-- contactless interface.
+	restrictContactlessAdmin	[1] BOOLEAN OPTIONAL,
+
+	-- If enabled, enumeration of data objects or keys will not be permitted.
+	restrictEnumeration			[2] BOOLEAN OPTIONAL,
+
+	-- If enabled, only one record for each key id may be generated
+	restrictSingleKey 			[3] BOOLEAN OPTIONAL,
+
+	ignoreContactlessAcl		[4] BOOLEAN OPTIONAL,
+
+	readEmptyDataObject 		[5] BOOLEAN OPTIONAL,
+
+	-- If enabled, any RSA keys generated implement the Chinese Remainder Theorem variant
+	useRSACRT 					[6] BOOLEAN OPTIONAL
+}
+
+
+END

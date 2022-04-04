@@ -32,30 +32,35 @@ import javacard.framework.JCSystem;
 import javacard.framework.Util;
 
 /** Provides functionality for PIV data objects */
-public final class PIVDataObject extends PIVObject {
+final class PIVDataObject extends PIVObject {
 
-  // Note:  Do NOT use content.length to determine the number of bytes in the content array
-  // rather use getLength().
-  public byte[] content;
+  // NOTES:
+  // - We deliberately make this public to provide access via ChainBuffer, etc. It isn't good OO
+  //   but it's Java Card so we forgive ourselves.
+  // - Do NOT use content.length to determine the number of bytes in the content array rather use
+  //   getLength().
+  byte[] content;
 
   // Indicates the number of bytes currently allocated.  In the case where an object is
   // reallocated with a smaller size this will be less than content.length
   private short bytesAllocated;
 
-  public PIVDataObject(byte id, byte modeContact, byte modeContactless) {
-    super(id, modeContact, modeContactless);
+  PIVDataObject(byte id, byte modeContact, byte modeContactless, byte adminKey) {
+    super(id, modeContact, modeContactless, adminKey, (byte) 0);
   }
 
   /**
    * @return the number of bytes allocated in content which may be less than content.length
    */
-  public short getLength() {
+  short getLength() {
     return bytesAllocated;
   }
 
-  public void allocate(short length) throws ISOException {
+  void allocate(short length) throws ISOException {
 
-    Assert.isTrue(length > 0);
+    if (length <= (short) 0) {
+      ISOException.throwIt(ISO7816.SW_WRONG_DATA);
+    }
 
     if (content == null) {
       content = new byte[length];
@@ -78,14 +83,14 @@ public final class PIVDataObject extends PIVObject {
    *
    * @return True if the object is initialised
    */
-  public boolean isInitialised() {
+  boolean isInitialised() {
     return (content != null);
   }
 
   /*
    * Wipes all data from the current object
    */
-  public void clear() {
+  void clear() {
     if (content == null) return;
 
     PIVSecurityProvider.zeroise(content, (short) 0, (short) content.length);

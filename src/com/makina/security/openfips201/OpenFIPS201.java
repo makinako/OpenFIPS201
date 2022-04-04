@@ -37,7 +37,7 @@ import org.globalplatform.SecureChannel;
  * The main applet class, which is responsible for handling APDU's and dispatching them to the PIV
  * provider.
  */
-public final class OpenFIPS201 extends Applet {
+final class OpenFIPS201 extends Applet {
   /*
    * PERSISTENT applet variables (EEPROM)
    */
@@ -70,16 +70,11 @@ public final class OpenFIPS201 extends Applet {
   //
   // Persistent state definitions
   //
-  private final ChainBuffer chainBuffer;
-  private SecureChannel secureChannel;
 
   public OpenFIPS201() {
 
-    // Create our chain buffer handler
-    chainBuffer = new ChainBuffer();
-
     // Create our PIV provider
-    piv = new PIV(chainBuffer);
+    piv = new PIV();
   }
 
   public static void install(byte[] bArray, short bOffset, byte bLength) {
@@ -87,10 +82,30 @@ public final class OpenFIPS201 extends Applet {
   }
 
   @Override
+  public boolean select() {
+    //
+    // If we are not permitted to use the applet over contactless, fail at selection.
+    // This means that the rest of the applet can happily assume we are permitted.
+    //
+    byte media = (byte) (APDU.getProtocol() & APDU.PROTOCOL_MEDIA_MASK);
+    boolean contactless =
+        (media == APDU.PROTOCOL_MEDIA_CONTACTLESS_TYPE_A)
+            || (media == APDU.PROTOCOL_MEDIA_CONTACTLESS_TYPE_B);
+
+    // Update the interface
+    piv.setIsContactless(contactless);
+
+    // Check if we are permitted to be selected over the current interface. If not, decline to be
+    // selected, which means the only way to recover this is to be used over a contact interface.
+    return piv.isInterfacePermitted();
+  }
+
+  @Override
   public void deselect() {
 
     // Reset any security domain session (see resetSecurity() documentation)
-    if (secureChannel != null) secureChannel.resetSecurity();
+    SecureChannel secureChannel = GPSystem.getSecureChannel();
+    secureChannel.resetSecurity();
 
     //
     // The PIV applet specification defines rules for how to manage security conditions when
@@ -117,68 +132,64 @@ public final class OpenFIPS201 extends Applet {
 
   @Override
   public void process(APDU apdu) {
+
+    //
+    // Handle incoming APDUs
+    //
+
+    final byte[] buffer = apdu.getBuffer();
+
     if (selectingApplet()) {
       processPIV_SELECT(apdu);
       return;
     }
 
-    // Get a reference to the GlobalPlatform SecureChannel (not allowed to do this
-    // in the constructor)
-    if (secureChannel == null) {
-      secureChannel = GPSystem.getSecureChannel();
-    }
-
-    //
-    // Handle incoming APDUs
-    //
-    // Process any commands that are wrapped by a GlobalPlatform Secure Channel
-    byte media = (byte) (APDU.getProtocol() & APDU.PROTOCOL_MEDIA_MASK);
-
-    final boolean contactless =
-        (media == APDU.PROTOCOL_MEDIA_CONTACTLESS_TYPE_A
-            || media == APDU.PROTOCOL_MEDIA_CONTACTLESS_TYPE_B);
-
-    final byte[] buffer = apdu.getBuffer();
-
-    // We pass the APDU here because this will send data on our behalf
-    chainBuffer.processOutgoing(apdu);
-
-    // Validate the CLA
-    if (!apdu.isISOInterindustryCLA()) {
-      switch (buffer[ISO7816.OFFSET_INS]) {
-        case INS_GP_INITIALIZE_UPDATE:
-          secureChannel.resetSecurity();
-          // Intentional fall through
-        case INS_GP_EXTERNAL_AUTHENTICATE:
-          if (Config.FEATURE_RESTRICT_SCP_TO_CONTACT && contactless) {
-            ISOException.throwIt(ISO7816.SW_SECURITY_STATUS_NOT_SATISFIED);
-          }
-          processGP_SECURECHANNEL(apdu);
-          break;
-        default:
-          ISOException.throwIt(ISO7816.SW_CLA_NOT_SUPPORTED);
-      }
+    // SPECIAL CASE 1 - GET RESPONSE
+    // We handle the GET RESPONSE command differently because it is the only ISO 7816 Case 1 / 3
+    // command this applet supports and we don't care about secure channel processing.
+    if (buffer[ISO7816.OFFSET_INS] == INS_GP_GET_RESPONSE) {
+      piv.processOutgoing(apdu);
       return;
     }
+    // TODO: Decide if this should go back to being called every time
+    // The implication is that if a caller does this:
+    // - GET DATA (big object)
+    // - SOME OTHER COMMAND
+    // - GET RESPONSE
+    // ... in some cases it will continue the original GET DATA.
 
+    //
+    // We can now safely call setIncomingAndReceive because all other expected commands are
+    // either CASE 2 or 4 (command data present).
+    //
     short length = apdu.setIncomingAndReceive();
-    boolean isSecureChannel;
-    if ((secureChannel.getSecurityLevel() & SC_MASK) == SC_MASK) {
 
-      // Update the APDU, including the header bytes
-      length = secureChannel.unwrap(buffer, (short) 0, (short) (ISO7816.OFFSET_CDATA + length));
-      length -= ISO7816.OFFSET_CDATA; // Remove the header length
+    //
+    // Process GlobalPlatform Secure Channel unwrapping if relevant to this command
+    // NOTE:
+    // We only consider the channel to be secure if ALL these conditions are true:
+    // 1) We have a previously established secure channel
+    // 2) The applet has not been deselected
+    // 3) The current command indicates it is transmitting a SCP protected command
+    // 4) The command unwrap method successfully completed
 
-      isSecureChannel = true;
-    } else {
-      isSecureChannel = false;
+    // Always default to false for secure channel until proven otherwise
+    piv.setIsSecureChannel(false);
+
+    if (apdu.isSecureMessagingCLA()) {
+      SecureChannel secureChannel = GPSystem.getSecureChannel();
+      if ((secureChannel.getSecurityLevel() & SC_MASK) == SC_MASK) {
+        // Validate and unwrap the APDU, including the header bytes
+        length += ISO7816.OFFSET_CDATA; // Add the header length
+        length = secureChannel.unwrap(buffer, (short) 0, length);
+        length -= ISO7816.OFFSET_CDATA; // Remove the header length
+        piv.setIsSecureChannel(true);
+      }
     }
-
-    // Notify PIV of any updated applet security conditions
-    piv.updateSecurityStatus(contactless, isSecureChannel);
 
     //
     // Process any outstanding chain requests
+    //
     // NOTES:
     // - If there is an outstanding chain request to process, this method will throw an ISOException
     //	 (including SW_NO_ERROR) and no further processing will occur.
@@ -186,46 +197,53 @@ public final class OpenFIPS201 extends Applet {
     //   prevent a downgrade attack where the attacker waits for a sensitive large-command to be
     //   executed and then intercepts the session and cancels the secure channel (thus removing
     //   session encryption).
+    // - TODO: Make sure that if we are supposed to be receiving this data under SCP, that it is
+    //   	   definitely still set.
 
     // We pass the byte array, offset and length here because the previous call to unwrap() may have
     // altered the length
-    chainBuffer.processIncomingObject(buffer, apdu.getOffsetCdata(), length);
+    piv.processIncomingObject(buffer, apdu.getOffsetCdata(), length);
 
     //
     // Normal APDU processing
     //
+    // TODO: Re-introduce CLA checking
 
-    // Call the appropriate process method based on the INS
     switch (buffer[ISO7816.OFFSET_INS]) {
-      case INS_GP_GET_RESPONSE:
-        chainBuffer.processOutgoing(apdu);
+      case INS_GP_INITIALIZE_UPDATE: // Case 4
+        processGP_SECURECHANNEL(apdu, true);
         break;
 
-      case INS_PIV_SELECT:
+      case INS_GP_EXTERNAL_AUTHENTICATE: // Case 4
+        processGP_SECURECHANNEL(apdu, false);
+        break;
+
+        // Application Commands
+      case INS_PIV_SELECT: // Case 4
         processPIV_SELECT(apdu);
         break;
 
-      case INS_PIV_GET_DATA:
+      case INS_PIV_GET_DATA: // Case 4
         processPIV_GET_DATA(apdu);
         break;
 
-      case INS_PIV_VERIFY:
+      case INS_PIV_VERIFY: // Case 2
         processPIV_VERIFY(apdu);
         break;
 
-      case INS_PIV_CHANGE_REFERENCE_DATA:
+      case INS_PIV_CHANGE_REFERENCE_DATA: // Case 2
         processPIV_CHANGE_REFERENCE_DATA(apdu);
         break;
 
-      case INS_PIV_RESET_RETRY_COUNTER:
+      case INS_PIV_RESET_RETRY_COUNTER: // Case 2
         processPIV_RESET_RETRY_COUNTER(apdu);
         break;
 
-      case INS_PIV_GENERAL_AUTHENTICATE:
+      case INS_PIV_GENERAL_AUTHENTICATE: // Case 4
         processPIV_GENERAL_AUTHENTICATE(apdu);
         break;
 
-      case INS_PIV_PUT_DATA:
+      case INS_PIV_PUT_DATA: // Case 2
         processPIV_PUT_DATA(apdu);
         break;
 
@@ -238,29 +256,32 @@ public final class OpenFIPS201 extends Applet {
     }
   }
 
-  /**************************************************************************
-   * ADMINISTRATIVE METHODS
-   *
-   * These methods are NOT a part of ISO-25185, but rather they are required
-   * for applet and data/key management.
-   **************************************************************************/
-
   /**
    * Processes the GlobalPlatform Secure Channel Protocol (SCP) authentication mechanisms
    *
    * @param apdu The APDU to process.
+   * @param reset If true, reset the secure channel
    */
-  private void processGP_SECURECHANNEL(APDU apdu) {
+  private void processGP_SECURECHANNEL(APDU apdu, boolean reset) {
 
     /*
      * PRE-CONDITIONS
      */
 
-    // None
+    // PRE-CONDITION 1 - Secure Channel access must be permitted on the current interface
+    if (!piv.isInterfacePermittedForAdmin()) {
+      ISOException.throwIt(ISO7816.SW_SECURITY_STATUS_NOT_SATISFIED);
+    }
 
     /*
      * EXECUTION STEPS
      */
+
+    SecureChannel secureChannel = GPSystem.getSecureChannel();
+
+    if (reset) {
+      secureChannel.resetSecurity();
+    }
 
     // STEP 1 - Call the PIV 'SELECT' command
     short length = secureChannel.processSecurity(apdu);
@@ -277,13 +298,13 @@ public final class OpenFIPS201 extends Applet {
   private void processPIV_SELECT(APDU apdu) {
 
     byte[] buffer = apdu.getBuffer();
-    short length = (short) (buffer[ISO7816.OFFSET_LC] & 0xFF);
     short ne = apdu.setOutgoing();
 
     /*
      * PRE-CONDITIONS
      */
 
+    // PRE-CONDITION 1 - This must be called only when the applet is selected or re-selected
     if (!selectingApplet()) {
       ISOException.throwIt(ISO7816.SW_FILE_NOT_FOUND);
     }
@@ -293,7 +314,7 @@ public final class OpenFIPS201 extends Applet {
      */
 
     // STEP 1 - Call the PIV 'SELECT' command in all cases to handle the PIV SELECT rules
-    length = piv.select(buffer, (short) 0);
+    short length = piv.select(buffer, (short) 0);
 
     // STEP 2 - Check the ne value
     if (ne < length) {
@@ -352,7 +373,7 @@ public final class OpenFIPS201 extends Applet {
     //		 to a data object to write to the client.
 
     // STEP 2 - Process the first frame of the chainBuffer for this response
-    chainBuffer.processOutgoing(apdu);
+    piv.processOutgoing(apdu);
   }
 
   /**
@@ -373,12 +394,17 @@ public final class OpenFIPS201 extends Applet {
      * PRE-CONDITIONS
      */
 
-    // PRE-CONDITION 1 - The P1 value must be equal to the constant CONST_P1
+    // PRE-CONDITION 1 - Administrative access must be permitted on the current interface
+    if (!piv.isInterfacePermittedForAdmin()) {
+      ISOException.throwIt(ISO7816.SW_SECURITY_STATUS_NOT_SATISFIED);
+    }
+
+    // PRE-CONDITION 2 - The P1 value must be equal to the constant CONST_P1
     if (buffer[ISO7816.OFFSET_P1] != CONST_P1) {
       ISOException.throwIt(ISO7816.SW_INCORRECT_P1P2);
     }
 
-    // PRE-CONDITION 2 - The P2 value must be equal to the constant CONST_P2 or CONST_P2_ADMIN
+    // PRE-CONDITION 3 - The P2 value must be equal to the constant CONST_P2 or CONST_P2_ADMIN
     boolean admin = false;
 
     if (buffer[ISO7816.OFFSET_P2] == CONST_P2_ADMIN) {
@@ -470,7 +496,6 @@ public final class OpenFIPS201 extends Applet {
 
     final byte CONST_P1 = (byte) 0x00;
     final byte CONST_P1_ADMIN = (byte) 0xFF;
-    final byte CONST_LC = (byte) 0x10;
 
     byte[] buffer = apdu.getBuffer();
     short length = (short) (buffer[ISO7816.OFFSET_LC] & 0xFF);
@@ -482,9 +507,9 @@ public final class OpenFIPS201 extends Applet {
     // PRE-CONDITION 1 - The P2 value must be set to one of the standard PIN references
     // Either: '00' (Global PIN), '80' (PIV APP PIN) or '81' (PUK)
     boolean isStandard =
-        (buffer[ISO7816.OFFSET_P2] == PIV.ID_KEY_GLOBAL_PIN
-            || buffer[ISO7816.OFFSET_P2] == PIV.ID_KEY_PIN
-            || buffer[ISO7816.OFFSET_P2] == PIV.ID_KEY_PUK);
+        (buffer[ISO7816.OFFSET_P2] == PIV.ID_CVM_GLOBAL_PIN
+            || buffer[ISO7816.OFFSET_P2] == PIV.ID_CVM_LOCAL_PIN
+            || buffer[ISO7816.OFFSET_P2] == PIV.ID_CVM_PUK);
 
     // PRE-CONDITION 2 - If the P2 value is set to one of the standard PIN references but the P1
     // value is set to CONST_P1_ADMIN, we consider this an administrative command for the purposes
@@ -497,12 +522,6 @@ public final class OpenFIPS201 extends Applet {
     // must be equal to the constant CONST_P1
     if (isStandard && buffer[ISO7816.OFFSET_P1] != CONST_P1) {
       ISOException.throwIt(ISO7816.SW_INCORRECT_P1P2);
-    }
-
-    // PRE-CONDITION 4 - If the P2 value is set to one of the standard PIN references, the LC
-    // (length) value must be equal to the constant CONST_LC
-    if (isStandard && length != CONST_LC) {
-      ISOException.throwIt(ISO7816.SW_WRONG_DATA);
     }
 
     /*
@@ -578,7 +597,7 @@ public final class OpenFIPS201 extends Applet {
     length = piv.generalAuthenticate(buffer, ISO7816.OFFSET_CDATA, length);
 
     // STEP 2 - Process the first frame of the chainBuffer for this response, if any
-    if (length != 0) chainBuffer.processOutgoing(apdu);
+    if (length > 0) piv.processOutgoing(apdu);
   }
 
   /**
@@ -596,12 +615,17 @@ public final class OpenFIPS201 extends Applet {
      * PRE-CONDITIONS
      */
 
-    // PRE-CONDITION 1 - The P1 value must be equal to the constant CONST_P1
+    // PRE-CONDITION 1 - Administrative access must be permitted on the current interface
+    if (!piv.isInterfacePermittedForAdmin()) {
+      ISOException.throwIt(ISO7816.SW_SECURITY_STATUS_NOT_SATISFIED);
+    }
+
+    // PRE-CONDITION 2 - The P1 value must be equal to the constant CONST_P1
     if (buffer[ISO7816.OFFSET_P1] != CONST_P1) {
       ISOException.throwIt(ISO7816.SW_INCORRECT_P1P2);
     }
 
-    // PRE-CONDITION 2 - The P2 value must be set to one of '04', '9A', '9C', '9D', '9E'
+    // PRE-CONDITION 3 - The P2 value must be set to one of '04', '9A', '9C', '9D', '9E'
     // NOTE: This is ignored because we use a flexible key system internally
 
     /*
@@ -612,6 +636,6 @@ public final class OpenFIPS201 extends Applet {
     piv.generateAsymmetricKeyPair(buffer, ISO7816.OFFSET_CDATA);
 
     // STEP 2 - Process the first frame of the chainBuffer for this response
-    chainBuffer.processOutgoing(apdu);
+    piv.processOutgoing(apdu);
   }
 }

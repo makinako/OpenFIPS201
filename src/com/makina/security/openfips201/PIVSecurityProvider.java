@@ -26,87 +26,134 @@
 
 package com.makina.security.openfips201;
 
+import javacard.framework.ISO7816;
+import javacard.framework.ISOException;
 import javacard.framework.JCSystem;
 import javacard.framework.OwnerPIN;
+import javacard.framework.PIN;
 import javacard.framework.Util;
-import javacard.security.RandomData;
-
-@SuppressWarnings("unused")
 
 /**
  * Provides all security and cryptographic services required by PIV, including the storage of PIN
  * and KEY objects, as well as cryptographic primitives.
  */
-public final class PIVSecurityProvider {
+final class PIVSecurityProvider {
+
+  //
+  // Constants - Security Flags
+  //
+
+  // If non-zero, the current communications interface is contactless
+  private static final short STATE_IS_CONTACTLESS = (short) 0;
+
+  // If non-zero, a valid GP Secure Channel authentication with CENC+CMAC is established
+  private static final short STATE_IS_SECURE_CHANNEL = (short) 1;
+
+  // If non-zero, a PIN verification occurred prior to the last GENERAL AUTHENTICATE command
+  private static final short STATE_PIN_ALWAYS = (short) 2;
+
+  // If non-zero, indicates the last key that was successfully authenticated
+  private static final short STATE_AUTH_KEY = (short) 3;
+
+  private static final short LENGTH_TRANSIENT_STATE = (short) 4;
+
+  //
+  // Constants - Security Counters
+  //
+  private static final short STATE_HISTORY_NEXT = (short) 0;
+  private static final short LENGTH_PERSISTENT_STATE = (short) 1;
 
   //
   // Persistent Objects
   //
 
-  // If non-zero, the current communications interface is contactless
-  private static final short FLAG_CONTACTLESS = (short) 0;
-  // If non-zero, a valid GP Secure Channel authentication with CENC+CMAC is established
-  private static final short FLAG_SECURE_CHANNEL = (short) 1;
-  // If non-zero, a PIN verification occurred prior to the last GENERAL AUTHENTICATE command
-  private static final short FLAG_PIN_ALWAYS = (short) 2;
-  private static final short LENGTH_FLAGS = (short) 3;
-  // PIN objects
-  public final OwnerPIN cardPIN; // 80 - Card Application PIN
-  public final OwnerPIN cardPUK; // 81 - PIN Unlocking Key (PUK)
-  public final CVMPIN globalPIN; // 00 - Global PIN
+  // PERSISTENT - PIN objects
+  private final OwnerPIN cardPIN; // 80 - Card Application PIN
+  private final OwnerPIN cardPUK; // 81 - PIN Unlocking Key (PUK)
+  private final CVMPIN globalPIN; // 00 - Global PIN
+  private final OwnerPIN[] pinHistory;
 
-  // Cryptographic Service Providers
-  private final RandomData cspRNG;
+  // PERSISTENT - Counters related to security operations
+  private final byte[] persistentState;
 
-  // Security Status Flags
-  private final boolean[] securityFlags;
-  // Key objects
+  // PERSISTENT - Key objects (linked list)
   private PIVKeyObject firstKey;
 
-  public PIVSecurityProvider() {
+  //
+  // Transient Objects
+  //
 
-    // Create all CSP's, including the shared key instances
-    cspRNG = RandomData.getInstance(RandomData.ALG_SECURE_RANDOM);
-    PIVKeyObjectSYM.createProviders();
-    PIVKeyObjectECC.createProviders();
-    PIVKeyObjectRSA.createProviders();
+  // TRANSIENT - Security Status Flags
+  private final byte[] transientState;
 
-    // Create our security flags
-    securityFlags = JCSystem.makeTransientBooleanArray(LENGTH_FLAGS, JCSystem.CLEAR_ON_DESELECT);
+  private static final byte FLAG_FALSE = (byte) 0;
+  private static final byte FLAG_TRUE = (byte) 0xFF;
+
+  PIVSecurityProvider(byte pinRetries, byte pukRetries) {
+
+    // Initialise our PIV crypto provider
+    PIVCrypto.init();
+
+    // Create our internal state
+    transientState =
+        JCSystem.makeTransientByteArray(LENGTH_TRANSIENT_STATE, JCSystem.CLEAR_ON_DESELECT);
+    persistentState = new byte[LENGTH_PERSISTENT_STATE];
 
     //
     // Create our PIN objects
     //
 
-    // Mandatory
-    cardPIN = new OwnerPIN(Config.PIN_RETRIES, Config.PIN_LENGTH_MAX);
+    // TODO: Change this to be made when the applet transitions to the PERSONALISED state and state
+    // the limitation that it can only be set once. This is because OwnerPIN won't let you change it
 
     // Mandatory
-    cardPUK = new OwnerPIN(Config.PUK_RETRIES, Config.PIN_LENGTH_MAX);
+    cardPIN = new OwnerPIN(pinRetries, Config.LIMIT_PIN_MAX_LENGTH);
+
+    // Mandatory
+    cardPUK = new OwnerPIN(pukRetries, Config.LIMIT_PUK_MAX_LENGTH);
 
     // Optional - But we still have to create it because it can be enabled at runtime
-    globalPIN = new CVMPIN(Config.PIN_RETRIES, Config.PIN_LENGTH_MAX);
-  }
+    globalPIN = new CVMPIN(pinRetries, Config.LIMIT_PIN_MAX_LENGTH);
 
-  public void resetSecurityStatus() {
-
-    if (cardPIN.isValidated()) cardPIN.reset();
-    if (cardPUK.isValidated()) cardPUK.reset();
-    if (Config.FEATURE_PIN_GLOBAL_ENABLED && globalPIN.isValidated()) globalPIN.reset();
-
-    PIVKeyObject key = firstKey;
-    while (key != null) {
-      key.resetSecurityStatus();
-      key = (PIVKeyObject) key.nextObject;
+    // Supplemental - PIN History
+    pinHistory = new OwnerPIN[Config.LIMIT_PIN_HISTORY];
+    for (short i = 0; i < Config.LIMIT_PIN_HISTORY; i++) {
+      // We don't need to make use of retry features for history PIN values
+      // as we will reset them every time.
+      pinHistory[i] = new OwnerPIN((byte) 1, Config.LIMIT_PIN_MAX_LENGTH);
+      // TODO: Probably need to initialise these even though it isn't a security risk
     }
   }
 
-  public boolean getPINAlways() {
-    return (securityFlags[FLAG_PIN_ALWAYS] && (cardPIN.isValidated() || globalPIN.isValidated()));
+  void clearVerification() {
+    // Reset all PINs
+    if (cardPIN.isValidated()) cardPIN.reset();
+    if (cardPUK.isValidated()) cardPUK.reset();
+    if (globalPIN.isValidated()) globalPIN.reset();
   }
 
-  public void setPINAlways(boolean value) {
-    securityFlags[FLAG_PIN_ALWAYS] = value;
+  void setAuthenticatedKey(byte key) {
+    transientState[STATE_AUTH_KEY] = key;
+  }
+
+  void clearAuthenticatedKey() {
+    // Reset any authenticated keys
+    // NOTE: We do NOT reset the secure channel, which is controlled from the applet
+    transientState[STATE_AUTH_KEY] = (byte) 0;
+  }
+
+  boolean getIsPINAlways() {
+    return (transientState[STATE_PIN_ALWAYS] == FLAG_TRUE
+        && (cardPIN.isValidated() || globalPIN.isValidated()));
+  }
+
+  void setPINAlways(boolean value) {
+    // TODO: Get rid of this and make PIN verification abstracted
+    transientState[STATE_PIN_ALWAYS] = value ? FLAG_TRUE : FLAG_FALSE;
+  }
+
+  boolean getIsPINVerified() {
+    return (cardPIN.isValidated() || globalPIN.isValidated());
   }
 
   /**
@@ -114,8 +161,8 @@ public final class PIVSecurityProvider {
    *
    * @return True if the current communications interface is contactless
    */
-  public boolean getIsContactless() {
-    return securityFlags[FLAG_CONTACTLESS];
+  boolean getIsContactless() {
+    return (transientState[STATE_IS_CONTACTLESS] == FLAG_TRUE);
   }
 
   /**
@@ -123,8 +170,8 @@ public final class PIVSecurityProvider {
    *
    * @param value The new value to set
    */
-  public void setIsContactless(boolean value) {
-    securityFlags[FLAG_CONTACTLESS] = value;
+  void setIsContactless(boolean value) {
+    transientState[STATE_IS_CONTACTLESS] = value ? FLAG_TRUE : FLAG_FALSE;
   }
 
   /**
@@ -132,8 +179,8 @@ public final class PIVSecurityProvider {
    *
    * @return True if there is a current GlobalPlatform Secure Channel with CENC+CMAC
    */
-  public boolean getIsSecureChannel() {
-    return securityFlags[FLAG_SECURE_CHANNEL];
+  boolean getIsSecureChannel() {
+    return (transientState[STATE_IS_SECURE_CHANNEL] == FLAG_TRUE);
   }
 
   /**
@@ -141,11 +188,11 @@ public final class PIVSecurityProvider {
    *
    * @param value The new value to set
    */
-  public void setIsSecureChannel(boolean value) {
-    securityFlags[FLAG_SECURE_CHANNEL] = value;
+  void setIsSecureChannel(boolean value) {
+    transientState[STATE_IS_SECURE_CHANNEL] = value ? FLAG_TRUE : FLAG_FALSE;
   }
 
-  public PIVKeyObject selectKey(byte id, byte mechanism) {
+  PIVKeyObject selectKey(byte id, byte mechanism) {
 
     // First, map the default mechanism code to TDEA 3KEY
     if (mechanism == PIV.ID_ALG_DEFAULT) {
@@ -163,14 +210,14 @@ public final class PIVSecurityProvider {
     return null;
   }
 
-  public boolean keyExists(byte id) {
+  boolean keyExists(byte id) {
 
-    PIVKeyObject key = firstKey;
+    PIVObject key = firstKey;
 
     // Traverse the linked list
     while (key != null) {
       if (key.match(id)) return true;
-      key = (PIVKeyObject) key.nextObject;
+      key = key.nextObject;
     }
 
     return false;
@@ -182,11 +229,19 @@ public final class PIVSecurityProvider {
    * @param id The key reference identifier
    * @param modeContact The access mode for the contact interface
    * @param modeContactless The access mode for the contactless interface
+   * @param adminKey The administrative key for this key object
    * @param mechanism The cryptographic mechanism
    * @param role The key role / privileges control bitmap
+   * @param attributes The optional key attributes
    */
-  public void createKey(
-      byte id, byte modeContact, byte modeContactless, byte mechanism, byte role, byte attributes) {
+  void createKey(
+      byte id,
+      byte modeContact,
+      byte modeContactless,
+      byte adminKey,
+      byte mechanism,
+      byte role,
+      byte attributes) {
 
     // First, map the default mechanism code to TDEA 3KEY
     if (mechanism == PIV.ID_ALG_DEFAULT) {
@@ -195,7 +250,8 @@ public final class PIVSecurityProvider {
 
     // Create our new key
     PIVKeyObject key =
-        PIVKeyObject.create(id, modeContact, modeContactless, mechanism, role, attributes);
+        PIVKeyObject.create(
+            id, modeContact, modeContactless, adminKey, mechanism, role, attributes);
 
     // Add it to our linked list
     // NOTE: If this is the first key added, just set our firstKey. Otherwise add it to the head
@@ -211,44 +267,59 @@ public final class PIVSecurityProvider {
   }
 
   /**
-   * Validates the current security conditions for performing card management commands
+   * Validates the current security conditions for administering the specified object.
    *
-   * @param requiresSecureChannel If true, a GlobalPlatform SCP session must be active
-   * @return True if the access mode check passed
+   * @param object The object to check permissions for
+   * @return True of the access mode check passed
    */
-  public boolean checkAccessModeAdmin(boolean requiresSecureChannel) {
+  boolean checkAccessModeAdmin(PIVObject object) {
 
     //
-    // This check can pass by either the FLAG_SECURE_CHANNEL flag being set, or by finding
-    // a key in the keystore that has the role attribute ROLE_ADMIN and is authenticated.
-    //
-    // If the requiresEncryption flag is set, then only FLAG_SECURE_CHANNEL is checked.
+    // This check can pass by any of the following conditions being true:
+    // 1) The STATE_IS_SECURE_CHANNEL flag is set
+    // 2) The object admin key is the last successfully authenticated key
+    // 3) The object has the USER_ADMIN flag set and passes normal read access conditions, with
+    //    the exception of objects that can ALWAYS be read.
     //
 
-    boolean valid = false;
+    boolean result = false;
 
-    // Iterate through the key store for ROLE_ADMIN keys
-    if (!requiresSecureChannel) {
-      PIVKeyObject key = firstKey;
-      while (key != null) {
-        if (key.hasAttribute(PIVKeyObject.ATTR_ADMIN) && key.getSecurityStatus()) {
-          valid = true;
-          break;
-        }
-        key = (PIVKeyObject) key.nextObject;
-      }
+    byte mode;
+    if (getIsContactless()) {
+      mode = object.getModeContactless();
+    } else {
+      mode = object.getModeContact();
     }
 
-    // Apply the GP SCP test
-    // NOTE: If the FEATURE_RESTRICT_ADMIN_TO_CONTACT flag is set, it is not possible
-    // 		 for FLAG_SECURE_CHANNEL to be set as the OpenFIPS201.process() checks
-    //		 if it is permitted to execute GP Authentication over contactless.
-    valid |= securityFlags[FLAG_SECURE_CHANNEL];
+    //
+    // ACCESS CONDITION 1 - Secure Channel (God Mode)
+    //
+    if (getIsSecureChannel()) {
+      result = true;
+    }
+
+    //
+    // ACCESS CONDITION 2 - Administrative Key
+    //
+    if (object.getAdminKey() == transientState[STATE_AUTH_KEY]) {
+      result = true;
+    }
+
+    //
+    // ACCESS CONDITION 3 - User Administration Privilege
+    //
+    if ((mode != PIVObject.ACCESS_MODE_ALWAYS)
+        && ((mode & PIVObject.ACCESS_MODE_USER_ADMIN) == PIVObject.ACCESS_MODE_USER_ADMIN)
+        && checkAccessModeObject(object)) {
+      result = true;
+    }
 
     // Now that we have performed a security check, clear the pinAlways flag
-    securityFlags[FLAG_PIN_ALWAYS] = false;
+    // NOTE: This incidentally always runs with access condition 3 above.
+    setPINAlways(false);
 
-    return valid;
+    // Done
+    return result;
   }
 
   /**
@@ -257,13 +328,17 @@ public final class PIVSecurityProvider {
    * @param object The object to check permissions for
    * @return True of the access mode check passed
    */
-  public boolean checkAccessModeObject(PIVObject object) {
+  boolean checkAccessModeObject(PIVObject object) {
 
     boolean valid = false;
 
     // Select the appropriate access mode to check
-    byte mode =
-        securityFlags[FLAG_CONTACTLESS] ? object.getModeContactless() : object.getModeContact();
+    byte mode;
+    if (transientState[STATE_IS_CONTACTLESS] == FLAG_TRUE) {
+      mode = object.getModeContactless();
+    } else {
+      mode = object.getModeContact();
+    }
 
     // Check for special ALWAYS condition, which ignores PIN_ALWAYS
     if (mode == PIVObject.ACCESS_MODE_ALWAYS) {
@@ -273,37 +348,102 @@ public final class PIVSecurityProvider {
       if ((mode & PIVObject.ACCESS_MODE_PIN) == PIVObject.ACCESS_MODE_PIN
           || (mode & PIVObject.ACCESS_MODE_PIN_ALWAYS) == PIVObject.ACCESS_MODE_PIN_ALWAYS) {
         // At least one PIN type must be both Enabled and Validated or we fail
-        if (Config.FEATURE_PIN_CARD_ENABLED && cardPIN.isValidated()) {
-          valid = true;
-        }
-        if (Config.FEATURE_PIN_GLOBAL_ENABLED && globalPIN.isValidated()) {
+        // NOTE: We don't check if they are enabled here, because if they weren't they could
+        // never be valid.
+        if (cardPIN.isValidated() || globalPIN.isValidated()) {
           valid = true;
         }
       }
 
-      // Check for PIN ALWAYS
-      if ((mode & PIVObject.ACCESS_MODE_PIN_ALWAYS) == PIVObject.ACCESS_MODE_PIN_ALWAYS
-          && !securityFlags[FLAG_PIN_ALWAYS]) {
+      // Check for PIN_ALWAYS
+      if (((mode & PIVObject.ACCESS_MODE_PIN_ALWAYS) == PIVObject.ACCESS_MODE_PIN_ALWAYS)
+          && transientState[STATE_PIN_ALWAYS] != FLAG_TRUE) {
         valid = false;
       }
-
-      // Now that we have performed a security check, clear the pinAlways flag
-      securityFlags[FLAG_PIN_ALWAYS] = false;
     }
+
+    // Now that we have performed a security check, clear the pinAlways flag
+    transientState[STATE_PIN_ALWAYS] = FLAG_FALSE;
 
     // Done
     return valid;
   }
 
-  /**
-   * Generates a number of random bytes using the SECURE_RANDOM generator
-   *
-   * @param buffer The buffer to write the random data to
-   * @param offset The starting offset to write the random data
-   * @param length The number of bytes to generate
-   */
-  public void generateRandom(byte[] buffer, short offset, short length) {
-    cspRNG.generateData(buffer, offset, length);
+  PIN getPIN(byte id) {
+
+    switch (id) {
+      case PIV.ID_CVM_LOCAL_PIN:
+        return cardPIN;
+
+      case PIV.ID_CVM_GLOBAL_PIN:
+        return globalPIN;
+
+      case PIV.ID_CVM_PUK:
+        return cardPUK;
+
+      default:
+        return null; // Keep compiler happy
+    }
+  }
+
+  void updatePIN(byte id, byte[] buffer, short offset, byte length, byte historyCount) {
+
+    OwnerPIN pin;
+
+    switch (id) {
+      case PIV.ID_CVM_LOCAL_PIN:
+        pin = cardPIN;
+        break;
+
+      case PIV.ID_CVM_GLOBAL_PIN:
+        pin = globalPIN;
+        break;
+
+      case PIV.ID_CVM_PUK:
+        // Update the PUK, no history matching required
+        cardPUK.update(buffer, offset, length);
+        return;
+
+      default:
+        ISOException.throwIt(PIV.SW_REFERENCE_NOT_FOUND);
+        return; // Keep compiler happy
+    }
+
+    // Optionally verify the PIN history
+    // NOTE: Any elements beyond the historyCheck count will not be used at all, so we ignore
+    // their values
+    boolean matched = false;
+
+    // Interate through our history list (which may be zero)
+    for (byte i = 0; i < historyCount; i++) {
+      OwnerPIN p = pinHistory[i];
+      if (p != null) {
+        if (p.getTriesRemaining() == 0) p.resetAndUnblock();
+        if (p.check(buffer, offset, length)) {
+          // We matched, no further checks required
+          matched = true;
+          break;
+        }
+      }
+    }
+
+    // If we got a match, the PIN check fails and we will not update
+    if (matched) {
+      ISOException.throwIt(ISO7816.SW_DATA_INVALID);
+      return; // Keep compiler happy
+    }
+
+    // Update the PIN
+    pin.update(buffer, offset, length);
+
+    // Update the PIN History if enabled
+    if (historyCount > 0) {
+      // Move/Roll to the next position we will write to
+      byte next = persistentState[STATE_HISTORY_NEXT];
+      pinHistory[next].update(buffer, offset, length);
+      next = (byte) ((byte) (next + (byte) 1) % historyCount);
+      persistentState[STATE_HISTORY_NEXT] = next;
+    }
   }
 
   /**
@@ -313,7 +453,7 @@ public final class PIVSecurityProvider {
    * @param offset The starting offset of the buffer
    * @param length The length within the buffer to clear
    */
-  public static void zeroise(byte[] buffer, short offset, short length) {
+  static void zeroise(byte[] buffer, short offset, short length) {
 
     Util.arrayFillNonAtomic(buffer, offset, length, (byte) 0x00);
     Util.arrayFillNonAtomic(buffer, offset, length, (byte) 0xFF);

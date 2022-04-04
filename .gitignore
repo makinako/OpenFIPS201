@@ -2,6 +2,12 @@
 ## Java
 ##
 
+# Asn1 Studio
+*.a1sproj
+
+# Sandbox Environment
+Sandbox/
+
 # Binary output
 bin/
 
@@ -25,6 +31,7 @@ hs_err_pid*
 
 # JCIDE build ignore
 JCIDE/
+.jcide
 .jcideslndata/
 .classpath
 .project
