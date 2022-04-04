@@ -1,12 +1,13 @@
 # OpenFIPS201 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-This project has been commissioned and funded by the Australian Department of Defence, to provide an open source implementation of the card application for the NIST Personal Identity Verification (PIV) standard as specified by [FIPS PUB 201-2](https://en.wikipedia.org/wiki/FIPS_201) and [SP800-73-4](http://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-73-4.pdf). 
+This project has been commissioned and funded by the Australian Department of Defence, to provide an open source implementation of the card application for the NIST Personal Identity Verification (PIV) standard as specified by [NIST FIPS PUB 201-2](https://en.wikipedia.org/wiki/FIPS_201) and [NIST SP 800-73-4](http://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-73-4.pdf). 
 
 **OpenFIPS201 implements the following functionality:**
+
 * A flexible filesystem that can be defined easily without recompilation
 * A flexible key store that defines key roles instead of hard-coding which key is used for what function
 * It compiles to Javacard 3.0.4 as a minimum
-* Secure personalisation over SCP w/CEnc+CMac using the CHANGE REFERENCE DATA and PUT DATA commands
+* Secure personalisation over SCP w/CENC+CMAC using the CHANGE REFERENCE DATA and PUT DATA commands
 * The following is out-of-scope at this time:
   * Virtual Contact Interface
   * Secure Messaging (Opacity)
@@ -21,6 +22,12 @@ Contact us at piv@makina.com.au if you want to talk about the project, or just t
 
 To contact the author directly, email kim@makina.com.au
 
+**This project makes use of the following Open Source tools:**
+
+* [Apache Ant](https://ant.apache.org/) by the [Apache Foundation](https://www.apache.org/)
+* [Ant-JavaCard](https://github.com/martinpaljak/ant-javacard) by [Martin Paljak](https://github.com/martinpaljak)
+* [Google Java Format](https://github.com/google/google-java-format) by [Google](https://github.com/google)
+
 ----
 
 
@@ -29,13 +36,12 @@ To contact the author directly, email kim@makina.com.au
 
 The latest revision of OpenFIPS201 is ready! Here are a few features and enhancements that have been added:
 
-
 #### Documentation
 
-Documentation relating to OpenFIPS201 has now been moved [here](https://openfips201.atlassian.net/wiki/spaces/OD/overview) to a public Confluence instance, as the docs were outgrowing the GitHub wiki. 
+* Documentation relating to OpenFIPS201 has now been moved [here](https://openfips201.atlassian.net/wiki/spaces/OD/overview) to a public Confluence instance, as the docs were outgrowing the GitHub wiki. 
+* [Discussions](https://github.com/makinako/OpenFIPS201/discussions) has now been enabled, we welcome any feedback you have or let us know how you're using OpenFIPS201!
 
-
-#### *Dynamic Configuration**
+#### Dynamic Configuration
 
 All `FEATURE` compilation constants are now gone and been replaced with a more extensive set of configuration registers for controlling aspects of applet behaviour. This means there is no longer a need to modify or build from source code in order to configure it.
 
@@ -53,7 +59,6 @@ The PUT DATA ADMIN command has changed a bit due to dynamic configuration. The f
 * Legacy Operation
 
 Your current pre-perso will still work via the `Legacy Operation`, but you will not be able to take advantage of some of the extended features, notably dynamic configuration. We encourage you to migrate over to the new commands, which have been kept as similar as possible to ease the transition.
-
 
 #### Bulk Pre-Personalisation
 
@@ -114,10 +119,6 @@ The applet now attempts to instantiate all the required cryptographic mechanisms
 * The `Options.restrictSingleKey` configuration parameter has been added, which will prevent the applet from allowing the same key to be defined with multiple mechanisms.
 * `GET STATUS` and `GET VERSION` are improved (more additions and improvements will follow in the coming months, but compatibility with the current response bytes will be maintained so don't hard-code length requirements into your code!).
 * Lots of other background changes, code review changes, etc.
-
-
-
-[Discussions](https://github.com/makinako/OpenFIPS201/discussions) has now been enabled, we welcome any feedback you have!
 
 
 
@@ -191,4 +192,3 @@ OpenFIPS201 has attempted to maintain compatibility with Javacard 2.2.x, however
 Going forward, OpenFIPS201 will target Javacard SDK 3.0.4 as a minimum. To continue to support Javacard 2.2.x we have added a new repository [OpenFIPS201-jc22](https://github.com/makinako/OpenFIPS201-jc22), which will serve as the compatibility release going forward.
 
 ----
-
