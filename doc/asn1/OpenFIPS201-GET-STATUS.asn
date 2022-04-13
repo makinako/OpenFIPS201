@@ -15,7 +15,8 @@ GetStatusResponse ::= [APPLICATION 19] SEQUENCE {
 	smState			[3] BOOLEAN,
 	vciState		[4] BOOLEAN,
 	scpState		[5] BOOLEAN,
-	contactless		[6] BOOLEAN
+	contactless		[6] BOOLEAN,
+	fipsMode		[7] BOOLEAN
 }
 
 END

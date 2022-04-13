@@ -220,6 +220,28 @@ final class TLVWriter {
    * @param tag The tag to write
    * @param value The value to write
    */
+  void write(byte  tag, byte value) throws ISOException {
+    if (dataPtr[0] == null) ISOException.throwIt(ISO7816.SW_DATA_INVALID);
+    byte[] data = (byte[]) dataPtr[0];
+
+    // TODO: Make sure we won't go over our length boundary
+
+    // Set the TAG
+    writeTag(tag);
+
+    // Set the LENGTH
+    data[context[CONTEXT_OFFSET]++] = (byte) 1;
+
+    // Set the VALUE
+    data[context[CONTEXT_OFFSET]++] = value;
+  }
+
+  /**
+   * Adds an object with a byte value to the TLV object
+   *
+   * @param tag The tag to write
+   * @param value The value to write
+   */
   void write(short tag, byte value) throws ISOException {
     if (dataPtr[0] == null) ISOException.throwIt(ISO7816.SW_DATA_INVALID);
     byte[] data = (byte[]) dataPtr[0];
@@ -315,14 +337,12 @@ final class TLVWriter {
   /**
    * Adds an object with a byte array value to the TLV object
    *
-   * @param tagClass The tag class to write
    * @param tag The tag to write
    * @param buffer The byte array to read from
    * @param offset The starting offset for the input array
    * @param length The number of bytes to read from the input array
    */
-  void write(byte tagClass, byte tag, byte[] buffer, short offset, short length)
-      throws ISOException {
+  void write(byte tag, byte[] buffer, short offset, short length) throws ISOException {
 
     if (dataPtr[0] == null) ISOException.throwIt(ISO7816.SW_DATA_INVALID);
     byte[] data = (byte[]) dataPtr[0];
@@ -330,7 +350,6 @@ final class TLVWriter {
     // TODO: Make sure we won't go over our length boundary
 
     // Set the TAG
-    tag |= tagClass;
     writeTag(tag);
 
     // Set the LENGTH

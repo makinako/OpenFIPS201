@@ -6,8 +6,7 @@ GetVersionResponse ::= [APPLICATION 19] SEQUENCE {
 	major		[1] INTEGER (0..127),
 	minor		[2] INTEGER (0..127),
 	revision	[3] INTEGER (0..127),
-	debug		[4] BOOLEAN,
-	fipsMode	[5] BOOLEAN	
+	debug		[4] BOOLEAN
 }
 
 END

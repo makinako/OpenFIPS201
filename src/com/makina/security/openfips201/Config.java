@@ -46,7 +46,7 @@ final class Config {
   static final short LENGTH_APPLICATION_NAME = (short) 11;
   static final byte VERSION_MAJOR = (byte) 1;
   static final byte VERSION_MINOR = (byte) 10;
-  static final byte VERSION_REVISION = (byte) 0;
+  static final byte VERSION_REVISION = (byte) 1;
   static final byte VERSION_DEBUG = (byte) 0; // If set to 1, this build is considered DEBUG
 
   ///////////////////////////////////////////////////////////////////////////

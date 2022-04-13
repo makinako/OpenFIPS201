@@ -3114,7 +3114,6 @@ final class PIV {
     final byte CONST_TAG_MINOR = (byte) 0x82;
     final byte CONST_TAG_REVISION = (byte) 0x83;
     final byte CONST_TAG_DEBUG = (byte) 0x84;
-    final byte CONST_TAG_FIPS_MODE = (byte) 0x85;
 
     // Application
     writer.write(
@@ -3132,9 +3131,6 @@ final class PIV {
     // Debug
     writer.write(CONST_TAG_DEBUG, Config.VERSION_DEBUG);
 
-    // FIPS Mode
-    writer.write(CONST_TAG_FIPS_MODE, (byte) 0); // TODO
-
     return writer.finish();
   }
 
@@ -3147,6 +3143,7 @@ final class PIV {
     final byte CONST_TAG_VCI_STATE = (byte) 0x84;
     final byte CONST_TAG_SCP_STATE = (byte) 0x85;
     final byte CONST_TAG_CONTACTLESS = (byte) 0x86;
+    final byte CONST_TAG_FIPS_MODE = (byte) 0x87;
 
     // TODO: Additional status items
     // # of keys defined
@@ -3183,6 +3180,9 @@ final class PIV {
 
     // Contactless
     writer.write(CONST_TAG_CONTACTLESS, cspPIV.getIsContactless() ? (byte) 1 : (byte) 0);
+
+    // FIPS Mode
+    writer.write(CONST_TAG_FIPS_MODE, (byte) 0); // TODO
 
     return writer.finish();
   }
