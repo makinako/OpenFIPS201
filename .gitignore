@@ -42,6 +42,7 @@ jumpRecordInfo.xml
 *.jcproj
 *.jcsln
 postbuild.bat
+build.properties
 
 ##
 ## OPERATING SYSTEM
