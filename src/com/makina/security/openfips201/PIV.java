@@ -2335,9 +2335,10 @@ final class PIV {
     if (ruleDistinct > (byte) 0) {
       byte maxSingle = (byte) 0;
 
-      for (short i = (short) 0; i < length; i++) {
+	  short end = (short)(offset + length);	  
+      for (short i = offset; i < end; i++) {
         byte count = (byte) 1; // Every used digit has at least 1
-        for (short j = (short) (i + (short) 1); j < length; j++) {
+        for (short j = (short) (i + (short) 1); j < end; j++) {
           // If we have a padding byte, we are done checking for this digit
           if (buffer[i] == PIN_PADDING_BYTE) break;
           if (buffer[i] == buffer[j]) count++;
