@@ -28,6 +28,7 @@ package com.makina.security.openfips201;
 
 import javacard.framework.ISO7816;
 import javacard.framework.ISOException;
+import javacard.framework.JCSystem;
 import javacard.security.AESKey;
 import javacard.security.CryptoException;
 import javacard.security.DESKey;
@@ -85,10 +86,26 @@ final class PIVCrypto {
 
   private static RandomData cspRNG;
 
+  static void terminate() {
+    cspRNG = null;
+    cspTDEA = null;
+    cspAES = null;
+    cspRSA = null;
+    cspECDH = null;
+    cspECCSHA1 = null;
+    cspECCSHA256 = null;
+    cspECCSHA384 = null;
+    cspECCSHA512 = null;
+    cspSHA256 = null;
+    cspSHA384 = null;
+
+    JCSystem.requestObjectDeletion();
+  }
+
   static void init() {
     // Create all CSP's
 
-	// Mandatory - RNG
+    // Mandatory - RNG
     try {
       cspRNG = RandomData.getInstance(RandomData.ALG_SECURE_RANDOM);
     } catch (CryptoException ex) {
@@ -218,7 +235,7 @@ final class PIVCrypto {
       case PIV.ID_ALG_AES_128:
       case PIV.ID_ALG_AES_192:
       case PIV.ID_ALG_AES_256:
-      	return true;
+        return true;
 
       default:
         return false;

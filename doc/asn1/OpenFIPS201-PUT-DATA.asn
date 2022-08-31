@@ -199,8 +199,8 @@ PinPolicyParameter ::= SEQUENCE {
 	permitContactless 		[3] BOOLEAN OPTIONAL,
 	minLength				[4] INTEGER (4..32) OPTIONAL,
 	maxLength				[5] INTEGER (4..32) OPTIONAL,
-	maxRetriesContact 		[6] INTEGER (1..127) OPTIONAL,
-	maxRetriesContactless 	[7] INTEGER (1..127) OPTIONAL,	
+	maxRetriesContact 		[6] INTEGER (1..15) OPTIONAL,
+	maxRetriesContactless 	[7] INTEGER (1..15) OPTIONAL,	
 	charset					[8] PinCharSet OPTIONAL,
 	history					[9] INTEGER (0..12) OPTIONAL,
 	ruleSequence			[10] INTEGER (0..32) OPTIONAL,
@@ -211,8 +211,8 @@ PukPolicyParameter ::= SEQUENCE {
 	enabled				[0] BOOLEAN OPTIONAL,
 	permitContactless 	[1] BOOLEAN OPTIONAL,
 	length				[2]	INTEGER (4..32) OPTIONAL,
-	retriesContact		[3] INTEGER (1..127) OPTIONAL,
-	retriesContactless	[4] INTEGER (1..127) OPTIONAL,
+	retriesContact		[3] INTEGER (1..15) OPTIONAL,
+	retriesContactless	[4] INTEGER (1..15) OPTIONAL,
 	restrictUpdate		[5] BOOLEAN OPTIONAL
 }
 

@@ -111,6 +111,11 @@ final class ECParamsP256 extends ECParams {
     }
     return instance;
   }
+  
+  static void terminate() {
+	// NOTE: It is the responsibility of the caller to perform garbage collection
+	instance = null;
+  }
 
   @Override
   protected byte[] getA() {

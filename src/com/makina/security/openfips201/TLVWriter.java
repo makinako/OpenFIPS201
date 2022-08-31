@@ -77,6 +77,11 @@ final class TLVWriter {
     return instance;
   }
 
+  static void terminate() {
+    instance = null;
+    JCSystem.requestObjectDeletion();
+  }
+
   /**
    * Initialises the object with a data buffer, starting offset and content length It is important
    * that the supplied buffer has enough length for the content and also the parent Tag and Length
@@ -220,7 +225,7 @@ final class TLVWriter {
    * @param tag The tag to write
    * @param value The value to write
    */
-  void write(byte  tag, byte value) throws ISOException {
+  void write(byte tag, byte value) throws ISOException {
     if (dataPtr[0] == null) ISOException.throwIt(ISO7816.SW_DATA_INVALID);
     byte[] data = (byte[]) dataPtr[0];
 

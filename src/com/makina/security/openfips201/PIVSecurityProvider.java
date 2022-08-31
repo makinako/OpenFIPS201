@@ -30,7 +30,6 @@ import javacard.framework.ISO7816;
 import javacard.framework.ISOException;
 import javacard.framework.JCSystem;
 import javacard.framework.OwnerPIN;
-import javacard.framework.PIN;
 import javacard.framework.Util;
 
 /**
@@ -68,9 +67,9 @@ final class PIVSecurityProvider {
   //
 
   // PERSISTENT - PIN objects
-  private final OwnerPIN cardPIN; // 80 - Card Application PIN
-  private final OwnerPIN cardPUK; // 81 - PIN Unlocking Key (PUK)
-  private final CVMPIN globalPIN; // 00 - Global PIN
+  private final PIVPIN cardPIN; // 80 - Card Application PIN
+  private final PIVPIN cardPUK; // 81 - PIN Unlocking Key (PUK)
+  private final PIVPIN globalPIN; // 00 - Global PIN
   private final OwnerPIN[] pinHistory;
 
   // PERSISTENT - Counters related to security operations
@@ -89,7 +88,7 @@ final class PIVSecurityProvider {
   private static final byte FLAG_FALSE = (byte) 0;
   private static final byte FLAG_TRUE = (byte) 0xFF;
 
-  PIVSecurityProvider(byte pinRetries, byte pukRetries) {
+  PIVSecurityProvider() {
 
     // Initialise our PIV crypto provider
     PIVCrypto.init();
@@ -107,13 +106,13 @@ final class PIVSecurityProvider {
     // the limitation that it can only be set once. This is because OwnerPIN won't let you change it
 
     // Mandatory
-    cardPIN = new OwnerPIN(pinRetries, Config.LIMIT_PIN_MAX_LENGTH);
+    cardPIN = new PIVOwnerPIN(Config.LIMIT_PIN_MAX_RETRIES, Config.LIMIT_PIN_MAX_LENGTH);
 
     // Mandatory
-    cardPUK = new OwnerPIN(pukRetries, Config.LIMIT_PUK_MAX_LENGTH);
+    cardPUK = new PIVOwnerPIN(Config.LIMIT_PUK_MAX_RETRIES, Config.LIMIT_PUK_MAX_LENGTH);
 
     // Optional - But we still have to create it because it can be enabled at runtime
-    globalPIN = new CVMPIN(pinRetries, Config.LIMIT_PIN_MAX_LENGTH);
+    globalPIN = new PIVCVMPIN();
 
     // Supplemental - PIN History
     pinHistory = new OwnerPIN[Config.LIMIT_PIN_HISTORY];
@@ -369,7 +368,7 @@ final class PIVSecurityProvider {
     return valid;
   }
 
-  PIN getPIN(byte id) {
+  PIVPIN getPIN(byte id) {
 
     switch (id) {
       case PIV.ID_CVM_LOCAL_PIN:
@@ -388,7 +387,7 @@ final class PIVSecurityProvider {
 
   void updatePIN(byte id, byte[] buffer, short offset, byte length, byte historyCount) {
 
-    OwnerPIN pin;
+    PIVPIN pin;
 
     switch (id) {
       case PIV.ID_CVM_LOCAL_PIN:

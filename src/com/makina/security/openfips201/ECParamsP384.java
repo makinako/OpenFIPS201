@@ -42,6 +42,11 @@ final class ECParamsP384 extends ECParams {
     }
     return instance;
   }
+  
+  static void terminate() {
+	// NOTE: It is the responsibility of the caller to perform garbage collection
+	instance = null;
+  }
 
   // Curve polynomial element a
   protected static final byte[] a = {

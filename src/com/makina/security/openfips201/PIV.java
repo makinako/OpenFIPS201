@@ -60,7 +60,7 @@ final class PIV {
   static final short LENGTH_SCRATCH = (short) 284;
 
   //
-  // Static PIV identifiers 
+  // Static PIV identifiers
   //
 
   // Data Objects
@@ -103,7 +103,6 @@ final class PIV {
    * PIV APPLICATION CONSTANTS
    */
   static final short SW_REFERENCE_NOT_FOUND = (short) 0x6A88;
-  static final short SW_OPERATION_BLOCKED = (short) 0x6983;
 
   static final short SW_PUT_DATA_COMMAND_MISSING = (short) 0x6E10;
   static final short SW_PUT_DATA_COMMAND_INVALID_LENGTH = (short) 0x6E11;
@@ -192,10 +191,7 @@ final class PIV {
     chainBuffer = new ChainBuffer();
 
     // Create our PIV Security Provider
-    cspPIV =
-        new PIVSecurityProvider(
-            config.readValue(Config.CONFIG_PIN_RETRIES_CONTACT),
-            config.readValue(Config.CONFIG_PUK_RETRIES_CONTACT));
+    cspPIV = new PIVSecurityProvider();
 
     // Create our TLV objects (we don't care about the result, this is just to allocate)
     TLVReader.getInstance();
@@ -261,7 +257,22 @@ final class PIV {
     // EXECUTION STEPS
     //
 
-    // STEP 1 - Return the APT
+    // STEP 1 - Evaluate whether any PIV state needs to be updated as a result of
+    //          configuration changes
+
+    // STEP 1a) Local PIN try limit
+    PIVPIN localPin = cspPIV.getPIN(PIV.ID_CVM_LOCAL_PIN);
+    if (config.readValue(Config.CONFIG_PIN_RETRIES_CONTACT) != localPin.getTryLimit()) {
+      localPin.setTryLimit(config.readValue(Config.CONFIG_PIN_RETRIES_CONTACT));
+    }
+
+    // STEP 1b) PUK try limit
+    PIVPIN puk = cspPIV.getPIN(PIV.ID_CVM_PUK);
+    if (config.readValue(Config.CONFIG_PUK_RETRIES_CONTACT) != puk.getTryLimit()) {
+      puk.setTryLimit(config.readValue(Config.CONFIG_PUK_RETRIES_CONTACT));
+    }
+
+    // STEP 2 - Return the APT
     Util.arrayCopyNonAtomic(
         Config.TEMPLATE_APT, ZERO, buffer, offset, (short) Config.TEMPLATE_APT.length);
 
@@ -634,7 +645,7 @@ final class PIV {
     //
 
     // PRE-CONDITION 1 - The PIN reference must point to a valid PIN
-    PIN pin = cspPIV.getPIN(id);
+    PIVPIN pin = cspPIV.getPIN(id);
     if (pin == null) {
       ISOException.throwIt(SW_REFERENCE_NOT_FOUND);
       return;
@@ -681,8 +692,6 @@ final class PIV {
     }
 
     // PRE-CONDITION 4 - The PIN must not be blocked
-    if (pin.getTriesRemaining() == (byte) 0) ISOException.throwIt(SW_OPERATION_BLOCKED);
-
     // PRE-CONDITION 5 - If using the contactless interface, the pin retries remaining must not
     //					 fall below the specified intermediate retry amount
 
@@ -694,8 +703,13 @@ final class PIV {
     // the issuer-specified intermediate retry value. If status word '69 83' is returned, then the
     // comparison shall not be made, and the security status and the retry counter of the key
     // reference shall remain unchanged.
-    if (cspPIV.getIsContactless() && (pin.getTriesRemaining() <= config.getIntermediatePIN())) {
-      ISOException.throwIt(SW_OPERATION_BLOCKED);
+    byte intermediateRetries = config.getIntermediatePINRetries();
+
+    if (cspPIV.getIsContactless()) {
+      if (pin.getTriesRemaining() <= intermediateRetries)
+        ISOException.throwIt(ISO7816.SW_FILE_INVALID);
+    } else {
+      if (pin.getTriesRemaining() == (byte) 0) ISOException.throwIt(ISO7816.SW_FILE_INVALID);
     }
 
     //
@@ -704,12 +718,18 @@ final class PIV {
 
     // Verify the PIN
     if (!pin.check(buffer, offset, (byte) length)) {
+      short remaining = pin.getTriesRemaining();
+
+      // For contactless, we reduce the retries by the difference between contact and contactless
+      if (cspPIV.getIsContactless()) {
+        remaining -= intermediateRetries;
+      }
 
       // Check for blocked again
-      if (pin.getTriesRemaining() == (byte) 0) ISOException.throwIt(SW_OPERATION_BLOCKED);
+      if (remaining == (byte) 0) ISOException.throwIt(ISO7816.SW_FILE_INVALID);
 
       // Return the number of retries remaining
-      ISOException.throwIt((short) (SW_RETRIES_REMAINING | (short) pin.getTriesRemaining()));
+      ISOException.throwIt((short) (SW_RETRIES_REMAINING | remaining));
     }
 
     // Verified, set the PIN ALWAYS flag
@@ -767,7 +787,7 @@ final class PIV {
     // needed ('90 00').
 
     // Check for a blocked PIN
-    if (pin.getTriesRemaining() == (byte) 0) ISOException.throwIt(SW_OPERATION_BLOCKED);
+    if (pin.getTriesRemaining() == (byte) 0) ISOException.throwIt(ISO7816.SW_FILE_INVALID);
 
     // If we are not validated
     if (!pin.isValidated()) {
@@ -869,8 +889,7 @@ final class PIV {
     // interface (including SM or VCI), then the card command shall fail. If key reference
     // '00' or '80' is specified and the command is not submitted over either the contact interface
     // or the VCI, then the card command shall fail. In each case, the security status and the
-    // retry counter
-    // of the key reference shall remain unchanged.
+    // retry counter of the key reference shall remain unchanged.
 
     // NOTE: This is handled in the switch statement and is configurable at compile-time
     byte intermediateRetries;
@@ -891,7 +910,7 @@ final class PIV {
         }
 
         // NOTE: This will only work if the 'CVM Management' applet privilege has been set
-        intermediateRetries = config.getIntermediatePIN();
+        intermediateRetries = config.getIntermediatePINRetries();
         break;
 
       case ID_CVM_LOCAL_PIN:
@@ -907,8 +926,7 @@ final class PIV {
           ISOException.throwIt(ISO7816.SW_SECURITY_STATUS_NOT_SATISFIED);
         }
 
-        intermediateRetries = config.getIntermediatePIN();
-
+        intermediateRetries = config.getIntermediatePINRetries();
         break;
 
       case ID_CVM_PUK:
@@ -924,7 +942,7 @@ final class PIV {
           ISOException.throwIt(ISO7816.SW_SECURITY_STATUS_NOT_SATISFIED);
         }
 
-        intermediateRetries = config.getIntermediatePUK();
+        intermediateRetries = config.getIntermediatePUKRetries();
         puk = true;
         break;
 
@@ -936,17 +954,20 @@ final class PIV {
     // If the current value of the retry counter associated with the key reference is zero, then the
     // reference data associated with the key reference shall not be changed and the
     // PIV Card Application shall return the status word '69 83'.
-    if (pin.getTriesRemaining() == ZERO) {
-      ISOException.throwIt(SW_OPERATION_BLOCKED);
-    }
 
     // If the command is submitted over the contactless interface (VCI) and the current value of the
     // retry counter associated with the key reference is at or below the issuer-specified
     // intermediate retry value (see Section 3.2.1),
     // then the reference data associated with the key reference shall not be changed and the PIV
     // Card Application shall return the status word '69 83'.
-    if (cspPIV.getIsContactless() && (pin.getTriesRemaining()) <= intermediateRetries) {
-      ISOException.throwIt(SW_OPERATION_BLOCKED);
+    if (cspPIV.getIsContactless()) {
+      if (pin.getTriesRemaining() <= intermediateRetries) {
+        ISOException.throwIt(ISO7816.SW_FILE_INVALID);
+      }
+    } else {
+      if (pin.getTriesRemaining() <= ZERO) {
+        ISOException.throwIt(ISO7816.SW_FILE_INVALID);
+      }
     }
 
     // If the authentication data in the command data field does not match the current value of the
@@ -991,16 +1012,24 @@ final class PIV {
     }
 
     // Verify the authentication reference data (old PIN/PUK) format
-    if (!puk) {
-      if (!verifyPinFormat(buffer, offset, pinLength)) {
-        ISOException.throwIt(ISO7816.SW_WRONG_DATA);
-      }
+    if (!puk && !verifyPinFormat(buffer, offset, pinLength)) {
+      ISOException.throwIt(ISO7816.SW_WRONG_DATA);
     }
 
     // Verify the authentication reference data (old PIN/PUK) value
     if (!pin.check(buffer, offset, pinLength)) {
+      short remaining = pin.getTriesRemaining();
+
+      // For contactless, we reduce the retries by the difference between contact and contactless
+      if (cspPIV.getIsContactless()) {
+        remaining -= intermediateRetries;
+      }
+
+      // Check for blocked again
+      if (remaining == (byte) 0) ISOException.throwIt(ISO7816.SW_FILE_INVALID);
+
       // Return the number of retries remaining
-      ISOException.throwIt((short) (SW_RETRIES_REMAINING | (short) pin.getTriesRemaining()));
+      ISOException.throwIt((short) (SW_RETRIES_REMAINING | remaining));
     }
 
     // Move to the new reference data
@@ -1071,7 +1100,7 @@ final class PIV {
     // interface.
     // NOTE: We must check this for both the PIN and the PUK
     /*
-      Truth table because there's a few balls in the air here:
+      Truth table because there are a few balls in the air here:
       IS_CTLESS	IGNORE_ACL	PIN_PERMIT	PUK_PERMIT	RESULT
       ----------------------------------------------------
       FALSE		X			X			X			FALSE
@@ -1103,7 +1132,7 @@ final class PIV {
     byte pinLength = config.readValue(Config.CONFIG_PIN_MAX_LENGTH);
     short expectedLength = (short) (config.readValue(Config.CONFIG_PUK_LENGTH) + pinLength);
 
-    if (length != expectedLength) ISOException.throwIt(SW_OPERATION_BLOCKED);
+    if (length != expectedLength) ISOException.throwIt(ISO7816.SW_FILE_INVALID);
 
     // PRE-CONDITION 6 - The PUK must not be blocked
     // If the current value of the PUK's retry counter is zero, then the PIN's retry counter shall
@@ -1113,7 +1142,14 @@ final class PIV {
       ISOException.throwIt(ISO7816.SW_SECURITY_STATUS_NOT_SATISFIED);
       return; // Keep compiler happy
     }
-    if (puk.getTriesRemaining() == ZERO) ISOException.throwIt(SW_OPERATION_BLOCKED);
+
+    byte intermediateRetries = config.getIntermediatePUKRetries();
+    if (cspPIV.getIsContactless()) {
+      if (puk.getTriesRemaining() <= intermediateRetries)
+        ISOException.throwIt(ISO7816.SW_FILE_INVALID);
+    } else {
+      if (puk.getTriesRemaining() == ZERO) ISOException.throwIt(ISO7816.SW_FILE_INVALID);
+    }
 
     // PRE-CONDITION 7 - Verify the PUK value
     // If the reset retry counter authentication data (PUK) in the command data field of the command
@@ -1124,13 +1160,18 @@ final class PIV {
       // Reset the PIN's security condition (see paragraph below for explanation)
       pin.reset();
 
-      // Check again if we are blocked
-      if (puk.getTriesRemaining() == ZERO) {
-        ISOException.throwIt(SW_OPERATION_BLOCKED);
-      } else {
-        // Return the number of retries remaining
-        ISOException.throwIt((short) (SW_RETRIES_REMAINING | (short) puk.getTriesRemaining()));
+      short remaining = puk.getTriesRemaining();
+
+      // For contactless, we reduce the retries by the difference between contact and contactless
+      if (cspPIV.getIsContactless()) {
+        remaining -= intermediateRetries;
       }
+
+      // Check for blocked again
+      if (remaining == (byte) 0) ISOException.throwIt(ISO7816.SW_FILE_INVALID);
+
+      // Return the number of retries remaining
+      ISOException.throwIt((short) (SW_RETRIES_REMAINING | remaining));
     }
 
     // Move to the start of the new PIN
@@ -2275,6 +2316,7 @@ final class PIV {
   private boolean verifyPinRules(byte[] buffer, short offset, short length) {
 
     boolean passed = true;
+
     //
     // RULE 1 - SEQUENCE RULE (Ascending and Descending)
     //
@@ -2335,7 +2377,7 @@ final class PIV {
     if (ruleDistinct > (byte) 0) {
       byte maxSingle = (byte) 0;
 
-	  short end = (short)(offset + length);	  
+      short end = (short) (offset + length);
       for (short i = offset; i < end; i++) {
         byte count = (byte) 1; // Every used digit has at least 1
         for (short j = (short) (i + (short) 1); j < end; j++) {
@@ -2788,11 +2830,11 @@ final class PIV {
     //
     // EXECUTION STEPS
     //
-    
+
     // STEP 1 - If this is a legacy request, apply the PERMIT_MUTUAL
-    // key attribute as a default. 
+    // key attribute as a default.
     if (legacy && PIVCrypto.isSymmetricMechanism(keyMechanism)) {
-	   keyAttribute |= PIVKeyObject.ATTR_PERMIT_MUTUAL;
+      keyAttribute |= PIVKeyObject.ATTR_PERMIT_MUTUAL;
     }
 
     // STEP 2 - Add the key to the key store
@@ -3058,7 +3100,10 @@ final class PIV {
     // SPECIAL CASE 2 - PUK
     //
     if (id == ID_CVM_PUK) {
-      // NOTE: No format verification required for the PUK
+      // NOTES:
+      // - We deliberately ignore the value of CONFIG_PUK_ENABLED here as there may be a good
+      //   reason for setting a pre-defined PUK value with the anticipation of enabling it later
+      // - No format verification required is for the PUK
 
       // Update the PUK
       cspPIV.updatePIN(ID_CVM_PUK, scratch, ZERO, (byte) length, ZERO);
@@ -3232,7 +3277,7 @@ final class PIV {
       ISOException.throwIt(ISO7816.SW_FILE_NOT_FOUND);
     }
 
-    // PRE-CONDITION 2 - The 'TAG' value must start with CONST_TAG_EXTENDED
+    // PRE-CONDITION 3 - The 'TAG' value must start with CONST_TAG_EXTENDED
     if (!reader.matchData(CONST_TAG_EXTENDED)) {
       ISOException.throwIt(ISO7816.SW_FILE_NOT_FOUND);
     }

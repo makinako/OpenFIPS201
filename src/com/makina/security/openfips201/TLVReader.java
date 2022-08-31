@@ -70,6 +70,11 @@ final class TLVReader {
     return instance;
   }
 
+  static void terminate() {
+    instance = null;
+    JCSystem.requestObjectDeletion();
+  }
+
   /**
    * Returns the length of the data element for the tag found at offset
    *

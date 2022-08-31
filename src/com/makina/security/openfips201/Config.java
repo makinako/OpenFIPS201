@@ -46,7 +46,7 @@ final class Config {
   static final short LENGTH_APPLICATION_NAME = (short) 11;
   static final byte VERSION_MAJOR = (byte) 1;
   static final byte VERSION_MINOR = (byte) 10;
-  static final byte VERSION_REVISION = (byte) 1;
+  static final byte VERSION_REVISION = (byte) 2;
   static final byte VERSION_DEBUG = (byte) 0; // If set to 1, this build is considered DEBUG
 
   ///////////////////////////////////////////////////////////////////////////
@@ -319,12 +319,12 @@ final class Config {
   //
   static final byte LIMIT_PIN_MIN_LENGTH = (byte) 4;
   static final byte LIMIT_PIN_MAX_LENGTH = (byte) 16;
-  static final byte LIMIT_PIN_MAX_RETRIES = (byte) 127;
+  static final byte LIMIT_PIN_MAX_RETRIES = (byte) 15;
   static final byte LIMIT_PIN_HISTORY = (byte) 12;
 
   static final byte LIMIT_PUK_MIN_LENGTH = (byte) 6;
   static final byte LIMIT_PUK_MAX_LENGTH = (byte) 16;
-  static final byte LIMIT_PUK_MAX_RETRIES = (byte) 127;
+  static final byte LIMIT_PUK_MAX_RETRIES = (byte) 15;
 
   private static final byte DEFAULT_PIN_ENABLE_LOCAL = TLV.TRUE;
   private static final byte DEFAULT_PIN_MIN_LENGTH = (byte) 6;
@@ -450,11 +450,11 @@ final class Config {
     return (config[address] != (byte) 0);
   }
 
-  byte getIntermediatePIN() {
+  byte getIntermediatePINRetries() {
     return (byte) (config[CONFIG_PIN_RETRIES_CONTACT] - config[CONFIG_PIN_RETRIES_CONTACTLESS]);
   }
 
-  byte getIntermediatePUK() {
+  byte getIntermediatePUKRetries() {
     return (byte) (config[CONFIG_PUK_RETRIES_CONTACT] - config[CONFIG_PUK_RETRIES_CONTACTLESS]);
   }
 
@@ -562,8 +562,8 @@ final class Config {
         if (value < (byte) 0 || value > LIMIT_PIN_MAX_RETRIES) {
           ISOException.throwIt(ISO7816.SW_DATA_INVALID);
         }
-        // Pre-condition - Must be less than RETRIES_CONTACT
-        if (value >= config[CONFIG_PIN_RETRIES_CONTACT]) {
+        // Pre-condition - Cannot be greater than RETRIES_CONTACT
+        if (value > config[CONFIG_PIN_RETRIES_CONTACT]) {
           ISOException.throwIt(ISO7816.SW_DATA_INVALID);
         }
         config[CONFIG_PIN_RETRIES_CONTACTLESS] = value;
@@ -661,8 +661,8 @@ final class Config {
         if (value < (byte) 0 || value > LIMIT_PUK_MAX_RETRIES) {
           ISOException.throwIt(ISO7816.SW_DATA_INVALID);
         }
-        // Pre-condition - Must be less than PUK_RETRIES_CONTACT
-        if (value >= config[CONFIG_PUK_RETRIES_CONTACT]) {
+        // Pre-condition - Must not be more than PUK_RETRIES_CONTACT
+        if (value > config[CONFIG_PUK_RETRIES_CONTACT]) {
           ISOException.throwIt(ISO7816.SW_DATA_INVALID);
         }
         config[CONFIG_PUK_RETRIES_CONTACTLESS] = value;

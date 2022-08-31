@@ -26,38 +26,20 @@
 
 package com.makina.security.openfips201;
 
-import javacard.framework.OwnerPIN;
-import javacard.framework.PIN;
 import javacard.framework.PINException;
 import org.globalplatform.CVM;
 import org.globalplatform.GPSystem;
 
 /** Provides an OwnerPIN proxy to the CVM class to allow uniform handling */
-final class CVMPIN extends OwnerPIN implements PIN {
+final class PIVCVMPIN implements PIVPIN {
 
   private final CVM cvm;
 
-  /**
-   * Constructor
-   *
-   * @param tryLimit The number of incorrect attempts before blocking
-   * @param maxPINSize The maximum length of the PIN
-   */
-  CVMPIN(byte tryLimit, byte maxPINSize) throws PINException {
-
-    super(tryLimit, maxPINSize);
+  /** Constructor */
+  PIVCVMPIN() throws PINException {
 
     // Get our CVM reference
     cvm = GPSystem.getCVM(GPSystem.CVM_GLOBAL_PIN);
-
-    // Map the try limit to the CVM
-    // NOTE: If the applet does not have the CVM MANAGEMENT privilege, this will fail
-    try {
-      cvm.setTryLimit(tryLimit);
-    } catch (Exception ex) {
-      // Do nothing, since the API gives us no way to know if we have this permission
-      // all we can do is try.
-    }
   }
 
   @Override
@@ -87,7 +69,18 @@ final class CVMPIN extends OwnerPIN implements PIN {
   }
 
   @Override
-  public void resetAndUnblock() {
-    cvm.resetAndUnblockState();
+  public byte getTryLimit() {
+    return (short) 0;
+  }
+
+  public void setTryLimit(byte limit) {
+    // Do nothing
+    PINException.throwIt(PINException.ILLEGAL_VALUE);
+  }
+
+  public boolean supportsSetTryLimit() {
+    // GPRegistryEntry reg = GPSystem.getRegistryEntry(null);
+    // return reg.isPrivileged(GPRegistryEntry.PRIVILEGE_CVM_MANAGEMENT);
+    return false;
   }
 }

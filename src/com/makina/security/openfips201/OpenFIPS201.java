@@ -28,6 +28,7 @@ package com.makina.security.openfips201;
 
 import javacard.framework.APDU;
 import javacard.framework.Applet;
+import javacard.framework.AppletEvent;
 import javacard.framework.ISO7816;
 import javacard.framework.ISOException;
 import org.globalplatform.GPSystem;
@@ -37,7 +38,7 @@ import org.globalplatform.SecureChannel;
  * The main applet class, which is responsible for handling APDU's and dispatching them to the PIV
  * provider.
  */
-final class OpenFIPS201 extends Applet {
+public final class OpenFIPS201 extends Applet implements AppletEvent {
   /*
    * PERSISTENT applet variables (EEPROM)
    */
@@ -128,6 +129,21 @@ final class OpenFIPS201 extends Applet {
     if (!reSelectingApplet()) {
       piv.deselect();
     }
+  }
+
+  @Override
+  public void uninstall() {
+  	//
+  	// NOTE:
+  	// - Get rid of all static instances that would prevent GP from deleting the applet instance 
+  	//   without also deleting the corresponding package
+  	// - TODO: Change TLVReader and TLVWriter to an instance
+  	// - TODO: Change ECParams to public final const arrays, there's no need to instantiate.
+    TLVReader.terminate();
+    TLVWriter.terminate();
+    PIVCrypto.terminate();
+    ECParamsP256.terminate();
+    ECParamsP384.terminate();
   }
 
   @Override
@@ -247,7 +263,7 @@ final class OpenFIPS201 extends Applet {
         processPIV_PUT_DATA(apdu);
         break;
 
-      case INS_PIV_GENERATE_ASYMMETRIC_KEYPAIR:
+      case INS_PIV_GENERATE_ASYMMETRIC_KEYPAIR: // Case 2
         processPIV_GENERATE_ASYMMETRIC_KEYPAIR(apdu);
         break;
 
