@@ -30,10 +30,24 @@ package com.makina.security.openfips201;
  * Curve P-256 (aka SECP256R1) domain parameters from NIST SP 800-186
  * (https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-186-draft.pdf) para 4.2.1.3
  */
-final class ECParamsP256 extends ECParams {
+final class ECParamsP256 {
+	
+  private ECParamsP256() {
+	
+  }
+
+  // The private key length in bytes
+  static final short KEY_LENGTH_BYTES = (short)32;
+
+  // The uncompressed public point length
+  // NOTE: This is the 2 * KEY_LENGTH_BYTES + 1
+  static final short PUBLIC_LENGTH_BYTES = (short)65;
+
+  // cofactor
+  static final short H = (short)0x01;
 
   // Curve polynomial element a
-  private static final byte[] a = {
+  static final byte[] A = {
     (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF,
     (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x01,
     (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00,
@@ -45,7 +59,7 @@ final class ECParamsP256 extends ECParams {
   };
 
   // Curve polynomial element b
-  private static final byte[] b = {
+  static final byte[] B = {
     (byte) 0x5A, (byte) 0xC6, (byte) 0x35, (byte) 0xD8,
     (byte) 0xAA, (byte) 0x3A, (byte) 0x93, (byte) 0xE7,
     (byte) 0xB3, (byte) 0xEB, (byte) 0xBD, (byte) 0x55,
@@ -57,7 +71,7 @@ final class ECParamsP256 extends ECParams {
   };
 
   // Base point
-  private static final byte[] G = {
+  static final byte[] G = {
     (byte) 0x04, (byte) 0x6B, (byte) 0x17, (byte) 0xD1,
     (byte) 0xF2, (byte) 0xE1, (byte) 0x2C, (byte) 0x42,
     (byte) 0x47, (byte) 0xF8, (byte) 0xBC, (byte) 0xE6,
@@ -78,7 +92,7 @@ final class ECParamsP256 extends ECParams {
   };
 
   // Field definition
-  private static final byte[] p = {
+  static final byte[] P = {
     (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF,
     (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x01,
     (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00,
@@ -90,7 +104,7 @@ final class ECParamsP256 extends ECParams {
   };
 
   // Order n of G
-  private static final byte[] n = {
+  static final byte[] N = {
     (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF,
     (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00,
     (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF,
@@ -100,50 +114,4 @@ final class ECParamsP256 extends ECParams {
     (byte) 0xF3, (byte) 0xB9, (byte) 0xCA, (byte) 0xC2,
     (byte) 0xFC, (byte) 0x63, (byte) 0x25, (byte) 0x51
   };
-
-  private static ECParams instance;
-
-  private ECParamsP256() {}
-
-  static ECParams getInstance() {
-    if (instance == null) {
-      instance = new ECParamsP256();
-    }
-    return instance;
-  }
-  
-  static void terminate() {
-	// NOTE: It is the responsibility of the caller to perform garbage collection
-	instance = null;
-  }
-
-  @Override
-  protected byte[] getA() {
-    return a;
-  }
-
-  @Override
-  protected byte[] getB() {
-    return b;
-  }
-
-  @Override
-  protected byte[] getG() {
-    return G;
-  }
-
-  @Override
-  protected byte[] getP() {
-    return p;
-  }
-
-  @Override
-  protected byte[] getN() {
-    return n;
-  }
-
-  @Override
-  protected short getH() {
-    return H;
-  }
 }

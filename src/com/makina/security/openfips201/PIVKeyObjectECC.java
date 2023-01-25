@@ -47,10 +47,6 @@ final class PIVKeyObjectECC extends PIVKeyObjectPKI {
   private ECPrivateKey privateKey = null;
   private ECPublicKey publicKey = null;
 
-  // TODO: Refactor to remove the need for a permanent ECParams object
-  private final ECParams params;
-  private final short marshaledPubKeyLen;
-
   PIVKeyObjectECC(
       byte id,
       byte modeContact,
@@ -61,26 +57,16 @@ final class PIVKeyObjectECC extends PIVKeyObjectPKI {
       byte attributes)
       throws ISOException {
     super(id, modeContact, modeContactless, adminKey, mechanism, role, attributes);
-
     switch (getMechanism()) {
       case PIV.ID_ALG_ECC_P256:
       case PIV.ID_ALG_ECC_CS2:
-        params = ECParamsP256.getInstance();
-        break;
       case PIV.ID_ALG_ECC_P384:
       case PIV.ID_ALG_ECC_CS7:
-        params = ECParamsP384.getInstance();
+      	// Do nothing, just a mechanism check
         break;
       default:
-        params = null; // Keep the compiler happy
         ISOException.throwIt(ISO7816.SW_DATA_INVALID);
     }
-
-    // Uncompressed ECC public keys are marshaled as the concatenation of:
-    // CONST_POINT_UNCOMPRESSED | X | Y
-    // where the length of the X and Y coordinates is the byte length of the key.
-    // TODO: We can use 2 consts and decide which to compare against based on the mechanism!
-    marshaledPubKeyLen = (short) (getKeyLengthBytes() * 2 + 1);
   }
 
   /**
@@ -106,7 +92,7 @@ final class PIVKeyObjectECC extends PIVKeyObjectPKI {
 
     switch (element) {
       case ELEMENT_ECC_POINT:
-        if (length != marshaledPubKeyLen) {
+        if (length != getPublicPointLength()) {
           ISOException.throwIt(ISO7816.SW_WRONG_LENGTH);
           return; // Keep static analyser happy
         }
@@ -150,7 +136,31 @@ final class PIVKeyObjectECC extends PIVKeyObjectPKI {
       privateKey =
           (ECPrivateKey)
               KeyBuilder.buildKey(KeyBuilder.TYPE_EC_FP_PRIVATE, getKeyLengthBits(), false);
-      setPrivateParams();
+
+    switch (getMechanism()) {
+      case PIV.ID_ALG_ECC_P256:
+      case PIV.ID_ALG_ECC_CS2:
+		privateKey.setA(ECParamsP256.A, (short) 0, (short) ECParamsP256.A.length);
+		privateKey.setB(ECParamsP256.B, (short) 0, (short) ECParamsP256.B.length);
+		privateKey.setG(ECParamsP256.G, (short) 0, (short) ECParamsP256.G.length);
+		privateKey.setR(ECParamsP256.N, (short) 0, (short) ECParamsP256.N.length);
+		privateKey.setFieldFP(ECParamsP256.P, (short) 0, (short) ECParamsP256.P.length);
+		privateKey.setK(ECParamsP256.H);
+		break;
+
+      case PIV.ID_ALG_ECC_P384:
+      case PIV.ID_ALG_ECC_CS7:
+		privateKey.setA(ECParamsP384.A, (short) 0, (short) ECParamsP384.A.length);
+		privateKey.setB(ECParamsP384.B, (short) 0, (short) ECParamsP384.B.length);
+		privateKey.setG(ECParamsP384.G, (short) 0, (short) ECParamsP384.G.length);
+		privateKey.setR(ECParamsP384.N, (short) 0, (short) ECParamsP384.N.length);
+		privateKey.setFieldFP(ECParamsP384.P, (short) 0, (short) ECParamsP384.P.length);
+		privateKey.setK(ECParamsP384.H);
+		break;
+
+      default:
+        ISOException.throwIt(ISO7816.SW_DATA_INVALID);
+	  }
     }
   }
 
@@ -160,7 +170,31 @@ final class PIVKeyObjectECC extends PIVKeyObjectPKI {
       publicKey =
           (ECPublicKey)
               KeyBuilder.buildKey(KeyBuilder.TYPE_EC_FP_PUBLIC, getKeyLengthBits(), false);
-      setPublicParams();
+              
+    switch (getMechanism()) {
+      case PIV.ID_ALG_ECC_P256:
+      case PIV.ID_ALG_ECC_CS2:
+		publicKey.setA(ECParamsP256.A, (short) 0, (short) ECParamsP256.A.length);
+		publicKey.setB(ECParamsP256.B, (short) 0, (short) ECParamsP256.B.length);
+		publicKey.setG(ECParamsP256.G, (short) 0, (short) ECParamsP256.G.length);
+		publicKey.setR(ECParamsP256.N, (short) 0, (short) ECParamsP256.N.length);
+		publicKey.setFieldFP(ECParamsP256.P, (short) 0, (short) ECParamsP256.P.length);
+		publicKey.setK(ECParamsP256.H);
+		break;
+
+      case PIV.ID_ALG_ECC_P384:
+      case PIV.ID_ALG_ECC_CS7:
+		publicKey.setA(ECParamsP384.A, (short) 0, (short) ECParamsP384.A.length);
+		publicKey.setB(ECParamsP384.B, (short) 0, (short) ECParamsP384.B.length);
+		publicKey.setG(ECParamsP384.G, (short) 0, (short) ECParamsP384.G.length);
+		publicKey.setR(ECParamsP384.N, (short) 0, (short) ECParamsP384.N.length);
+		publicKey.setFieldFP(ECParamsP384.P, (short) 0, (short) ECParamsP384.P.length);
+		publicKey.setK(ECParamsP384.H);
+		break;
+
+      default:
+        ISOException.throwIt(ISO7816.SW_DATA_INVALID);
+	  }
     }
   }
 
@@ -186,7 +220,7 @@ final class PIVKeyObjectECC extends PIVKeyObjectPKI {
       // We know that the worst-case of this will fit into a short-form length.
       writer.init(scratch, offset, TLV.LENGTH_1BYTE_MAX, CONST_TAG_RESPONSE);
       writer.writeTag(ELEMENT_ECC_POINT);
-      writer.writeLength(marshaledPubKeyLen);
+      writer.writeLength(getPublicPointLength());
       offset = writer.getOffset();
       offset += (publicKey).getW(scratch, offset);
 
@@ -237,6 +271,24 @@ final class PIVKeyObjectECC extends PIVKeyObjectPKI {
         return (short) 0; // Keep compiler happy
     }
   }
+  
+  short getPublicPointLength() throws ISOException {
+	  
+    switch (getMechanism()) {
+      case PIV.ID_ALG_ECC_P256:
+      case PIV.ID_ALG_ECC_CS2:
+        return ECParamsP256.PUBLIC_LENGTH_BYTES;
+
+      case PIV.ID_ALG_ECC_P384:
+      case PIV.ID_ALG_ECC_CS7:
+        return ECParamsP384.PUBLIC_LENGTH_BYTES;
+
+      default:
+        ISOException.throwIt(ISO7816.SW_DATA_INVALID);
+        return (short) 0; // Keep compiler happy
+    }
+	  
+  }
 
   /**
    * @return true if the privateKey exists and is initialized.
@@ -269,39 +321,6 @@ final class PIVKeyObjectECC extends PIVKeyObjectPKI {
       privateKey.clearKey();
       privateKey = null;
     }
-  }
-
-  /** Set ECC domain parameters. */
-  private void setPrivateParams() {
-
-    byte[] a = params.getA();
-    byte[] b = params.getB();
-    byte[] g = params.getG();
-    byte[] p = params.getP();
-    byte[] r = params.getN();
-
-    privateKey.setA(a, (short) 0, (short) a.length);
-    privateKey.setB(b, (short) 0, (short) b.length);
-    privateKey.setG(g, (short) 0, (short) g.length);
-    privateKey.setR(r, (short) 0, (short) r.length);
-    privateKey.setFieldFP(p, (short) 0, (short) p.length);
-    privateKey.setK(params.getH());
-  }
-
-  /** Set ECC domain parameters. */
-  private void setPublicParams() {
-    byte[] a = params.getA();
-    byte[] b = params.getB();
-    byte[] g = params.getG();
-    byte[] p = params.getP();
-    byte[] r = params.getN();
-
-    publicKey.setA(a, (short) 0, (short) a.length);
-    publicKey.setB(b, (short) 0, (short) b.length);
-    publicKey.setG(g, (short) 0, (short) g.length);
-    publicKey.setR(r, (short) 0, (short) r.length);
-    publicKey.setFieldFP(p, (short) 0, (short) p.length);
-    publicKey.setK(params.getH());
   }
 
   /**

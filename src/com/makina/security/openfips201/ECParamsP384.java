@@ -30,26 +30,24 @@ package com.makina.security.openfips201;
  * Curve P-384 (aka SECP384R1) domain parameters from NIST SP 800-186
  * (https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-186-draft.pdf) para 4.2.1.4
  */
-final class ECParamsP384 extends ECParams {
+final class ECParamsP384 {
 
-  private static ECParams instance;
-
-  private ECParamsP384() {}
-
-  static ECParams getInstance() {
-    if (instance == null) {
-      instance = new ECParamsP384();
-    }
-    return instance;
+  private ECParamsP384() {
+	
   }
-  
-  static void terminate() {
-	// NOTE: It is the responsibility of the caller to perform garbage collection
-	instance = null;
-  }
+
+  // The private key length in bytes
+  static final short KEY_LENGTH_BYTES = (short)48;
+
+  // The uncompressed public point length
+  // NOTE: This is the 2 * KEY_LENGTH_BYTES + 1
+  static final short PUBLIC_LENGTH_BYTES = (short)97;
+
+  // cofactor
+  static final short H = (short)0x01;
 
   // Curve polynomial element a
-  protected static final byte[] a = {
+  static final byte[] A = {
     (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF,
     (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF,
     (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF,
@@ -65,7 +63,7 @@ final class ECParamsP384 extends ECParams {
   };
 
   // Curve polynomial element b
-  protected static final byte[] b = {
+  static final byte[] B = {
     (byte) 0xB3, (byte) 0x31, (byte) 0x2F, (byte) 0xA7,
     (byte) 0xE2, (byte) 0x3E, (byte) 0xE7, (byte) 0xE4,
     (byte) 0x98, (byte) 0x8E, (byte) 0x05, (byte) 0x6B,
@@ -81,7 +79,7 @@ final class ECParamsP384 extends ECParams {
   };
 
   // Base point
-  protected static final byte[] G = {
+  static final byte[] G = {
     (byte) 0x04, (byte) 0xAA, (byte) 0x87, (byte) 0xCA,
     (byte) 0x22, (byte) 0xBE, (byte) 0x8B, (byte) 0x05,
     (byte) 0x37, (byte) 0x8E, (byte) 0xB1, (byte) 0xC7,
@@ -110,7 +108,7 @@ final class ECParamsP384 extends ECParams {
   };
 
   // Field Definition
-  protected static final byte[] p = {
+  static final byte[] P = {
     (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF,
     (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF,
     (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF,
@@ -126,7 +124,7 @@ final class ECParamsP384 extends ECParams {
   };
 
   // Order of G
-  protected static final byte[] n = {
+  static final byte[] N = {
     (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF,
     (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF,
     (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF,
@@ -140,34 +138,4 @@ final class ECParamsP384 extends ECParams {
     (byte) 0xEC, (byte) 0xEC, (byte) 0x19, (byte) 0x6A,
     (byte) 0xCC, (byte) 0xC5, (byte) 0x29, (byte) 0x73
   };
-
-  @Override
-  protected byte[] getA() {
-    return a;
-  }
-
-  @Override
-  protected byte[] getB() {
-    return b;
-  }
-
-  @Override
-  protected byte[] getG() {
-    return G;
-  }
-
-  @Override
-  protected byte[] getP() {
-    return p;
-  }
-
-  @Override
-  protected byte[] getN() {
-    return n;
-  }
-
-  @Override
-  protected short getH() {
-    return H;
-  }
 }

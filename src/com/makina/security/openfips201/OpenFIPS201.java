@@ -138,12 +138,9 @@ public final class OpenFIPS201 extends Applet implements AppletEvent {
   	// - Get rid of all static instances that would prevent GP from deleting the applet instance 
   	//   without also deleting the corresponding package
   	// - TODO: Change TLVReader and TLVWriter to an instance
-  	// - TODO: Change ECParams to public final const arrays, there's no need to instantiate.
     TLVReader.terminate();
     TLVWriter.terminate();
     PIVCrypto.terminate();
-    ECParamsP256.terminate();
-    ECParamsP384.terminate();
   }
 
   @Override

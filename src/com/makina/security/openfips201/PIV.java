@@ -461,7 +461,7 @@ final class PIV {
       // NOTE:
       // This description doesn't explicitly say whether the entire response should be zero
       // (i.e. SW12 only), or to return the data object tag with a zero length.
-      //
+      //won't be long
       // TODO: Review what the NIST test cards do in this instance! That should be the default
       if (config.readFlag(Config.OPTION_READ_EMPTY_DATA_OBJECT)) {
         // We just return an OK response with no data
