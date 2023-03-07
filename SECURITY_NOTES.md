@@ -11,16 +11,13 @@
    out to be non-trivial (and probably very slow) in the JavaCard realm because of the limited number of crypto primitives
    supported by `javacardx.framework.math.BigNumber`.
    
-   The current implementation of OpenFIPS201 has no way to limit the crypto operations that can be asked of a particular
-   key. This means that any ECC key which is exposed for ECDSA (e.g. key 9E) may be subject to this attack unless the JCRE
-   or underlying crypto engine defends against it by confirming that the point is on the expected curve. Limiting the
-   crypto operations available to a key will be addressed in issue [#29](https://github.com/makinako/OpenFIPS201/issues/29) 
+   The current implementation of OpenFIPS201 permits limiting the crypto operations available to a key (see issue [#29](https://github.com/makinako/OpenFIPS201/issues/29)) and so we recommend that users:
+   * Confirm that the cards or tokens they use actively defend against the attack
+   * Never enable the `keyAgreement` role in conjunction with either of the `sign` or `authenticate` roles for any given ECC key object.
    
    Information about this attack can be found [here](https://web-in-security.blogspot.com/2015/09/practical-invalid-curve-attacks.html)
    
-   ### Recommendation
-   We recommend that users of OpenFIPS201 confirm that the cards or tokens they use actively defend against the attack.
-   
+   ### Recommendation  
    Test points that can be used to confirm the defence are included below. The points can be formed into APDUs by
    prepending the points with the following bytes:
    
