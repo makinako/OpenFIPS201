@@ -220,7 +220,6 @@ final class ChainBuffer {
       // We have been called in the middle of another operation! call resetAbort in case there is
       // some outstanding transaction
       resetAbort();
-      ISOException.throwIt(ISO7816.SW_CONDITIONS_NOT_SATISFIED);
     }
 
     //
