@@ -115,3 +115,5 @@ bin/*
 vendor_libs/*
 /.apt_generated/
 tools/format.bat
+/tools/sdk/jdk-11.0.2
+/output

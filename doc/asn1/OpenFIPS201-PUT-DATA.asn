@@ -1,40 +1,49 @@
---<OSS.PDU OpenFIPS201_PUT_DATA_Schema.PutDataRequest>--
-OpenFIPS201_PUT_DATA_Schema DEFINITIONS IMPLICIT TAGS ::= 
+--<OSS.PDU OpenFIPS201-PUT-DATA-ADMIN-Schema.PutDataRequest>--
+OpenFIPS201-PUT-DATA-ADMIN-Schema DEFINITIONS IMPLICIT TAGS ::= 
 BEGIN
 
 PutDataRequest ::= CHOICE {
-	legacyRequest		PutDataLegacyRequest,
-	createObjectRequest	[APPLICATION 4] PutDataCreateObjectRequest,
-	deleteObjectRequest	[APPLICATION 5] PutDataDeleteObjectRequest,
-	createKeyRequest 	[APPLICATION 6] PutDataCreateKeyRequest,
-	deleteKeyRequest 	[APPLICATION 7] PutDataDeleteKeyRequest,
-	configRequest		[APPLICATION 8] PutDataUpdateConfigRequest
+	createContainerRequest [APPLICATION 4] PutDataCreateObjectRequest,
+	createVerifierRequest  [APPLICATION 5] PutDataCreateVerifierRequest,
+	createKeyRequest 	   [APPLICATION 6] PutDataCreateKeyRequest,
+	updateConfigRequest	   [APPLICATION 8] PutDataUpdateConfigRequest,
+	deleteObjectRequest    [APPLICATION 9] PutDataDeleteObjectRequest,
+	deletePinRequest       [APPLICATION 10] PutDataDeletePinRequest,
+	deleteKeyRequest       [APPLICATION 11] PutDataDeleteKeyRequest,
+
+	secureRequest        [APPLICATION 31] NULL
 }
 
 PutDataBulkRequest ::= [APPLICATION 10] SEQUENCE OF PutDataRequest
 
-PutDataLegacyRequest ::= SEQUENCE {
-	operation		[10] LegacyOperation,
-	id				[11] OCTET STRING (SIZE(1..3)),
-	modeContact		[12] AccessMode,
-	modeContactless	[13] AccessMode,
-
-    -- Required for Keys only
-	keyMechanism	[14] KeyMechanism OPTIONAL,
-	keyRole			[15] KeyRole OPTIONAL,
-	keyAttribute	[16] OCTET STRING (SIZE(1)) OPTIONAL
-}
-
 PutDataCreateObjectRequest ::= SEQUENCE {
-	id				[11] OCTET STRING (SIZE(1..3)),
-
-	modeContact		[12] AccessMode,
-	modeContactless	[13] AccessMode,
-	adminKey		[17] OCTET STRING (SIZE(1)) OPTIONAL
+  id        [11] OCTET STRING (SIZE(1..3)),
+  modeContact   [12] AccessMode,
+  modeContactless [13] AccessMode,
+  adminKey    [17] OCTET STRING (SIZE(1)) OPTIONAL
 }
 
 PutDataDeleteObjectRequest ::= SEQUENCE {
-	id				[11] OCTET STRING (SIZE(1..3))
+  id        [11] OCTET STRING (SIZE(1..3))
+}
+
+PutDataCreateVerifierRequest ::= SEQUENCE {
+  id        [11] OCTET STRING (SIZE(1)),
+  modeContact   [12] AccessMode,
+  modeContactless [13] AccessMode,
+  minLength [14] INTEGER(4..16),
+  maxLength [15] INTEGER(4..16),
+  retriesContact [16] INTEGER (0..15),
+  retriesContactless [17] INTEGER (0..15),
+  ruleCharset [18] PinCharSet OPTIONAL,
+  ruleHistory [19] INTEGER (0..12) OPTIONAL,
+  ruleSequence [20] INTEGER (0..16) OPTIONAL,
+  ruleRepeat [21] INTEGER (0..16) OPTIONAL,
+  restrictUpdate [22] BOOLEAN OPTIONAL
+}
+
+PutDataDeletePinRequest ::= SEQUENCE {
+  id        [11] OCTET STRING (SIZE(1))
 }
 
 PutDataCreateKeyRequest ::= SEQUENCE {
@@ -50,23 +59,27 @@ PutDataCreateKeyRequest ::= SEQUENCE {
 }
 
 PutDataDeleteKeyRequest ::= SEQUENCE {
-	id				[11] OCTET STRING (SIZE(1)),
+	id					[11] OCTET STRING (SIZE(1)),
 	keyMechanism	[14] KeyMechanism OPTIONAL
 }
 
 PutDataUpdateConfigRequest ::= SEQUENCE {
-	pinPolicy			[0] PinPolicyParameter OPTIONAL,
-	pukPolicy 			[1] PukPolicyParameter OPTIONAL,
-	vciPolicy 			[2] VciPolicyParameter OPTIONAL,
-	occPolicy 			[3] OccPolicyParameter OPTIONAL,
-	options				[4] OptionsParameter OPTIONAL
+	-- If set to TRUE, the applet may not be selected over the contactless interface
+	restrictContactlessGlobal	[0] BOOLEAN OPTIONAL,
+
+	-- If set to TRUE, admin functions are disabled over the contactless interface 
+	restrictContactlessAdmin	[1] BOOLEAN OPTIONAL,
+
+	-- If TRUE, object listing functionality is disabled
+	restrictEnumeration			[2] BOOLEAN OPTIONAL,
+
+	-- If TRUE, requesting randomness is disabled
+	restrictRandom				[3] BOOLEAN OPTIONAL,
+
+	-- If TRUE, VCI compatibility mode (FIPS 140-2) is enabled
+	vciCompatibilityMode		[4] BOOLEAN OPTIONAL
 }
 
-LegacyOperation ::= ENUMERATED {
-	undefined	(0),		
-	dataObject	(1),
-	key			(2)
-}  
 
 AccessMode ::= ENUMERATED {
 	-- This object may never be accessed (typically used for restricting contactless)
@@ -77,15 +90,15 @@ AccessMode ::= ENUMERATED {
 	
 	-- PIN verification must immediately precede every access to this object
 	pinAlways	(2),
+	
+	-- This object may be accessed without any verification (free access, clobbers lower 6 bits).
+	always	(63),
 
-	-- Biometric On-Card Comparison may be used to access this object
-   	occ			(4),  
+    -- The object requires secure messaging to be set
+	sm			(64),	
 
     -- The object may be managed to by a cardholder who has satisfied the access conditions
-	userAdmin	(16),
-	
-	-- This object may be accessed without any verification (free access).
-	always		(127)
+	userAdmin	(-128)
 }
 
 KeyRole ::= ENUMERATED {
@@ -111,29 +124,13 @@ KeyRole ::= ENUMERATED {
 	--   RSA: RSA Digital Signature
 	--   ECC: ECDSA
 	--    SM: Not supported
-	sign		(4),
-
-   	-- RFU
-	verify		(8),
-	
-	-- RFU
-	encrypt		(16),
-	
-	-- RFU
-	decrypt		(32)
+	sign		(4)
 }
   
-KeyAttribute ::= ENUMERATED {
+KeyAttribute ::= BIT STRING {
 
 	-- No special attributes are defined
 	none			(0),
-
-   	-- This symmetric key permits INTERNAL authentication (encrypting a challenge).
-   	-- NOTE: Don't ever use this as it opens up oracle attacks! See SECURITY.MD
-   	-- SYM: Supported
-   	-- RSA: Not supported
-   	-- ECC: Not supported
-	permitInternal	(2),
 
    	-- This symmetric key permits EXTERNAL authentication (host authentication).
 	-- NOTE: Using this method does not provide any authentication of the card,
@@ -151,14 +148,20 @@ KeyAttribute ::= ENUMERATED {
 	
 	-- Permits this key to be imported (as opposed to generated)
 	-- Applies To: All keys (this MUST be set for symmetric keys)
-	importable	(16)
+	importable	(16),
+	
+	-- Uses the Chinese Remainder Theorem key format instead of vanilla RSA
+	-- Applies to: RSA keys only
+	rsaCRT (32)
 }
 
 KeyMechanism ::= ENUMERATED {
 	undefined (0),
-    tdea192 (3),
+  tdea192 (3),
 	rsa1024 (6),
 	rsa2048 (7),
+	rsa3072 (5),
+	rsa4096 (4),
 	aes128 (8),
 	aes192 (10),
 	aes256 (12),
@@ -183,80 +186,5 @@ PinCharSet ::= ENUMERATED {
 	raw					(3)
 
 }
-
-PinPolicyParameter ::= SEQUENCE {
-
-	-- PIN verification is enabled using the local (application) PIN
-	enableLocal				[0] BOOLEAN OPTIONAL,	
-
-	-- PIN verification is enabled using the global (card) PIN only
-	enableGlobal			[1] BOOLEAN OPTIONAL,
-
-	-- The discovery object will indicate a preference for the global PIN, if enabled
-	preferGlobal			[2] BOOLEAN OPTIONAL,
-
-	-- PIN verification may occur over the contactless interface
-	permitContactless 		[3] BOOLEAN OPTIONAL,
-	minLength				[4] INTEGER (4..32) OPTIONAL,
-	maxLength				[5] INTEGER (4..32) OPTIONAL,
-	maxRetriesContact 		[6] INTEGER (1..15) OPTIONAL,
-	maxRetriesContactless 	[7] INTEGER (1..15) OPTIONAL,	
-	charset					[8] PinCharSet OPTIONAL,
-	history					[9] INTEGER (0..12) OPTIONAL,
-	ruleSequence			[10] INTEGER (0..32) OPTIONAL,
-	ruleDistinct			[11] INTEGER (0..32) OPTIONAL
-}
-
-PukPolicyParameter ::= SEQUENCE {
-	enabled				[0] BOOLEAN OPTIONAL,
-	permitContactless 	[1] BOOLEAN OPTIONAL,
-	length				[2]	INTEGER (4..32) OPTIONAL,
-	retriesContact		[3] INTEGER (1..15) OPTIONAL,
-	retriesContactless	[4] INTEGER (1..15) OPTIONAL,
-	restrictUpdate		[5] BOOLEAN OPTIONAL
-}
-
-VciMode ::= ENUMERATED {
-	disabled (0),
-	enabled (1),
-	requirePairing (2)
-}
-
-OccMode ::= ENUMERATED {
-	disabled (0),
-	enabled (1)
-}
-
-VciPolicyParameter ::= SEQUENCE {
-	mode				[0] VciMode OPTIONAL
-}
-
-OccPolicyParameter ::= SEQUENCE {
-	mode				[0] OccMode OPTIONAL
-}
-
-OptionsParameter ::= SEQUENCE {
-
-	-- If enabled, the PIV applet will not be selectable over the contactless interface.
-	restrictContactlessGlobal	[0] BOOLEAN OPTIONAL,
-
-	-- If enabled, the PIV applet will not permit secure channel administration over the 
-	-- contactless interface.
-	restrictContactlessAdmin	[1] BOOLEAN OPTIONAL,
-
-	-- If enabled, enumeration of data objects or keys will not be permitted.
-	restrictEnumeration			[2] BOOLEAN OPTIONAL,
-
-	-- If enabled, only one record for each key id may be generated
-	restrictSingleKey 			[3] BOOLEAN OPTIONAL,
-
-	ignoreContactlessAcl		[4] BOOLEAN OPTIONAL,
-
-	readEmptyDataObject 		[5] BOOLEAN OPTIONAL,
-
-	-- If enabled, any RSA keys generated implement the Chinese Remainder Theorem variant
-	useRSACRT 					[6] BOOLEAN OPTIONAL
-}
-
 
 END

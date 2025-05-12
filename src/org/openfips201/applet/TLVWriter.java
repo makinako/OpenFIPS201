@@ -1,30 +1,26 @@
 /******************************************************************************
  * MIT License
  *
- * Project: OpenFIPS201
- * Copyright: (c) 2017 Commonwealth of Australia
- * Author: Kim O'Sullivan - Makina (kim@makina.com.au)
+ * Project: OpenFIPS201 Copyright: (c) 2025 Commonwealth of Australia 
+ * Author: Kim O'Sullivan / Makina (kim@makina.com.au / @makinako)
  *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
+ * associated documentation files (the "Software"), to deal in the Software without restriction,
+ * including without limitation the rights to use, copy, modify, merge, publish, distribute,
+ * sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
  *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
+ * The above copyright notice and this permission notice shall be included in all copies or
+ * substantial portions of the Software.
  *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT
+ * NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+ * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  ******************************************************************************/
 
-package com.makina.security.openfips201;
+package org.openfips201.applet;
 
 import javacard.framework.ISO7816;
 import javacard.framework.ISOException;
@@ -46,14 +42,14 @@ final class TLVWriter {
   // - 2 bytes = 0-255 bytes data length
   // - 3 bytes = 0-32767 bytes data length (because of java signed type)
   private static final short CONTEXT_LENGTH_MAX = (short) 0;
-  // The offset where the 2-byte length will be written at the end
+  // The offset where the the final constructed tag length will be written, if at all 
   private static final short CONTEXT_LENGTH_PTR = (short) 1;
   // The current offset in the buffer
   private static final short CONTEXT_OFFSET = (short) 2;
   // The original offset in the buffer
   private static final short CONTEXT_OFFSET_RESET = (short) 3;
 
-  private static final short LENGTH_CONTEXT = (short) 5;
+  private static final short LENGTH_CONTEXT = (short) 4;
 
   //
   // CONSTANTS
@@ -69,17 +65,47 @@ final class TLVWriter {
   }
 
   static TLVWriter getInstance() {
+    if (instance == null) {
+      allocate();
+    }
+    instance.reset();
+    return instance;
+  }
 
+  static void allocate() {
     if (instance == null) {
       instance = new TLVWriter();
     }
-
-    return instance;
   }
 
   static void terminate() {
     instance = null;
     JCSystem.requestObjectDeletion();
+  }
+
+  /**
+   * Initialises the object with a data buffer and starting offset, but no parent tag
+   *
+   * @param buffer The byte array to write to
+   * @param offset The starting offset
+   * @param maxLength the indicative maximum length of the expected content.
+   * @param tag The parent tag value
+   */
+  void init(byte[] buffer, short offset) throws ISOException { // NO_UCD
+    if (buffer == null) {
+      ISOException.throwIt(ISO7816.SW_DATA_INVALID);
+      return; // Make static analyser happy
+    }
+
+    dataPtr[0] = buffer;
+    context[CONTEXT_OFFSET] = offset;
+    context[CONTEXT_OFFSET_RESET] = offset;
+
+    // No parent TLV is being written; mark this by setting CONTEXT_LENGTH_BYTES to 0.
+    context[CONTEXT_LENGTH_PTR] = 0;
+
+    // The maxLength field is irrelevant in flat mode.
+    context[CONTEXT_LENGTH_MAX] = 0;
   }
 
   /**
@@ -90,13 +116,16 @@ final class TLVWriter {
    * @param buffer The byte array to write to
    * @param offset The starting offset
    * @param maxLength the indicative maximum length of the expected content.
-   * @param tagClass The parent tag class
    * @param tag The parent tag value
    */
-  void init(byte[] buffer, short offset, short maxLength, byte tagClass, byte tag)
-      throws ISOException {
-    tag |= tagClass;
-    init(buffer, offset, maxLength, tag);
+  void init(byte[] buffer, short offset, short maxLength, byte tag) throws ISOException {
+    init(buffer, offset);
+
+    // Set the parent TAG
+    writeTagByte(tag);
+
+    // Reserve the LENGTH value
+    reserveLength(maxLength);
   }
 
   /**
@@ -110,88 +139,84 @@ final class TLVWriter {
    * @param tag The parent tag value
    */
   void init(byte[] buffer, short offset, short maxLength, short tag) throws ISOException {
-
-    // This method no longer forces the tag to be constructed. That's the job of the caller
-    if (maxLength < (short) 0) ISOException.throwIt(ISO7816.SW_WRONG_LENGTH);
-
-    dataPtr[0] = buffer;
-
-    context[CONTEXT_OFFSET] = offset;
-    context[CONTEXT_OFFSET_RESET] = offset;
-    context[CONTEXT_LENGTH_MAX] = maxLength;
+    init(buffer, offset);
 
     // Set the parent TAG
-    writeTag(tag);
+    writeTagShort(tag);
 
     // Reserve the LENGTH value
-    if (maxLength <= TLV.LENGTH_1BYTE_MAX) {
-      // Store the offset where we will write the length at the end and increment
-      context[CONTEXT_LENGTH_PTR] = context[CONTEXT_OFFSET]++;
-    } else if (maxLength <= TLV.LENGTH_2BYTE_MAX) {
-      // Reserve a 1-byte length
-      buffer[context[CONTEXT_OFFSET]++] = (byte) 0x81;
-
-      // Store the offset where we will write the length at the end
-      context[CONTEXT_LENGTH_PTR] = context[CONTEXT_OFFSET]++;
-
-      // Move the position 1 forward
-      context[CONTEXT_OFFSET]++;
-    } else { // (maxLength <= LENGTH_3BYTE_MAX)
-      // Reserve a 2-byte length
-      buffer[context[CONTEXT_OFFSET]++] = (byte) 0x82;
-
-      // Store the offset where we will write the length at the end
-      context[CONTEXT_LENGTH_PTR] = context[CONTEXT_OFFSET];
-
-      // Move the position 2 forward
-      context[CONTEXT_OFFSET] += (short) 2;
-    }
+    reserveLength(maxLength);
   }
 
+  private void reserveLength(short maxLength) {
+    // Reserve the LENGTH value
+    short reserved;
+    if (maxLength <= TLV.LENGTH_1BYTE_MAX) {
+      reserved = 1;
+      context[CONTEXT_LENGTH_MAX] = TLV.LENGTH_1BYTE_MAX;
+    } else if (maxLength <= TLV.LENGTH_2BYTE_MAX) {
+      reserved = 2;
+      context[CONTEXT_LENGTH_MAX] = TLV.LENGTH_2BYTE_MAX;
+    } else { // (maxLength <= LENGTH_3BYTE_MAX)
+      reserved = 3;
+      context[CONTEXT_LENGTH_MAX] = TLV.LENGTH_3BYTE_MAX;
+    }
+
+    // Mark the original offset for the length and move to the new position
+    context[CONTEXT_LENGTH_PTR] = context[CONTEXT_OFFSET];
+    context[CONTEXT_OFFSET] += reserved;
+  }
+
+  byte[] getBuffer() {
+    return (byte[])dataPtr[0];
+  }
+  
   /**
    * Calculates the total object length for the parent constructed tag and clears all internal state
    *
    * @return The length of the entire data object
    */
   short finish() throws ISOException {
-
     // Write the length to the data object tag field
-    if (dataPtr[0] == null) ISOException.throwIt(ISO7816.SW_DATA_INVALID);
-
-    byte[] data = (byte[]) dataPtr[0];
+    if (dataPtr[0] == null) {
+      ISOException.throwIt(ISO7816.SW_DATA_INVALID);
+    }
 
     // Write the now known the LENGTH value
-    short length;
-    if (context[CONTEXT_LENGTH_MAX] >= 0 && context[CONTEXT_LENGTH_MAX] <= TLV.LENGTH_1BYTE_MAX) {
-      length = (short) (context[CONTEXT_OFFSET] - context[CONTEXT_LENGTH_PTR] - 1);
-      if (length > TLV.LENGTH_1BYTE_MAX) ISOException.throwIt(ISO7816.SW_DATA_INVALID);
-      data[context[CONTEXT_LENGTH_PTR]] = (byte) (length & (short) 0x007F);
-    } else if (context[CONTEXT_LENGTH_MAX] >= 0
-        && context[CONTEXT_LENGTH_MAX] <= TLV.LENGTH_2BYTE_MAX) {
-      length = (short) (context[CONTEXT_OFFSET] - context[CONTEXT_LENGTH_PTR] - 1);
-      if (length > TLV.LENGTH_2BYTE_MAX) ISOException.throwIt(ISO7816.SW_DATA_INVALID);
-      data[context[CONTEXT_LENGTH_PTR]] = (byte) (length & (short) 0x00FF);
-    } else if (context[CONTEXT_LENGTH_MAX] >= 0
-        && context[CONTEXT_LENGTH_MAX] <= TLV.LENGTH_3BYTE_MAX) {
-      length = (short) (context[CONTEXT_OFFSET] - context[CONTEXT_LENGTH_PTR] - 2);
-      Util.setShort(data, context[CONTEXT_LENGTH_PTR], length);
-    } else {
-      // Invalid length supplied
-      ISOException.throwIt(ISO7816.SW_WRONG_LENGTH);
+    if (context[CONTEXT_LENGTH_PTR] != 0) {
+      byte[] data = (byte[]) dataPtr[0];
+
+      short finalLength;
+      if (context[CONTEXT_LENGTH_MAX] <= TLV.LENGTH_1BYTE_MAX) {
+        finalLength = (short) (context[CONTEXT_OFFSET] - context[CONTEXT_LENGTH_PTR] - TLV.LENGTH_1BYTE);
+      } else if (context[CONTEXT_LENGTH_MAX] <= TLV.LENGTH_2BYTE_MAX) {
+        finalLength = (short) (context[CONTEXT_OFFSET] - context[CONTEXT_LENGTH_PTR] - TLV.LENGTH_2BYTE);
+      } else { // context[CONTEXT_LENGTH_MAX] <= TLV.LENGTH_3BYTE_MAX)
+        finalLength = (short) (context[CONTEXT_OFFSET] - context[CONTEXT_LENGTH_PTR] - TLV.LENGTH_3BYTE);
+      }
+
+      // Check if we have exceeded our maximum
+      if (finalLength > context[CONTEXT_LENGTH_MAX]) {
+        reset();
+        ISOException.throwIt(ISO7816.SW_DATA_INVALID);
+      }
+
+      // Write the length
+      writeLength(data, context[CONTEXT_LENGTH_PTR], finalLength);
     }
 
     // Update length to calculate the total length of bytes written
-    length = (short) (context[CONTEXT_OFFSET] - context[CONTEXT_OFFSET_RESET]);
+    short totalLength = (short) (context[CONTEXT_OFFSET] - context[CONTEXT_OFFSET_RESET]);
 
-    // Reset all internal state (this will also unlock)
+    // Reset all internal state
     reset();
 
-    // Done, release the lock and return the total length
-    return length;
+    // Done, return the total length written
+    return totalLength;
   }
 
   /** Clears the current state */
-  void reset() {
+  private void reset() {
     dataPtr[0] = null;
 
     context[CONTEXT_OFFSET_RESET] = (short) 0;
@@ -201,21 +226,11 @@ final class TLVWriter {
   }
 
   /**
-   * Returns whether a TLV object is currently being written
-   *
-   * @return Whether this instance is initialised
-   */
-  boolean isInitialized() {
-    return (dataPtr[0] != null);
-  }
-
-  /**
    * Progresses the write pointer forward when you have written to the buffer in some other way.
    *
    * @param length The number of elements to progress forward.
    */
   void move(short length) {
-    // TODO: Make sure we won't go over our length boundary
     context[CONTEXT_OFFSET] += length;
   }
 
@@ -226,13 +241,13 @@ final class TLVWriter {
    * @param value The value to write
    */
   void write(byte tag, byte value) throws ISOException {
-    if (dataPtr[0] == null) ISOException.throwIt(ISO7816.SW_DATA_INVALID);
+    if (dataPtr[0] == null) {
+      ISOException.throwIt(ISO7816.SW_DATA_INVALID);
+    }
     byte[] data = (byte[]) dataPtr[0];
 
-    // TODO: Make sure we won't go over our length boundary
-
     // Set the TAG
-    writeTag(tag);
+    writeTagByte(tag);
 
     // Set the LENGTH
     data[context[CONTEXT_OFFSET]++] = (byte) 1;
@@ -247,95 +262,32 @@ final class TLVWriter {
    * @param tag The tag to write
    * @param value The value to write
    */
-  void write(short tag, byte value) throws ISOException {
-    if (dataPtr[0] == null) ISOException.throwIt(ISO7816.SW_DATA_INVALID);
+  void write(byte tag, int value) throws ISOException {
+    if (dataPtr[0] == null) {
+      ISOException.throwIt(ISO7816.SW_DATA_INVALID);
+    }
     byte[] data = (byte[]) dataPtr[0];
-
-    // TODO: Make sure we won't go over our length boundary
 
     // Set the TAG
-    writeTag(tag);
+    writeTagByte(tag);
 
-    // Set the LENGTH
-    data[context[CONTEXT_OFFSET]++] = (byte) 1;
+    // Compute the necessary length to hold the integer value
+    short length = 0;
+    if ((value & 0xFF0000) != 0) {
+        length = 3;  // The value needs three bytes
+    } else if ((value & 0xFF00) != 0) {
+        length = 2;  // The value needs two bytes
+    } else if ((value & 0xFF) != 0) {
+        length = 1;  // The value needs one byte
+    }
 
-    // Set the VALUE
-    data[context[CONTEXT_OFFSET]++] = value;
-  }
+    // Write the length
+    data[context[CONTEXT_OFFSET]++] = (byte) length;
 
-  /**
-   * Adds an object with a byte value to the TLV object
-   *
-   * @param tagClass The tag class to assign to this tag
-   * @param tag The tag to write
-   * @param value The value to write
-   */
-  void write(byte tagClass, byte tag, byte value) throws ISOException {
-    if (dataPtr[0] == null) ISOException.throwIt(ISO7816.SW_DATA_INVALID);
-    byte[] data = (byte[]) dataPtr[0];
-
-    // TODO: Make sure we won't go over our length boundary
-
-    // Combine the tag/class and set the tag value
-    tag |= tagClass;
-    writeTag(tag);
-
-    // Set the LENGTH
-    data[context[CONTEXT_OFFSET]++] = (byte) 1;
-
-    // Set the VALUE
-    data[context[CONTEXT_OFFSET]++] = value;
-  }
-
-  /**
-   * Adds an object with a short value to the TLV object
-   *
-   * @param tag The tag to write
-   * @param value The value to write
-   */
-  void write(short tag, short value) throws ISOException {
-    if (dataPtr[0] == null) ISOException.throwIt(ISO7816.SW_DATA_INVALID);
-    byte[] data = (byte[]) dataPtr[0];
-
-    // TODO: Make sure we won't go over our length boundary
-
-    // Set the TAG
-    writeTag(tag);
-
-    // Set the LENGTH
-    data[context[CONTEXT_OFFSET]++] = (byte) 2;
-
-    // Set the VALUE
-    Util.setShort(data, context[CONTEXT_OFFSET], value);
-
-    context[CONTEXT_OFFSET] += (short) 2;
-  }
-
-  /**
-   * Adds an object with a byte array value to the TLV object
-   *
-   * @param tag The tag to write
-   * @param buffer The byte array to read from
-   * @param offset The starting offset for the input array
-   * @param length The number of bytes to read from the input array
-   */
-  void write(short tag, byte[] buffer, short offset, short length) throws ISOException {
-
-    if (dataPtr[0] == null) ISOException.throwIt(ISO7816.SW_DATA_INVALID);
-    byte[] data = (byte[]) dataPtr[0];
-
-    // TODO: Make sure we won't go over our length boundary
-
-    // Set the TAG
-    writeTag(tag);
-
-    // Set the LENGTH
-    writeLength(length);
-
-    // Set the VALUE
-    Util.arrayCopy(buffer, offset, data, context[CONTEXT_OFFSET], length);
-
-    // Increment the position / length
+    // Write the value according to the calculated length
+    for (short i = 0; i < length; i++) {
+        data[(short)(context[CONTEXT_OFFSET] + i)] = (byte) ((value >> (8 * (length - i - 1))) & 0xFF);
+    }    
     context[CONTEXT_OFFSET] += length;
   }
 
@@ -349,13 +301,14 @@ final class TLVWriter {
    */
   void write(byte tag, byte[] buffer, short offset, short length) throws ISOException {
 
-    if (dataPtr[0] == null) ISOException.throwIt(ISO7816.SW_DATA_INVALID);
+    if (dataPtr[0] == null) {
+      ISOException.throwIt(ISO7816.SW_DATA_INVALID);
+    }
+
     byte[] data = (byte[]) dataPtr[0];
 
-    // TODO: Make sure we won't go over our length boundary
-
     // Set the TAG
-    writeTag(tag);
+    writeTagByte(tag);
 
     // Set the LENGTH
     writeLength(length);
@@ -368,24 +321,32 @@ final class TLVWriter {
   }
 
   /**
-   * Adds an object with no value to the TLV object
+   * Adds an object with a byte array value to the TLV object
    *
    * @param tag The tag to write
+   * @param buffer The byte array to read from
+   * @param offset The starting offset for the input array
+   * @param length The number of bytes to read from the input array
    */
-  void writeNull(short tag) throws ISOException {
+  void write(short tag, byte[] buffer, short offset, short length) throws ISOException {
 
-    if (dataPtr[0] == null) ISOException.throwIt(ISO7816.SW_DATA_INVALID);
+    if (dataPtr[0] == null) {
+      ISOException.throwIt(ISO7816.SW_DATA_INVALID);
+    }
+
     byte[] data = (byte[]) dataPtr[0];
 
-    // TODO: Make sure we won't go over our length boundary
-
     // Set the TAG
-    writeTag(tag);
+    writeTagShort(tag);
 
     // Set the LENGTH
-    data[context[CONTEXT_OFFSET]++] = (byte) 0;
+    writeLength(length);
 
-    // There is no VALUE element
+    // Set the VALUE
+    Util.arrayCopy(buffer, offset, data, context[CONTEXT_OFFSET], length);
+
+    // Increment the position / length
+    context[CONTEXT_OFFSET] += length;
   }
 
   /**
@@ -394,8 +355,10 @@ final class TLVWriter {
    * @param tag The tag to write
    * @return The length of the tag bytes written
    */
-  short writeTag(byte tag) {
-    return writeTag((short) (tag & 0xFF));
+  short writeTagByte(byte tag) {
+    ((byte[]) dataPtr[0])[context[CONTEXT_OFFSET]] = tag;
+    context[CONTEXT_OFFSET]++;
+    return (short) 1; // Length of the tag
   }
 
   /**
@@ -404,7 +367,7 @@ final class TLVWriter {
    * @param tag The tag to write
    * @return The length of the tag bytes written
    */
-  short writeTag(short tag) {
+  short writeTagShort(short tag) {
     if (tag >= 0 && tag <= 255) {
       // Single-byte tag
       ((byte[]) dataPtr[0])[context[CONTEXT_OFFSET]] = (byte) tag;
@@ -412,8 +375,7 @@ final class TLVWriter {
       return (short) 1; // Length of the tag
     } else {
       // Double-byte tag
-      Util.setShort((byte[]) dataPtr[0], context[CONTEXT_OFFSET], tag);
-      context[CONTEXT_OFFSET] += (short) 2;
+      context[CONTEXT_OFFSET] = Util.setShort((byte[]) dataPtr[0], context[CONTEXT_OFFSET], tag);
       return (short) 2; // Length of the tag
     }
   }
@@ -425,26 +387,33 @@ final class TLVWriter {
    * @return The length of the Length bytes written
    */
   short writeLength(short length) {
+    context[CONTEXT_OFFSET] = writeLength((byte[]) dataPtr[0], context[CONTEXT_OFFSET], length);
+    return context[CONTEXT_OFFSET];
+  }
 
-    byte[] data = (byte[]) dataPtr[0];
+  /**
+   * Writes the LENGTH portion of an object only
+   *
+   * @param length The length value to write
+   * @return The length of the Length bytes written
+   */
+  static short writeLength(byte[] buffer, short offset, short length) {
 
     // Set the LENGTH
     if (length >= 0 && length <= 127) {
       // Single-byte length
-      data[context[CONTEXT_OFFSET]++] = (byte) length;
-      return (short) 1;
+      buffer[offset++] = (byte) length;
     } else if (length > 127 && length <= 255) {
       // Double-byte length
-      data[context[CONTEXT_OFFSET]++] = (byte) 0x81;
-      data[context[CONTEXT_OFFSET]++] = (byte) length;
-      return (short) 2;
+      buffer[offset++] = (byte) 0x81;
+      buffer[offset++] = (byte) length;
     } else {
       // Triple-byte length
-      data[context[CONTEXT_OFFSET]++] = (byte) 0x82;
-      Util.setShort(data, context[CONTEXT_OFFSET], length);
-      context[CONTEXT_OFFSET] += (short) 2;
-      return (short) 3;
+      buffer[offset++] = (byte) 0x82;
+      offset = Util.setShort(buffer, offset, length);
     }
+
+    return offset;
   }
 
   /**

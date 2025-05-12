@@ -1,37 +1,36 @@
 /******************************************************************************
  * MIT License
  *
- * Project: OpenFIPS201
- * Copyright: (c) 2017 Commonwealth of Australia
- * Author: Kim O'Sullivan - Makina (kim@makina.com.au)
+ * Project: OpenFIPS201 Copyright: (c) 2025 Commonwealth of Australia 
+ * Author: Kim O'Sullivan / Makina (kim@makina.com.au / @makinako)
  *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
+ * associated documentation files (the "Software"), to deal in the Software without restriction,
+ * including without limitation the rights to use, copy, modify, merge, publish, distribute,
+ * sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
  *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
+ * The above copyright notice and this permission notice shall be included in all copies or
+ * substantial portions of the Software.
  *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT
+ * NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+ * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  ******************************************************************************/
 
-package com.makina.security.openfips201;
+package org.openfips201.applet;
 
-abstract class PIVKeyObjectPKI extends PIVKeyObject {
+import javacard.framework.ISO7816;
+import javacard.framework.ISOException;
 
-  protected static final short CONST_TAG_RESPONSE = (short) 0x7F49;
+abstract class PIVKeyPKI extends PIVKey {
 
-  protected PIVKeyObjectPKI(
-      byte id,
+  static final short CONST_TAG_RESPONSE = (short) 0x7F49;
+  
+  PIVKeyPKI(
+      int id,
       byte modeContact,
       byte modeContactless,
       byte adminKey,
@@ -39,10 +38,27 @@ abstract class PIVKeyObjectPKI extends PIVKeyObject {
       byte role,
       byte attributes) {
     super(id, modeContact, modeContactless, adminKey, mechanism, role, attributes);
+
+
+    // Role Check - The SIGN and KEY_ESTABLISH may not co-exist
+    if ((role & ROLE_SIGN) == ROLE_SIGN && 
+        (role & ROLE_KEY_ESTABLISH) == ROLE_KEY_ESTABLISH ) {
+      ISOException.throwIt(ISO7816.SW_WRONG_DATA);
+    }
+    
+    // Attribute Check - The EXTERNAL attribute MUST NOT be set for asymmetric keys
+    if ((attributes & ATTR_PERMIT_EXTERNAL) != (byte) 0) {
+      ISOException.throwIt(ISO7816.SW_WRONG_DATA);
+    }
+
+    // Attribute Check - The MUTUAL attribute MUST NOT be set for asymmetric keys
+    if ((attributes & ATTR_PERMIT_MUTUAL) != (byte) 0) {
+      ISOException.throwIt(ISO7816.SW_WRONG_DATA);
+    }
   }
 
   /**
-   * Signs the passed precomputed hash
+   * Performs the digital signature operation supported by this key type
    *
    * @param inBuffer contains the precomputed hash
    * @param inOffset the location of the first byte of the hash
@@ -55,16 +71,16 @@ abstract class PIVKeyObjectPKI extends PIVKeyObject {
       byte[] inBuffer, short inOffset, short inLength, byte[] outBuffer, short outOffset);
 
   /**
-   * Performs a key agreement
+   * Performs a key establishment operation supported by this key type
    *
-   * @param inBuffer the input to the key agreement operation
-   * @param inOffset the the location of first byte of the key agreement input
-   * @param inLength the length of the key agreement input
-   * @param outBuffer the key agreement output
-   * @param outOffset the location of the first byte of the key agreement output
-   * @return the length of the key agreement output
+   * @param inBuffer the input to the key establishment operation
+   * @param inOffset the the location of first byte of the key establishment input
+   * @param inLength the length of the key establishment input
+   * @param outBuffer the key establishment output
+   * @param outOffset the location of the first byte of the key establishment output
+   * @return the length of the key establishment output
    */
-  abstract short keyAgreement(
+  abstract short keyEstablish(
       byte[] inBuffer, short inOffset, short inLength, byte[] outBuffer, short outOffset);
 
   /**
@@ -75,4 +91,7 @@ abstract class PIVKeyObjectPKI extends PIVKeyObject {
    * @return The length of the generated key
    */
   abstract short generate(byte[] outBuffer, short outOffset);
+
+  @Override
+  abstract short getBlockLength();
 }
