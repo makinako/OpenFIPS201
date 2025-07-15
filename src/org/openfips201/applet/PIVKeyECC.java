@@ -120,20 +120,20 @@ class PIVKeyECC extends PIVKeyPKI {
       return;
     }
 
-    ECPrivateKey privateKey;
+    ECPrivateKey privateKey; 
     ECPublicKey publicKey;
     
     switch (getMechanism()) {
     case Constants.ID_ALG_ECC_P256:
     case Constants.ID_ALG_ECC_CS2:
-      privateKey = (ECPrivateKey)Platform.Cryptography.buildKey(KeyBuilder.ALG_TYPE_EC_FP_PRIVATE, KeyBuilder.LENGTH_EC_FP_256);
-      publicKey = (ECPublicKey)Platform.Cryptography.buildKey(KeyBuilder.ALG_TYPE_EC_FP_PUBLIC, KeyBuilder.LENGTH_EC_FP_256);
+      privateKey = (ECPrivateKey)Platform.Cryptography.buildKey(KeyBuilder.TYPE_EC_FP_PRIVATE, KeyBuilder.LENGTH_EC_FP_256);
+      publicKey = (ECPublicKey)Platform.Cryptography.buildKey(KeyBuilder.TYPE_EC_FP_PUBLIC, KeyBuilder.LENGTH_EC_FP_256);
       break;
 
     case Constants.ID_ALG_ECC_P384:
     case Constants.ID_ALG_ECC_CS7:
-      privateKey = (ECPrivateKey)Platform.Cryptography.buildKey(KeyBuilder.ALG_TYPE_EC_FP_PRIVATE, KeyBuilder.LENGTH_EC_FP_384);
-      publicKey = (ECPublicKey)Platform.Cryptography.buildKey(KeyBuilder.ALG_TYPE_EC_FP_PUBLIC, KeyBuilder.LENGTH_EC_FP_384);
+      privateKey = (ECPrivateKey)Platform.Cryptography.buildKey(KeyBuilder.TYPE_EC_FP_PRIVATE, KeyBuilder.LENGTH_EC_FP_384);
+      publicKey = (ECPublicKey)Platform.Cryptography.buildKey(KeyBuilder.TYPE_EC_FP_PUBLIC, KeyBuilder.LENGTH_EC_FP_384);
       break;
 
     default:
