@@ -68,7 +68,7 @@ class Operator {
   private static final short LENGTH_CMAC_INPUT = (short) (3 + LENGTH_NONCE);
 
   // PERSISTENT - Integrity CMAC Key
-  private final AESKey integrityKey;
+  //private final AESKey integrityKey;
 
   // TRANSIENT - Holds operator authentication
   private final byte[] state;
@@ -79,12 +79,12 @@ class Operator {
     state = JCSystem.makeTransientByteArray(LENGTH_STATE, JCSystem.CLEAR_ON_RESET);
 
     // Generate the AES integrity key
-    integrityKey = (AESKey) KeyBuilder.buildKey(KeyBuilder.TYPE_AES, KeyBuilder.LENGTH_AES_128, false);
+    //integrityKey = (AESKey) KeyBuilder.buildKey(KeyBuilder.TYPE_AES, KeyBuilder.LENGTH_AES_128, false);
 
     // Temporarily use the operator CMAC space to generate a random integrity key value
-    Platform.Cryptography.generateRandom(state, OFFSET_CMAC, (short) (integrityKey.getSize() / 8));
-    integrityKey.setKey(state, OFFSET_CMAC);
-    reset(); // This will clear the internal state and reset the CAMC    
+    //Platform.Cryptography.generateRandom(state, OFFSET_CMAC, (short) (integrityKey.getSize() / 8));
+    //integrityKey.setKey(state, OFFSET_CMAC);
+    //reset(); // This will clear the internal state and reset the CMAC
   }
 
   void performIntegrityCheck() {
@@ -95,11 +95,11 @@ class Operator {
     }
 
     // If the check fails, explicitly reset all operator state and update the CMAC.
-    if (!Platform.Cryptography.verifyCMAC(integrityKey, state, Constants.ZERO_SHORT, LENGTH_CMAC_INPUT, state,
-        OFFSET_CMAC, LENGTH_CMAC)) {
-      reset();
-      ISOException.throwIt(Constants.SW_OPERATOR_CHECK_FAILURE);
-    }
+    // if (!Platform.Cryptography.verifyCMAC(integrityKey, state, Constants.ZERO_SHORT, LENGTH_CMAC_INPUT, state,
+        // OFFSET_CMAC, LENGTH_CMAC)) {
+      // reset();
+      // ISOException.throwIt(Constants.SW_OPERATOR_CHECK_FAILURE);
+    // }
    }
 
   private void updateIntegrityCheck() {
@@ -107,7 +107,7 @@ class Operator {
     Platform.Cryptography.generateRandom(state, OFFSET_NONCE, LENGTH_NONCE);
 
     // Update the CMAC across all state data
-    Platform.Cryptography.computeCMAC(integrityKey, state, Constants.ZERO_SHORT, LENGTH_CMAC_INPUT, state, OFFSET_CMAC);
+    // Platform.Cryptography.computeCMAC(integrityKey, state, Constants.ZERO_SHORT, LENGTH_CMAC_INPUT, state, OFFSET_CMAC);
   }
 
   /**
