@@ -60,7 +60,7 @@ final class Config {
   //
   static final byte VERSION_MAJOR = (byte) 2;
   static final byte VERSION_MINOR = (byte) 0;
-  static final byte VERSION_REVISION = (byte) 0;
+  static final byte VERSION_REVISION = (byte) 1;
 
   //
   // FIPS-140 Approve Mode flag
