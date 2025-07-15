@@ -30,6 +30,7 @@ import javacard.framework.OwnerPIN;
 import javacard.framework.TransactionException;
 import javacard.framework.Util;
 import javacard.security.AESKey;
+import javacard.security.CryptoException;
 import javacard.security.ECKey;
 import javacard.security.ECPrivateKey;
 import javacard.security.Key;
@@ -124,7 +125,7 @@ class Platform {
       JCSystem.requestObjectDeletion();
     }
   }
-  
+
   static OwnerPIN createPIN(byte tryLimit, byte maxPINSize) {
     return new OwnerPIN(tryLimit, maxPINSize);
   }
@@ -194,7 +195,7 @@ class Platform {
 
       try {
         if (cspAES == null) {
-          cspAES = Cipher.getInstance(Cipher.CIPHER_AES_ECB, false);
+          cspAES = Cipher.getInstance(Cipher.ALG_AES_BLOCK_128_ECB_NOPAD, false);
         }
       } catch (Exception ex) {
         // Just fall-through if it isn't supported
@@ -203,7 +204,7 @@ class Platform {
 
       try {
         if (cspTDEA == null) {
-          cspTDEA = Cipher.getInstance(Cipher.CIPHER_DES_ECB, false);
+          cspTDEA = Cipher.getInstance(Cipher.ALG_DES_ECB_NOPAD, false);
         }
       } catch (Exception ex) {
         // Just fall-through if it isn't supported
@@ -230,7 +231,7 @@ class Platform {
 
       try {
         if (cspCMAC == null) {
-          cspCMAC = null;
+          cspCMAC = getCMAC();
         }
       } catch (Exception ex) {
         // Just fall-through if it isn't supported
@@ -280,9 +281,11 @@ class Platform {
       cspTDEA = null;
       cspRSA = null;
       cspECDSA = null;
+      cspCMAC = null;
       cspECDH = null;
       cspSHA256 = null;
       cspSHA384 = null;
+      cspRandom = null;
       requestObjectDeletion();
     }
 
@@ -306,14 +309,14 @@ class Platform {
         return (!Config.FIPS_APPROVED_MODE && cspRSA != null);
 
       case Constants.ID_ALG_RSA_2048:
-      case Constants.ID_ALG_RSA_3072:
-      case Constants.ID_ALG_RSA_4096:
+        //case Constants.ID_ALG_RSA_3072:
+        //case Constants.ID_ALG_RSA_4096:
         return (cspRSA != null);
 
       case Constants.ID_ALG_ECC_P256:
       case Constants.ID_ALG_ECC_P384:
-      case Constants.ID_ALG_ECC_CS2:
-      case Constants.ID_ALG_ECC_CS7:
+        //case Constants.ID_ALG_ECC_CS2:
+        //case Constants.ID_ALG_ECC_CS7:
         return (cspECDSA != null && cspECDH != null);
 
       default:
@@ -336,6 +339,8 @@ class Platform {
     }
 
     static Signature getCMAC() {
+      //final byte SIG_CIPHER_AES_CMAC16 = (byte) 0x67; // From P60 UGAM      
+      //return Signature.getInstance(MessageDigest.ALG_NULL, SIG_CIPHER_AES_CMAC16, Cipher.PAD_NOPAD, false);
       return null;
     }
 
@@ -384,8 +389,7 @@ class Platform {
         } else {
           ISOException.throwIt(ISO7816.SW_FUNC_NOT_SUPPORTED);
         }
-
-        return null;
+        return (Key) key;
 
       default:
         return null;
