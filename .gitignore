@@ -117,3 +117,4 @@ vendor_libs/*
 tools/format.bat
 /tools/sdk/jdk-11.0.2
 /output
+/tools/sdk/p60secid
