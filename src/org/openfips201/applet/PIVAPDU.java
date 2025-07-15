@@ -681,12 +681,12 @@ final class PIVAPDU {
       //
       // PLAINTEXT: Send the data directly from the source buffer up to the maximum permitted
       //
+      apdu.setOutgoingLength(outLength);
       if (inLength > 0) {
-        apdu.setOutgoingLength(outLength);
         apdu.sendBytesLong(data, context[CONTEXT_OFFSET], outLength);
-        context[CONTEXT_REMAINING] -= inLength;
-        context[CONTEXT_OFFSET] += inLength;
       }
+      context[CONTEXT_REMAINING] -= inLength;
+      context[CONTEXT_OFFSET] += inLength;
 
       // If we have nothing left to send, clear our context and return 9000
       if (context[CONTEXT_REMAINING] > 0) {
@@ -701,7 +701,7 @@ final class PIVAPDU {
       // NOTE: We limit our response data to the maximum supported depending on which mode is enabled
       //
 
-      // If response wrapping is not required, just treat it as plaintext
+      // Wrap before sending if required
       if (channelSCP.isResponseWrapped()) {
         short limit = channelSCP.getMaxWrapLength();
         if (inLength > limit) {
@@ -731,11 +731,10 @@ final class PIVAPDU {
           channelSCP.reset();
           ISOException.throwIt(ISO7816.SW_UNKNOWN);
         }
-        apdu.setOutgoingLength(outLength);
-        apdu.sendBytes(Constants.ZERO_SHORT, outLength);
-      } else {
-        // Same as plaintext
-        apdu.setOutgoingLength(outLength);
+      }
+      
+      apdu.setOutgoingLength(outLength);
+      if (outLength > 0) {
         apdu.sendBytesLong(data, context[CONTEXT_OFFSET], outLength);
       }
       
@@ -776,7 +775,9 @@ final class PIVAPDU {
       }
 
       apdu.setOutgoingLength(outLength);
-      apdu.sendBytes(Constants.ZERO_SHORT, outLength);
+      if (outLength > 0) {
+        apdu.sendBytes(Constants.ZERO_SHORT, outLength);
+      }
 
       // Request how many INPUT bytes were used in the call to wrap()
       inLength = channelPIVSM.getLastBytesWrapped();
