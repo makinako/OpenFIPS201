@@ -13,7 +13,7 @@
 	<target name="jc305-release">
 		<property name="platform" value="jc305"/>
 		<javacard jckit="tools/sdk/jcdk-3.0.5">
-			<cap targetsdk="tools/sdk/jcdk-3.0.5" sources="src;src-platform/${platform}" debug="false" ints="true" aid="A0000003084F46323031" version="${version}" 
+			<cap targetsdk="tools/sdk/jcdk-3.0.5" sources="src;src-platform/${platform}" debug="false" ints="true" aid="A00000030800001000" version="${version}" 
 				 output="${outputPath}/bin-release/%n-v${version}-jc%j-%J.cap">
 				<applet class="org.openfips201.applet.OpenFIPS201" aid="A000000308000010000100"/>
 				<import jar="tools/sdk/org.globalplatform-1.6/gpapi-globalplatform.jar"/>
@@ -25,7 +25,7 @@
 	<target name="jc305-debug">
 		<property name="platform" value="jc305"/>
 		<javacard jckit="tools/sdk/jcdk-3.0.5">
-			<cap targetsdk="tools/sdk/jcdk-3.0.5" sources="src;src-platform/${platform}" debug="true" ints="true" aid="A0000003084F46323031" version="${version}" 
+			<cap targetsdk="tools/sdk/jcdk-3.0.5" sources="src;src-platform/${platform}" debug="true" ints="true" aid="A00000030800001000" version="${version}" 
 				 output="${outputPath}/bin-debug/%n-v${version}-jc%j-%J.cap">
 				<applet class="org.openfips201.applet.OpenFIPS201" aid="A000000308000010000100"/>
 				<import jar="tools/sdk/org.globalplatform-1.6/gpapi-globalplatform.jar"/>
@@ -36,7 +36,7 @@
 	<target name="jc304-release">
 		<property name="platform" value="jc304"/>
 		<javacard jckit="tools/sdk/jcdk-3.0.4">
-			<cap targetsdk="tools/sdk/jcdk-3.0.4" sources="src;src-platform/${platform}" debug="false" ints="true" aid="A0000003084F46323031" version="${version}" 
+			<cap targetsdk="tools/sdk/jcdk-3.0.4" sources="src;src-platform/${platform}" debug="false" ints="true" aid="A00000030800001000" version="${version}" 
 				 output="${outputPath}/bin-release/%n-v${version}-jc%j-%J.cap">
 				<applet class="org.openfips201.applet.OpenFIPS201" aid="A000000308000010000100"/>
 				<import jar="tools/sdk/org.globalplatform-1.6/gpapi-globalplatform.jar"/>
@@ -48,7 +48,7 @@
 	<target name="jc304-debug">
 		<property name="platform" value="jc304"/>
 		<javacard jckit="tools/sdk/jcdk-3.0.4">
-			<cap targetsdk="tools/sdk/jcdk-3.0.4" sources="src;src-platform/${platform}" debug="true" ints="true" aid="A0000003084F46323031" version="${version}" 
+			<cap targetsdk="tools/sdk/jcdk-3.0.4" sources="src;src-platform/${platform}" debug="true" ints="true" aid="A00000030800001000" version="${version}" 
 				 output="${outputPath}/bin-debug/%n-v${version}-jc%j-%J.cap">
 				<applet class="org.openfips201.applet.OpenFIPS201" aid="A000000308000010000100"/>
 				<import jar="tools/sdk/org.globalplatform-1.6/gpapi-globalplatform.jar"/>
@@ -56,8 +56,7 @@
 		</javacard>
 	</target>
 
-	<target name="all" depends="jc304-release">
+	<target name="all" depends="jc304-release,jc305-release">
 		<tstamp/>
 	</target>
-<!-- jc304-release,jc304-debug,jc305-release,jc305-debug -->
 </project>
