@@ -134,11 +134,6 @@ public final class OpenFIPS201 extends Applet implements AppletEvent {
 
   @Override
   public boolean select() {
-    // Ensure that the ChannelSCP instance is initialised (we can't do this in the constructor)
-    // because GPSystem.getSecureChannel() explictly says: This method shall not be invoked from 
-    // the Applet.install() method.
-    channelSCP.init();
-
     // Check if we are permitted to be selected over the current interface. If not,
     // decline to be selected, which means the only way to recover this is to be used over a
     // contact interface.
