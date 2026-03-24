@@ -66,7 +66,7 @@ final class ChannelSCP {
   }
 
   boolean isEstablished() {
-    return ((scp.getSecurityLevel() & REQUIRED_LEVEL) == REQUIRED_LEVEL);
+    return ((GPSystem.getSecureChannel().getSecurityLevel() & REQUIRED_LEVEL) == REQUIRED_LEVEL);
   }
 
   static boolean isSecureChannel(byte cla) {
@@ -75,7 +75,7 @@ final class ChannelSCP {
   }
 
   boolean isResponseWrapped() {
-    return ((scp.getSecurityLevel() & (SecureChannel.R_ENCRYPTION | SecureChannel.R_MAC)) != 0);
+    return ((GPSystem.getSecureChannel().getSecurityLevel() & (SecureChannel.R_ENCRYPTION | SecureChannel.R_MAC)) != 0);
   }
 
   short unwrap(byte[] buffer, short offset, short length) {
