@@ -282,7 +282,7 @@ class Platform {
     }
     
     static Signature getCMAC() {
-      return Signature.getInstance(Signature.SIG_CIPHER_AES_CMAC128, false);
+      return Signature.getInstance(Signature.ALG_AES_CMAC_128, false);
     }
 
     static short computeCMAC(AESKey key, byte[] inBuffer, short inOffset, short inLength, byte[] outBuffer,
