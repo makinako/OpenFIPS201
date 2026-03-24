@@ -789,12 +789,14 @@ public final class OpenFIPS201 extends Applet implements AppletEvent {
 
     // PRE-CONDITION 3 - The command must contain data
     if (inLength <= Constants.ZERO_SHORT) {
+      pApdu.reset();
       ISOException.throwIt(ISO7816.SW_WRONG_LENGTH);
     }
 
     // PRE-CONDITION 4 - The parameter values must be equal to the constant '3FFF'
     // (standard) or '3F00' (administrative)
     if (pApdu.getP1() != PARAM_P1) {
+      pApdu.reset();
       ISOException.throwIt(ISO7816.SW_INCORRECT_P1P2);
     }
 
@@ -810,6 +812,7 @@ public final class OpenFIPS201 extends Applet implements AppletEvent {
 
     default:
       ISOException.throwIt(ISO7816.SW_INCORRECT_P1P2);
+      pApdu.reset();
       return; // Keep compiler happy
     }
 
@@ -836,8 +839,10 @@ public final class OpenFIPS201 extends Applet implements AppletEvent {
       try {
         offset = piv.putData(pApdu);
       } catch (ISOException ex) {
+        pApdu.reset();
         throw ex;
       } catch (Exception ex) {
+        pApdu.reset();
         ISOException.throwIt(ISO7816.SW_UNKNOWN);
         return; // Keep compiler happy
       }
