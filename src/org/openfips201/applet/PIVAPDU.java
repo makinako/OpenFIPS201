@@ -681,8 +681,8 @@ final class PIVAPDU {
       //
       // PLAINTEXT: Send the data directly from the source buffer up to the maximum permitted
       //
+      apdu.setOutgoingLength(outLength);
       if (inLength > 0) {
-        apdu.setOutgoingLength(outLength);
         apdu.sendBytesLong(data, context[CONTEXT_OFFSET], outLength);
         context[CONTEXT_REMAINING] -= inLength;
         context[CONTEXT_OFFSET] += inLength;
@@ -736,7 +736,9 @@ final class PIVAPDU {
       } else {
         // Same as plaintext
         apdu.setOutgoingLength(outLength);
-        apdu.sendBytesLong(data, context[CONTEXT_OFFSET], outLength);
+        if (outLength > 0) {
+          apdu.sendBytesLong(data, context[CONTEXT_OFFSET], outLength);
+        }
       }
       
       context[CONTEXT_REMAINING] -= inLength;
@@ -776,7 +778,9 @@ final class PIVAPDU {
       }
 
       apdu.setOutgoingLength(outLength);
-      apdu.sendBytes(Constants.ZERO_SHORT, outLength);
+      if (outLength > 0) {
+        apdu.sendBytes(Constants.ZERO_SHORT, outLength);        
+      }
 
       // Request how many INPUT bytes were used in the call to wrap()
       inLength = channelPIVSM.getLastBytesWrapped();
