@@ -34,9 +34,6 @@ final class ChannelSCP {
   private static final byte CLA_MASK_SECURE_MESSAGING = (byte) 0x0C;
   private static final byte CLA_FLAG_SCP = (byte) 0x04;
 
-  // REFERENCE - Pointer to the active secure channel
-  private SecureChannel scp;
-
   private static final byte REQUIRED_LEVEL = SecureChannel.AUTHENTICATED | SecureChannel.C_DECRYPTION
       | SecureChannel.C_MAC;
 
@@ -45,19 +42,19 @@ final class ChannelSCP {
   }
 
   void init() {
-    if (scp == null) {
-      scp = GPSystem.getSecureChannel();
-    }
   }
 
   short initializeUpdate(APDU apdu) {
     // Force reset
+    SecureChannel scp = GPSystem.getSecureChannel();
     scp.resetSecurity();
 
     return scp.processSecurity(apdu);
   }
 
   short externalAuthenticate(APDU apdu) {
+    SecureChannel scp = GPSystem.getSecureChannel();
+
     short length = scp.processSecurity(apdu);
 
     if ((scp.getSecurityLevel() & REQUIRED_LEVEL) != REQUIRED_LEVEL) {
@@ -113,6 +110,7 @@ final class ChannelSCP {
 
     // We can now unwrap
     try {
+      SecureChannel scp = GPSystem.getSecureChannel();
       length = scp.unwrap(buffer, offset, length);
     } catch (ISOException ex) {
       reset();
@@ -133,6 +131,7 @@ final class ChannelSCP {
     // Begin with the maximum amount when no wrapping is enabled
     short result = (short) 256;
 
+    SecureChannel scp = GPSystem.getSecureChannel();
     if ((scp.getSecurityLevel() & SecureChannel.R_ENCRYPTION) == SecureChannel.R_ENCRYPTION) {
       // R_ENCRYPTION + R_MAC is enabled
       result = (short) 240; // 256 bytes - 8 byte R_MAC value = 248. Nearest multiple of 16 is 240. 
@@ -160,6 +159,7 @@ final class ChannelSCP {
 
     // We can now wrap
     try {
+      SecureChannel scp = GPSystem.getSecureChannel();
       length = scp.wrap(buffer, offset, length);
     } catch (ISOException ex) {
       reset();
@@ -173,7 +173,7 @@ final class ChannelSCP {
   }
 
   void reset() {
-    init();
+    SecureChannel scp = GPSystem.getSecureChannel();
     scp.resetSecurity();
   }
 }
