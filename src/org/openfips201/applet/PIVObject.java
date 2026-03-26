@@ -50,7 +50,14 @@ abstract class PIVObject {
   // The object may be accessed ONLY over an established PIV Secure Messaging channel
   // NOTE: This is an independent criteria to any other access condition.
   static final byte ACCESS_MODE_SM = (byte) 0x40;
-  
+
+  // The object may be accessed ONLY over an established PIV Secure Messaging channel AND
+  // the VCI condition has been met.
+  // NOTES:
+  // - This is an independent criteria to any other access condition except SM
+  // - Setting this implicitly also sets ACCESS_MODE_SM (0x40)
+  static final byte ACCESS_MODE_VCI = (byte) 0x60;
+
   // The object may be managed to by a user who has satisfied the access
   // conditions.
   // NOTES:
@@ -59,7 +66,7 @@ abstract class PIVObject {
   static final byte ACCESS_MODE_USER_ADMIN = (byte) 0x80;
 
   // The object may be accessed ALWAYS
-  static final byte ACCESS_MODE_ALWAYS = (byte) 0x3F; // Special value rather than a bitmap
+  static final byte ACCESS_MODE_ALWAYS = (byte) 0x1F; // Special value rather than a bitmap
 
   static final short HEADER_MODE_CONTACT = (short) 0;
   static final short HEADER_MODE_CONTACTLESS = (short) 1;
