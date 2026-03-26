@@ -2752,7 +2752,7 @@ final class PIV {
    */
   private void checkAccessPrivilege(PIVObject object, PIVAPDU pApdu) {
     
-    boolean result = false;
+    short result = Constants.FALSE_SHORT;
 
     // Select the appropriate access mode to check    
     byte mode = Platform.isContactless() ? object.getModeContactless() : object.getModeContact();
@@ -2782,12 +2782,12 @@ final class PIV {
 
     // ACCESS CONDITION 1 - Check for special ALWAYS condition, which ignores PIN_ALWAYS
     if ((mode & PIVObject.ACCESS_MODE_ALWAYS) == PIVObject.ACCESS_MODE_ALWAYS) {
-      result = true;
+      result = Constants.TRUE_SHORT;
     } else {
       // ACCESS CONDITION 2 - The 'Key Holder' role is authenticated and the authenticated key 
       // matches the object's administrative key.
       if (operator.hasRole(Operator.ROLE_KEY_HOLDER) && object.getAdminKey() == operator.getId()) {
-        result = true;
+        result = Constants.TRUE_SHORT;
       }
       // ACCESS CONDITION 3 - An authenticated user may access with MODE_PIN_ALWAYS if
       // there was an immediately preceding authentication
@@ -2795,7 +2795,7 @@ final class PIV {
       // PIN Always is checked later because it is applied to 
       if ((mode & PIVObject.ACCESS_MODE_PIN) == PIVObject.ACCESS_MODE_PIN && 
           operator.hasRole(Operator.ROLE_USER)) {
-        result = true;
+        result = Constants.TRUE_SHORT;
       }
 
       // SPECIAL - 'IMMEDIATE' CHECK (Previously called 'PIN ALWAYS')
@@ -2807,7 +2807,7 @@ final class PIV {
       // NOTE: It doesn't make a lot of sense to apply this to the KEY_HOLDER, but the PIV
       // test runner will fail if we don't constrain them as well.
       if ((mode & PIVObject.ACCESS_MODE_IMMEDIATE) == PIVObject.ACCESS_MODE_IMMEDIATE && !immediate) {
-        result = false;
+        result = Constants.FALSE_SHORT;
       }
     }
 
@@ -2820,15 +2820,15 @@ final class PIV {
     // and therefore the channel is protected.
     if ((mode & PIVObject.ACCESS_MODE_VCI) == PIVObject.ACCESS_MODE_VCI
         && !isVirtualContactInterface(pApdu)) {
-      result = false;
+      result = Constants.FALSE_SHORT;
     }    
     if ((mode & PIVObject.ACCESS_MODE_SM) == PIVObject.ACCESS_MODE_SM
         && pApdu.getSecureChannel() != PIVAPDU.SECURE_CHANNEL_PIVSM) {
-      result = false;
+      result = Constants.FALSE_SHORT;
     }      
 
     // Final check
-    if (!result) {
+    if (Constants.FALSE_SHORT == result || Constants.TRUE_SHORT != result) {
       ISOException.throwIt(ISO7816.SW_SECURITY_STATUS_NOT_SATISFIED);
     }
 
