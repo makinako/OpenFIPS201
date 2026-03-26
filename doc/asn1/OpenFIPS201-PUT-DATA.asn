@@ -91,11 +91,14 @@ AccessMode ::= ENUMERATED {
 	-- PIN verification must immediately precede every access to this object
 	pinAlways	(2),
 	
-	-- This object may be accessed without any verification (free access, clobbers lower 6 bits).
-	always	(63),
+	-- This object may be accessed without any verification (free access, clobbers lower 5 bits).
+	always	(31),
 
-    -- The object requires secure messaging to be set
+    -- The object requires secure messaging to be true
 	sm			(64),	
+	
+    -- The object requires secure messaging AND the VCI condition to be true
+	vci			(96),	
 
     -- The object may be managed to by a cardholder who has satisfied the access conditions
 	userAdmin	(-128)
