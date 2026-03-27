@@ -442,13 +442,6 @@ final class PIV {
       return; // Keep compiler happy
     }
 
-    // PRE-CONDITION 2: If PUK and VCI COMPATIBILITY MODE is disabled, it cannot be used over VCI
-    // NOTE: Under no circumstances does the PIV standard PUK usage auth over contactless
-    if (id == Constants.ID_AUTH_PUK && !config.readFlag(Config.CONFIG_VCI_COMPATIBILITY_MODE)
-        && Platform.isContactless() && isVirtualContactInterface(pApdu)) {
-      ISOException.throwIt(Constants.SW_REFERENCE_NOT_FOUND);
-    }
-
     // PRE-CONDITION 2: The verifier must be permitted
     checkAccessPrivilege(verifier, pApdu);
 
@@ -680,6 +673,15 @@ final class PIV {
     // (implemented in verify()).
     // - This applet does not decrement if the format of either PIN/PUK is wrong.
 
+    byte[] buffer = pApdu.getData();
+    short offset = pApdu.getDataOffset();
+    short length = pApdu.getDataLength();
+
+    //
+    // NOTE: 
+    // Although it makes no functional difference, the order of these pre-conditions must be 
+    // maintained to pass the PIV Test Runner. 
+    
     // PRE-CONDITION 1: The requested verifier must be defined
     PIVVerifier verifier = dataStore.getVerifier(id);
     if (verifier == null) {
@@ -687,23 +689,19 @@ final class PIV {
       return; // Keep compiler happy
     }
 
-    // PRE-CONDITION 2: The verifier must be permitted
-    checkAccessPrivilege(verifier, pApdu);
-
-    // PRE-CONDITION 3: The 'RESTRICT UPDATE' flag must be false for this verifier
+    // PRE-CONDITION 2: The 'RESTRICT UPDATE' flag must be false for this verifier
     if (verifier.getRestrictUpdate()) {
       ISOException.throwIt(Constants.SW_REFERENCE_NOT_FOUND);
     }
 
-    byte[] buffer = pApdu.getData();
-    short offset = pApdu.getDataOffset();
-    short length = pApdu.getDataLength();
-
-    // PRE-CONDITION 4: Ensure the supplied length is exactly two maximum lengths
+    // PRE-CONDITION 3: Ensure the supplied length is exactly two maximum lengths
     byte maxLength = verifier.getMaxLength();
     if (length != (short) (maxLength * 2)) {
       ISOException.throwIt(ISO7816.SW_WRONG_DATA);
-    }
+    }      
+
+    // PRE-CONDITION 4: The verifier must be permitted
+    checkAccessPrivilege(verifier, pApdu);
 
     // If the authentication data in the command data field satisfies the criteria
     // in Section 2.4.3 and matches the current value of the reference data, but
@@ -816,8 +814,14 @@ final class PIV {
       return; // Keep compiler happy
     }
 
-    // PRE-CONDITION 6: The verifier must be permitted
-    checkAccessPrivilege(puk, pApdu);
+    // PRE-CONDITION 6: The puk must be permitted
+    // NOTE: The PIV Test Runner expects either SW_REFERENCE_NOT_FOUND or SW_FUNC_NOT_SUPPORTED
+    // errors only. So if we get an exception here we return the latter for interoperability.
+    try {
+      checkAccessPrivilege(puk, pApdu);      
+    } catch (Exception ex) {
+      ISOException.throwIt(ISO7816.SW_FUNC_NOT_SUPPORTED);
+    }
 
     // If the reset retry counter authentication data (PUK) in the command data
     // field of the command does not match reference data associated with the PUK
@@ -2760,11 +2764,17 @@ final class PIV {
    * @return True of the access mode check passed
    */
   private void checkAccessPrivilege(PIVObject object, PIVAPDU pApdu) {
-    boolean result = false;
+    
+    short result = Constants.FALSE_SHORT;
 
     // Select the appropriate access mode to check    
-    byte mode = !Platform.isContactless() || isVirtualContactInterface(pApdu) ? object.getModeContact()
-        : object.getModeContactless();
+    byte mode = Platform.isContactless() ? object.getModeContactless() : object.getModeContact();
+
+    // The VCI compatibility flag exists for compliance with older middleware/systems that treat
+    // the VCI condition as always equivalent to the Contact interface 
+    if (config.readFlag(Config.CONFIG_VCI_COMPATIBILITY_MODE) && isVirtualContactInterface(pApdu)) {
+      mode = object.getModeContact();
+    }
 
     // Always perform an integrity check on the operator permissions before using them
     operator.performIntegrityCheck();
@@ -2785,19 +2795,20 @@ final class PIV {
 
     // ACCESS CONDITION 1 - Check for special ALWAYS condition, which ignores PIN_ALWAYS
     if ((mode & PIVObject.ACCESS_MODE_ALWAYS) == PIVObject.ACCESS_MODE_ALWAYS) {
-      result = true;
+      result = Constants.TRUE_SHORT;
     } else {
       // ACCESS CONDITION 2 - The 'Key Holder' role is authenticated and the authenticated key 
       // matches the object's administrative key.
       if (operator.hasRole(Operator.ROLE_KEY_HOLDER) && object.getAdminKey() == operator.getId()) {
-        result = true;
+        result = Constants.TRUE_SHORT;
       }
-      // ACCESS CONDITION 4 - An authenticated user may access with MODE_PIN_ALWAYS if
+      // ACCESS CONDITION 3 - An authenticated user may access with MODE_PIN_ALWAYS if
       // there was an immediately preceding authentication
       // NOTE:
       // PIN Always is checked later because it is applied to 
-      else if ((mode & PIVObject.ACCESS_MODE_PIN) == PIVObject.ACCESS_MODE_PIN) {
-        result = (operator.hasRole(Operator.ROLE_USER));
+      if ((mode & PIVObject.ACCESS_MODE_PIN) == PIVObject.ACCESS_MODE_PIN && 
+          operator.hasRole(Operator.ROLE_USER)) {
+        result = Constants.TRUE_SHORT;
       }
 
       // SPECIAL - 'IMMEDIATE' CHECK (Previously called 'PIN ALWAYS')
@@ -2807,24 +2818,30 @@ final class PIV {
       // pass the IMMEDIATE check.
       //
       // NOTE: It doesn't make a lot of sense to apply this to the KEY_HOLDER, but the PIV
-      // test runner will fail if we don't contrain them as well.
-      if ((mode & PIVObject.ACCESS_MODE_IMMEDIATE) == PIVObject.ACCESS_MODE_IMMEDIATE) {
-        result = immediate;
+      // test runner will fail if we don't constrain them as well.
+      if ((mode & PIVObject.ACCESS_MODE_IMMEDIATE) == PIVObject.ACCESS_MODE_IMMEDIATE && !immediate) {
+        result = Constants.FALSE_SHORT;
       }
     }
 
     //
-    // SPECIAL - SECURE MESSAGING CHECK
+    // SPECIAL - SECURE MESSAGING & VCI CHECK
     //
-    // This check is independent and so result can be reset to false if this fails.
-    // It requires that PIV Secure Messaging was used, but it will skip the check if
-    // SCP was used as this only possible for an administrative connection, which is protected.
+    // These checks are independent and so the result can be reset to false if either fails.
+    // NOTE: 
+    // Both SM and VCI checks are skipped if SCP is used, as this is considered administrative
+    // and therefore the channel is protected.
+    if ((mode & PIVObject.ACCESS_MODE_VCI) == PIVObject.ACCESS_MODE_VCI
+        && !isVirtualContactInterface(pApdu)) {
+      result = Constants.FALSE_SHORT;
+    }    
     if ((mode & PIVObject.ACCESS_MODE_SM) == PIVObject.ACCESS_MODE_SM
-        && pApdu.getSecureChannel() == PIVAPDU.SECURE_CHANNEL_NONE) {
-      result = false;
-    }
+        && pApdu.getSecureChannel() != PIVAPDU.SECURE_CHANNEL_PIVSM) {
+      result = Constants.FALSE_SHORT;
+    }      
 
-    if (!result) {
+    // Final check
+    if (Constants.FALSE_SHORT == result || Constants.TRUE_SHORT != result) {
       ISOException.throwIt(ISO7816.SW_SECURITY_STATUS_NOT_SATISFIED);
     }
 
