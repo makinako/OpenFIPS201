@@ -243,7 +243,14 @@ abstract class PIVKey extends PIVObject {
     if (!Platform.Cryptography.supportsMechanism(mechanism)) {
       ISOException.throwIt(ISO7816.SW_FUNC_NOT_SUPPORTED);
     }
-
+       
+    // PRE-CONDITION: For the reserved PIV Secure Messaging identifier only, we restrict
+    // to the known cipher suite mechanisms
+    if (id == Config.DEFAULT_PIVSM_KEY && mechanism != Constants.ID_ALG_ECC_CS2 && 
+        mechanism != Constants.ID_ALG_ECC_CS7) {
+      ISOException.throwIt(Constants.SW_PUT_DATA_KEY_MECHANISM_INVALID);      
+    }
+    
     // PRE-CONDITION: The 'KEY ROLE' tag MUST be present
     if (!reader.match(Constants.TAG_KEY_ROLE)) {
       ISOException.throwIt(Constants.SW_PUT_DATA_KEY_ROLE_MISSING);

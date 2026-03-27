@@ -1964,7 +1964,20 @@ final class PIV {
       return; // Keep static analyser happy
     }
 
-    // PRE-CONDITION 4B - The key reference and mechanism must exist (mechanism
+    // PRE-CONDITION 4B - For the PIV-SM key, if the generic ECC mechanism is supplied,
+    // map it to the appropriate cipher suite.
+    // NOTE: This is required because although the algorithm identifiers for PIV-SM keys are 
+    // '27' (P256) & '2E' (P384), for the GEN ASYM KEYPAIR command only the PIV Test Runner wants 
+    // the original ECCP256 ('11') and ECCP384 ('14') identifiers specified. This implies that 
+    // other PIV implementations with PIV-SM probably do the same thing and so shall we.
+    if (id == Config.DEFAULT_PIVSM_KEY && mechanism == Constants.ID_ALG_ECC_P256) {
+      mechanism = Constants.ID_ALG_ECC_CS2;
+    }    
+    if (id == Config.DEFAULT_PIVSM_KEY && mechanism == Constants.ID_ALG_ECC_P384) {
+      mechanism = Constants.ID_ALG_ECC_CS7;
+    }    
+    
+    // PRE-CONDITION 4C - The key reference and mechanism must exist (mechanism
     // test)
     PIVKey key = dataStore.getKey(id, mechanism);
     if (key == null) {
