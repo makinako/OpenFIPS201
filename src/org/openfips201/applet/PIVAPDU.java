@@ -276,7 +276,9 @@ final class PIVAPDU {
     // 
 
     // PRE-CONDITION: The first frame of the APDU must be already processed
-    if (context[CONTEXT_STATE] != STATE_INCOMING_APDU_COMPLETE && context[CONTEXT_STATE] != STATE_OUTGOING) {
+    if (context[CONTEXT_STATE] != STATE_INCOMING_APDU_COMPLETE 
+        && context[CONTEXT_STATE] != STATE_INCOMING_OBJECT_COMPLETE 
+        && context[CONTEXT_STATE] != STATE_OUTGOING) {
       ISOException.throwIt(ISO7816.SW_CONDITIONS_NOT_SATISFIED);
     }
 
@@ -618,6 +620,42 @@ final class PIVAPDU {
     return context[CONTEXT_LENGTH]; // Return the # of bytes read so far
   }
 
+  /**
+   * Allows an immediate outgoing SW_OK response without altering the internal state.
+   * Used for handling incoming data where a wrapped SW_OK response is required.  
+   * @param apdu
+   * @throws ISOException
+   */
+  void processOutgoingAck(APDU apdu) throws ISOException {
+    // PRE-CONDITION: We must be currently chaining an incoming APDU or Object
+    if (context[CONTEXT_STATE] != STATE_INCOMING_APDU && 
+        context[CONTEXT_STATE] != STATE_INCOMING_OBJECT &&
+        context[CONTEXT_STATE] != STATE_INCOMING_OBJECT_COMPLETE) {
+      ISOException.throwIt(ISO7816.SW_CONDITIONS_NOT_SATISFIED);
+    }
+    
+    if (context[CONTEXT_SECURE_CHANNEL] == SECURE_CHANNEL_SCP && channelSCP.isResponseWrapped()) {
+      byte[] apduBuffer = apdu.getBuffer();
+      
+      // Write the intended status to the start of the buffer
+      Util.setShort(apduBuffer, Constants.ZERO_SHORT, ISO7816.SW_NO_ERROR);
+      
+      try {
+        // Wrap just the 2 status bytes
+        short outLength = channelSCP.wrap(apduBuffer, Constants.ZERO_SHORT, (short) 2);
+        apdu.setOutgoingAndSend(Constants.ZERO_SHORT, outLength);
+      } catch (ISOException ex) {
+        reset();
+        channelSCP.reset();
+        throw ex;
+      } catch (Exception ex) {
+        reset();
+        channelSCP.reset();
+        ISOException.throwIt(ISO7816.SW_UNKNOWN);
+      }
+    }    
+  }
+  
   /**
    * Starts or continues processing for an outgoing buffer being transmitted to the host
    *
