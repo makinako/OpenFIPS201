@@ -134,7 +134,7 @@ final class ChannelSCP {
     SecureChannel scp = GPSystem.getSecureChannel();
     if ((scp.getSecurityLevel() & SecureChannel.R_ENCRYPTION) == SecureChannel.R_ENCRYPTION) {
       // R_ENCRYPTION + R_MAC is enabled
-      result = (short) 240; // 256 bytes - 8 byte R_MAC value = 248. Nearest multiple of 16 is 240. 
+      result = (short) 239; // 256 bytes - 8 byte R_MAC value = 248. Nearest multiple of 16 is 240. 
     } else if ((scp.getSecurityLevel() & SecureChannel.R_MAC) == SecureChannel.R_MAC) {
       // Only R_MAC is enabled
       result = (short) 248; // 256 bytes - 8 byte R_MAC value 
