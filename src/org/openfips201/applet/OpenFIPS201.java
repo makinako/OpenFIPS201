@@ -576,6 +576,7 @@ public final class OpenFIPS201 extends Applet implements AppletEvent {
 
     // PRE-CONDITION 1 - The command must be complete (No error, just return)
     if (!pApdu.isCompleteCommand()) {
+      pApdu.processOutgoingAck(apdu);
       return;
     }
 
@@ -709,6 +710,8 @@ public final class OpenFIPS201 extends Applet implements AppletEvent {
 
     // PRE-CONDITION 1 - The command must be complete (No error, just return to allow the next part)
     if (!pApdu.isCompleteCommand()) {
+      // Immediately acknowledge with SW_OK (doesn't alter status)
+      pApdu.processOutgoingAck(apdu);
       return;
     }
 
@@ -779,11 +782,14 @@ public final class OpenFIPS201 extends Applet implements AppletEvent {
 
     // PRE-CONDITION 1 - If this is a continuation of a previous chained object, just return
     if (pApdu.getState() == PIVAPDU.STATE_INCOMING_OBJECT) {
+      // Immediately acknowledge with SW_OK (doesn't alter status)
+      pApdu.processOutgoingAck(apdu);
       return;
     }
 
     // PRE-CONDITION 2 - If this is the completion of a previous chained object, just return
     if (pApdu.getState() == PIVAPDU.STATE_INCOMING_OBJECT_COMPLETE) {
+      pApdu.setOutgoingStatus(ISO7816.SW_NO_ERROR);
       return;
     }
 
@@ -818,6 +824,8 @@ public final class OpenFIPS201 extends Applet implements AppletEvent {
 
     // PRE-CONDITION 5 - If admin, the command must be complete (Not an error, just return)
     if (Constants.TRUE_SHORT == admin && !pApdu.isCompleteCommand()) {
+      // Immediately acknowledge with SW_OK (doesn't alter status)
+      pApdu.processOutgoingAck(apdu);
       return;
     }
 
@@ -855,6 +863,9 @@ public final class OpenFIPS201 extends Applet implements AppletEvent {
 
         // STEP 2 - Process the first block to the destination object, skipping unwrapping
         pApdu.processIncomingObject(offset, inLength, apdu.isCommandChainingCLA());
+        
+        // Immediately acknowledge with SW_OK (doesn't alter status)
+        pApdu.processOutgoingAck(apdu);
       }
     }
   }
