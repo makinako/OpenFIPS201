@@ -746,9 +746,10 @@ final class PIVAPDU {
           inLength = limit;
         }
         // Figure out what status we intend to return first so we can include it in the wrap data
-        if ((short) (context[CONTEXT_REMAINING] - inLength) > 0) {
+        short remaining = (short)(context[CONTEXT_REMAINING] - inLength); 
+        if (remaining > 0) {
           status = ISO7816.SW_BYTES_REMAINING_00;
-          status |= (context[CONTEXT_REMAINING] > (short) 0x00FF) ? (short) 0x00FF : context[CONTEXT_REMAINING];
+          status |= (remaining > (short) 0x00FF) ? (short) 0x00FF : remaining;
         }
 
         // Copy the data (if any) and the status bytes (they will be removed later) to the output
@@ -779,12 +780,6 @@ final class PIVAPDU {
       
       context[CONTEXT_REMAINING] -= inLength;
       context[CONTEXT_OFFSET] += inLength;
-
-      // If we have nothing left to send, clear our context and return 9000
-      if (context[CONTEXT_REMAINING] > 0) {
-        status = ISO7816.SW_BYTES_REMAINING_00;
-        status |= (context[CONTEXT_REMAINING] > (short) 0x00FF) ? (short) 0x00FF : context[CONTEXT_REMAINING];
-      }
       break;
 
     case SECURE_CHANNEL_PIVSM:
