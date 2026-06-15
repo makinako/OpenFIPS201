@@ -1,9 +1,8 @@
 # OpenFIPS201 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-
-
-| IMPORTANT: This is the _unreleased_ version of the OpenFIPS201 v2.0 FIPS applet! It is the code-base that passed the FIPS 140-3 testing, however the release for this applet is subject to final submission from the lab and so until then, consider this a preview to help users understand what has changed in more detail. |
-| ------------------------------------------------------------ |
+> [!WARNING]  
+> This is the _unreleased_ version of the OpenFIPS201 v2.0 FIPS applet! It is the code-base that passed the FIPS 140-3 testing, however the release for this applet is subject to final submission from the lab and so until then, consider this a preview to help users understand what has changed in more detail.
+> 
 
 **Applet Features:**
 

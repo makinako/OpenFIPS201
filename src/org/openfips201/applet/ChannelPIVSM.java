@@ -636,11 +636,16 @@ final class ChannelPIVSM {
       // Recalculate the padding bytes (since we only encrypt in block-multiples, it will be the same)      
       short cipherLength = (short) (inLength + LENGTH_BLOCK - (inLength % LENGTH_BLOCK));
 
+      // The actual ciphertext bytes emitted. update() MAY emit fewer than we feed in, because a
+      // padded cipher can hold back a complete block until doFinal adds the padding.
+      short enciphered;
+
       // Can we fit all remaining ciphertext, including padding bytes in outBuffer?
       if (cipherLength <= bytesRemaining) {
 
         // Call doFinal, presuming that it will write exactly [cipherLength] bytes
-        if (cipherLength != cspAES.doFinal(inBuffer, inOffset, inLength, outBuffer, offset)) {
+        enciphered = cspAES.doFinal(inBuffer, inOffset, inLength, outBuffer, offset);
+        if (cipherLength != enciphered) {
           // Insane condition, we're doing something wrong.
           ISOException.throwIt(ISO7816.SW_WRONG_DATA);
         }
@@ -654,17 +659,14 @@ final class ChannelPIVSM {
         // Calculate the largest block-size amount of input data that we can write and encipher it.
 
         // NOTES:
-        // - We will always get exactly the # of bytes we wrote in, because we are calling update()
+        // - update() MAY emit fewer bytes than we feed in; the held-back block flushes on a later call
         // - It is possible, however unlikely, that we will write all of the remaining bytes here.
         //   This does not mean we are finished, it just means another call to wrap() will write
         //   just the padding bytes in a doFinal, passing a zero-length data input.
         cipherLength = (short) ((bytesRemaining / LENGTH_BLOCK) * LENGTH_BLOCK);
 
-        // Call update, presuming that it will write exactly [cipherLength] bytes
-        if (cipherLength != cspAES.update(inBuffer, inOffset, cipherLength, outBuffer, offset)) {
-          // Insane condition, we're doing something wrong.
-          ISOException.throwIt(ISO7816.SW_WRONG_DATA);
-        }
+        // Call update; use the count it actually emitted, which may be fewer than [cipherLength]
+        enciphered = cspAES.update(inBuffer, inOffset, cipherLength, outBuffer, offset);
 
         // Do NOT update the state here, we remain in the OUTGOING_DATA state
         // Track the total data bytes we have wrapped so far
@@ -672,12 +674,12 @@ final class ChannelPIVSM {
       }
 
       // In all cases, update the CMAC with the ciphertext we just calculated 
-      cspCMAC.update(outBuffer, offset, cipherLength);
+      cspCMAC.update(outBuffer, offset, enciphered);
 
       // Update our tracking bytes
-      counters[COUNTER_REMAINING_BYTES_WRAPPED] -= cipherLength;
-      bytesRemaining -= cipherLength;
-      offset += cipherLength;
+      counters[COUNTER_REMAINING_BYTES_WRAPPED] -= enciphered;
+      bytesRemaining -= enciphered;
+      offset += enciphered;
     }
 
     //
