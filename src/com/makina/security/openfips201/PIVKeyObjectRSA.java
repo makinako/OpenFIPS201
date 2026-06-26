@@ -148,7 +148,7 @@ final class PIVKeyObjectRSA extends PIVKeyObjectPKI {
   void clear() {
     if (publicKey != null) {
       publicKey.clearKey();
-      privateKey = null;
+      publicKey = null;
     }
     if (privateKey != null) {
       privateKey.clearKey();
