@@ -7,9 +7,6 @@ PutDataRequest ::= CHOICE {
 	createVerifierRequest  [APPLICATION 5] PutDataCreateVerifierRequest,
 	createKeyRequest 	   [APPLICATION 6] PutDataCreateKeyRequest,
 	updateConfigRequest	   [APPLICATION 8] PutDataUpdateConfigRequest,
-	deleteObjectRequest    [APPLICATION 9] PutDataDeleteObjectRequest,
-	deletePinRequest       [APPLICATION 10] PutDataDeletePinRequest,
-	deleteKeyRequest       [APPLICATION 11] PutDataDeleteKeyRequest,
 
 	secureRequest        [APPLICATION 31] NULL
 }
@@ -21,10 +18,6 @@ PutDataCreateObjectRequest ::= SEQUENCE {
   modeContact   [12] AccessMode,
   modeContactless [13] AccessMode,
   adminKey    [17] OCTET STRING (SIZE(1)) OPTIONAL
-}
-
-PutDataDeleteObjectRequest ::= SEQUENCE {
-  id        [11] OCTET STRING (SIZE(1..3))
 }
 
 PutDataCreateVerifierRequest ::= SEQUENCE {
@@ -42,10 +35,6 @@ PutDataCreateVerifierRequest ::= SEQUENCE {
   restrictUpdate [22] BOOLEAN OPTIONAL
 }
 
-PutDataDeletePinRequest ::= SEQUENCE {
-  id        [11] OCTET STRING (SIZE(1))
-}
-
 PutDataCreateKeyRequest ::= SEQUENCE {
 	id				[11] OCTET STRING (SIZE(1)),
 
@@ -56,11 +45,6 @@ PutDataCreateKeyRequest ::= SEQUENCE {
 	keyMechanism	[14] KeyMechanism,
 	keyRole			[15] KeyRole,
 	keyAttribute	[16] OCTET STRING (SIZE(1))
-}
-
-PutDataDeleteKeyRequest ::= SEQUENCE {
-	id					[11] OCTET STRING (SIZE(1)),
-	keyMechanism	[14] KeyMechanism OPTIONAL
 }
 
 PutDataUpdateConfigRequest ::= SEQUENCE {
@@ -164,7 +148,7 @@ KeyMechanism ::= ENUMERATED {
 	rsa1024 (6),
 	rsa2048 (7),
 	rsa3072 (5),
-	rsa4096 (4),
+	rsa4096 (22),
 	aes128 (8),
 	aes192 (10),
 	aes256 (12),

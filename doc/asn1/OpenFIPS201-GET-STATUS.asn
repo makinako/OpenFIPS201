@@ -2,9 +2,10 @@ OpenFIPS201-GET-STATUS-Schema DEFINITIONS IMPLICIT TAGS ::=
 BEGIN
 
 AppletState ::= ENUMERATED {
-  selectable  (3),
-  secured     (7),
-  locked     (15)
+  installed   (3),
+  selectable  (7),
+  secured     (15),
+  locked      (128)
 }
 
 OperatorRole ::= ENUMERATED {
