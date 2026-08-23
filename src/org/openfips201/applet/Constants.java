@@ -266,11 +266,20 @@ final class Constants {
   // Tag for updating a configuration operation.
   static final byte TAG_OP_UPDATE_CONFIG = (byte) 0x68;
 
+   // Tag for deleting a data object (container) operation.
+   static final byte TAG_OP_DELETE_OBJECT = (byte) 0x69;
+ 
+   // Tag for deleting a verifier (PIN/PUK) operation.
+   static final byte TAG_OP_DELETE_PIN = (byte) 0x6A;
+ 
+   // Tag for deleting a key operation.
+   static final byte TAG_OP_DELETE_KEY = (byte) 0x6B;
+
   // Tag for securing the applet (non-constructed tag).
   static final byte TAG_OP_SECURE_APPLET = (byte) 0x5F;
 
   // Tag for bulk requests.
-  static final byte TAG_OP_BULK_REQUEST = (byte) 0x6A;
+  static final byte TAG_OP_BULK_REQUEST = (byte) 0x7E;
 
   ////////////////////////////////////////////////////////////////////////////////
   // Custom Error Constants
