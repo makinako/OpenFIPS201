@@ -14,7 +14,8 @@ PutDataRequest ::= CHOICE {
 	secureRequest        [APPLICATION 31] NULL
 }
 
-PutDataBulkRequest ::= [APPLICATION 10] SEQUENCE OF PutDataRequest
+-- Moved from [APPLICATION 10] to avoid coliding with PutDataRequest.deletePinRequest
+PutDataBulkRequest ::= [APPLICATION 30] SEQUENCE OF PutDataRequest
 
 PutDataCreateObjectRequest ::= SEQUENCE {
   id        [11] OCTET STRING (SIZE(1..3)),

@@ -28,6 +28,7 @@ import javacard.security.AESKey;
 import javacard.security.DESKey;
 import javacard.security.KeyBuilder;
 import javacard.security.SecretKey;
+import javacard.security.CryptoException;
 
 /** Provides functionality for symmetric PIV key objects */
 final class PIVKeySYM extends PIVKey {
@@ -118,6 +119,9 @@ final class PIVKeySYM extends PIVKey {
   }
 
   private void allocate() throws ISOException {
+    if (!Platform.Cryptography.supportsMechanism(getMechanism())) {
+      ISOException.throwIt(ISO7816.SW_FUNC_NOT_SUPPORTED);
+    }
 
     clear();
     byte keyType;
@@ -149,7 +153,11 @@ final class PIVKeySYM extends PIVKey {
       return; // Keep compiler happy
     }
 
-    key = (SecretKey) Platform.Cryptography.buildKey(keyType, keyLen);
+    try {
+      key = (SecretKey) Platform.Cryptography.buildKey(keyType, keyLen);
+    } catch (CryptoException ex) {
+      Platform.Cryptography.onCryptoException(getMechanism(), ex);
+    }
   }
 
   @Override
@@ -214,6 +222,11 @@ final class PIVKeySYM extends PIVKey {
       ISOException.throwIt(ISO7816.SW_DATA_INVALID);
     }
 
-    return Platform.Cryptography.encipher(key, inBuffer, inOffset, inLength, outBuffer, outOffset);
+    try {
+      return Platform.Cryptography.encipher(key, inBuffer, inOffset, inLength, outBuffer, outOffset);
+    } catch (CryptoException ex) {
+      Platform.Cryptography.onCryptoException(getMechanism(), ex);
+      return (short) 0; // Keep compiler happy
+    }
   }
 }

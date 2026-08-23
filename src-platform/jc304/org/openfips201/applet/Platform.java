@@ -40,6 +40,7 @@ import javacard.security.PrivateKey;
 import javacard.security.RandomData;
 import javacard.security.SecretKey;
 import javacard.security.Signature;
+import javacard.security.CryptoException;
 import javacardx.crypto.Cipher;
 
 /*
@@ -187,95 +188,19 @@ class Platform {
     private static MessageDigest cspSHA384;
     private static RandomData cspRandom;
 
+    // Basic support bitmap per mechanism ID
+    private static short mechanismSupport = (short) 0xffff;
+
+    // Keygen support bitmap per mechanism ID
+    private static short generateSupport = (short) 0xffff;
+
     private Cryptography() {
     }
 
-    private static void init() {
-
-      try {
-        if (cspAES == null) {
-          cspAES = Cipher.getInstance(Cipher.CIPHER_AES_ECB, false);
-        }
-      } catch (Exception ex) {
-        // Just fall-through if it isn't supported
-        cspAES = null;
-      }
-
-      try {
-        if (cspTDEA == null) {
-          cspTDEA = Cipher.getInstance(Cipher.CIPHER_DES_ECB, false);
-        }
-      } catch (Exception ex) {
-        // Just fall-through if it isn't supported
-        cspTDEA = null;
-      }
-
-      try {
-        if (cspRSA == null) {
-          cspRSA = Cipher.getInstance(Cipher.ALG_RSA_NOPAD, false);
-        }
-      } catch (Exception ex) {
-        // Just fall-through if it isn't supported
-        cspRSA = null;
-      }
-
-      try {
-        if (cspECDSA == null) {
-          cspECDSA = Signature.getInstance(Signature.SIG_CIPHER_ECDSA, false);
-        }
-      } catch (Exception ex) {
-        // Just fall-through if it isn't supported
-        cspECDSA = null;
-      }
-
-      try {
-        if (cspCMAC == null) {
-          cspCMAC = null;
-        }
-      } catch (Exception ex) {
-        // Just fall-through if it isn't supported
-        cspCMAC = null;
-      }
-
-      try {
-        if (cspECDH == null) {
-          cspECDH = KeyAgreement.getInstance(KeyAgreement.ALG_EC_SVDP_DH_PLAIN, false);
-        }
-      } catch (Exception ex) {
-        // Just fall-through if it isn't supported
-        cspECDH = null;
-      }
-
-      try {
-        if (cspSHA256 == null) {
-          cspSHA256 = MessageDigest.getInstance(MessageDigest.ALG_SHA_256, false);
-        }
-      } catch (Exception ex) {
-        // Just fall-through if it isn't supported
-        cspSHA256 = null;
-      }
-
-      try {
-        if (cspSHA384 == null) {
-          cspSHA384 = MessageDigest.getInstance(MessageDigest.ALG_SHA_384, false);
-        }
-      } catch (Exception ex) {
-        // Just fall-through if it isn't supported
-        cspSHA384 = null;
-      }
-
-      try {
-        if (cspRandom == null) {
-          cspRandom = RandomData.getInstance(RandomData.ALG_SECURE_RANDOM);
-        }
-      } catch (Exception ex) {
-        // Just fall-through if it isn't supported
-        cspRandom = null;
-      }
-
+    static void init() {
     }
 
-    private static void terminate() {
+    static void terminate() {
       cspAES = null;
       cspTDEA = null;
       cspRSA = null;
@@ -286,6 +211,66 @@ class Platform {
       requestObjectDeletion();
     }
 
+    private static short mechanismBit(byte mechanism) {
+      switch (mechanism) {
+      case Constants.ID_ALG_DEFAULT:
+      case Constants.ID_ALG_TDEA_3KEY:
+        return (short) 0x0001;
+      case Constants.ID_ALG_AES_128:
+        return (short) 0x0002;
+      case Constants.ID_ALG_AES_192:
+        return (short) 0x0004;
+      case Constants.ID_ALG_AES_256:
+        return (short) 0x0008;
+      case Constants.ID_ALG_RSA_1024:
+        return (short) 0x0010;
+      case Constants.ID_ALG_RSA_2048:
+        return (short) 0x0020;
+      case Constants.ID_ALG_RSA_3072:
+        return (short) 0x0040;
+      case Constants.ID_ALG_RSA_4096:
+        return (short) 0x0080;
+      case Constants.ID_ALG_ECC_P256:
+      case Constants.ID_ALG_ECC_CS2:
+        return (short) 0x0100;
+      case Constants.ID_ALG_ECC_P384:
+      case Constants.ID_ALG_ECC_CS7:
+        return (short) 0x0200;
+      default:
+        return (short) 0x0000;
+      }
+    }
+
+    private static void setUnsupported(byte mechanism) {
+      mechanismSupport &= (short) ~mechanismBit(mechanism);
+    }
+
+    private static void setGenerateUnsupported(byte mechanism) {
+      generateSupport &= (short) ~mechanismBit(mechanism);
+    }
+
+    static boolean supportsGenerate(byte mechanism) {
+      return supportsMechanism(mechanism) && (generateSupport & mechanismBit(mechanism)) != (short) 0;
+    }
+
+    // Ensures mechanism is flagged unsupported when encountering a NO_SUCH_ALGORITHM CryptoException.
+    static void onCryptoException(byte mechanism, CryptoException ex) {
+      if (ex.getReason() == CryptoException.NO_SUCH_ALGORITHM) {
+        setUnsupported(mechanism);
+        ISOException.throwIt(ISO7816.SW_FUNC_NOT_SUPPORTED);
+      }
+      throw ex;
+    }
+
+    // As per onCryptoException, but flagging keygen support.
+    static void onGenerateException(byte mechanism, CryptoException ex) {
+      if (ex.getReason() == CryptoException.NO_SUCH_ALGORITHM) {
+        setGenerateUnsupported(mechanism);
+        ISOException.throwIt(ISO7816.SW_FUNC_NOT_SUPPORTED);
+      }
+      throw ex;
+    }
+
     static boolean supportsMechanism(byte mechanism) {
 
       switch (mechanism) {
@@ -293,28 +278,20 @@ class Platform {
       // Supported Algorithms
       case Constants.ID_ALG_DEFAULT:
       case Constants.ID_ALG_TDEA_3KEY:
-        // FIPS: Disabled in Approved mode
-        return (!Config.FIPS_APPROVED_MODE && cspTDEA != null);
+      case Constants.ID_ALG_RSA_1024:
+        return !Config.FIPS_APPROVED_MODE && (mechanismSupport & mechanismBit(mechanism)) != (short) 0;
 
       case Constants.ID_ALG_AES_128:
       case Constants.ID_ALG_AES_192:
       case Constants.ID_ALG_AES_256:
-        return (cspAES != null);
-
-      case Constants.ID_ALG_RSA_1024:
-        // FIPS: Disabled in Approved mode
-        return (!Config.FIPS_APPROVED_MODE && cspRSA != null);
-
       case Constants.ID_ALG_RSA_2048:
       case Constants.ID_ALG_RSA_3072:
       case Constants.ID_ALG_RSA_4096:
-        return (cspRSA != null);
-
       case Constants.ID_ALG_ECC_P256:
       case Constants.ID_ALG_ECC_P384:
       case Constants.ID_ALG_ECC_CS2:
       case Constants.ID_ALG_ECC_CS7:
-        return (cspECDSA != null && cspECDH != null);
+        return (mechanismSupport & mechanismBit(mechanism)) != (short) 0;
 
       default:
         return false;
@@ -324,10 +301,16 @@ class Platform {
     static MessageDigest getMessageDigest(byte algorithm) {
       switch (algorithm) {
       case MessageDigest.ALG_SHA_256:
+        if (cspSHA256 == null) {
+          cspSHA256 = MessageDigest.getInstance(MessageDigest.ALG_SHA_256, false);
+        }
         cspSHA256.reset();
         return cspSHA256;
       case MessageDigest.ALG_SHA_384:
-        cspSHA256.reset();
+        if (cspSHA384 == null) {
+          cspSHA384 = MessageDigest.getInstance(MessageDigest.ALG_SHA_384, false);
+        }
+        cspSHA384.reset();    
         return cspSHA384;
       default:
         ISOException.throwIt(ISO7816.SW_FUNC_NOT_SUPPORTED);
@@ -385,7 +368,7 @@ class Platform {
           ISOException.throwIt(ISO7816.SW_FUNC_NOT_SUPPORTED);
         }
 
-        return null;
+        return (Key) key;
 
       default:
         return null;
@@ -431,12 +414,18 @@ class Platform {
       case KeyBuilder.TYPE_DES:
       case KeyBuilder.TYPE_DES_TRANSIENT_DESELECT:
       case KeyBuilder.TYPE_DES_TRANSIENT_RESET:
+        if (cspTDEA == null) {
+          cspTDEA = Cipher.getInstance(Cipher.CIPHER_DES_ECB, false);
+        }
         cipher = cspTDEA;
         break;
 
       case KeyBuilder.TYPE_AES:
       case KeyBuilder.TYPE_AES_TRANSIENT_DESELECT:
       case KeyBuilder.TYPE_AES_TRANSIENT_RESET:
+        if (cspAES == null) {
+          cspAES = Cipher.getInstance(Cipher.CIPHER_AES_ECB, false);
+        }
         cipher = cspAES;
         break;
 
@@ -513,6 +502,9 @@ class Platform {
         return (short) 0; // Keep compiler happy
       }
 
+      if (cspECDSA == null) {
+        cspECDSA = Signature.getInstance(Signature.SIG_CIPHER_ECDSA, false);
+      }
       cspECDSA.init(privateKey, Signature.MODE_SIGN);
       return cspECDSA.signPreComputedHash(inBuffer, inOffset, inLength, outBuffer, outOffset);
     }
@@ -550,6 +542,9 @@ class Platform {
       // with the only remaining option, which is to perform a private key decryption
       // operation, which makes us feel awkward and wrong.
       //
+      if (cspRSA == null) {
+        cspRSA = Cipher.getInstance(Cipher.ALG_RSA_NOPAD, false);
+      }
       cspRSA.init(privateKey, Cipher.MODE_DECRYPT);
       return cspRSA.doFinal(inBuffer, inOffset, inLength, outBuffer, outOffset);
     }
@@ -570,7 +565,9 @@ class Platform {
 
       // NOTE: The Java Card implementation of generateSecret() performs sufficient buffer state and
       // length checking that we don't double-up here.
-
+      if (cspECDH == null) {
+        cspECDH = KeyAgreement.getInstance(KeyAgreement.ALG_EC_SVDP_DH_PLAIN, false);
+      }
       cspECDH.init(privateKey);
       return cspECDH.generateSecret(inBuffer, inOffset, inLength, outBuffer, outOffset);
     }
@@ -589,6 +586,9 @@ class Platform {
           buffer[(short) (offset + i)] = (byte) (i % 256);
         }
       } else {
+        if (cspRandom == null) {
+          cspRandom = RandomData.getInstance(RandomData.ALG_SECURE_RANDOM);
+        }
         cspRandom.generateData(buffer, offset, length);
       }
 

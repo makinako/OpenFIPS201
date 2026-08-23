@@ -29,6 +29,7 @@ import javacard.security.ECPrivateKey;
 import javacard.security.ECPublicKey;
 import javacard.security.KeyBuilder;
 import javacard.security.KeyPair;
+import javacard.security.CryptoException;
 
 /** Provides functionality for ECC PIV key objects */
 class PIVKeyECC extends PIVKeyPKI {
@@ -42,7 +43,8 @@ class PIVKeyECC extends PIVKeyPKI {
   private static final byte ELEMENT_ECC_SECRET = (byte) 0x87;
 
   // PERSISTENT - The key store
-  private KeyPair keyPair;
+  private ECPublicKey publicKey;
+  private ECPrivateKey privateKey;
 
   PIVKeyECC(int id, byte modeContact, byte modeContactless, byte adminKey, byte mechanism, byte role, byte attributes)
       throws ISOException {
@@ -93,7 +95,7 @@ class PIVKeyECC extends PIVKeyPKI {
         return; // Keep static analyser happy
       }
 
-      ((ECPublicKey) keyPair.getPublic()).setW(buffer, offset, length);
+      publicKey.setW(buffer, offset, length);
       break;
 
     case ELEMENT_ECC_SECRET:
@@ -102,7 +104,7 @@ class PIVKeyECC extends PIVKeyPKI {
         return; // Keep static analyser happy
       }
 
-      ((ECPrivateKey) keyPair.getPrivate()).setS(buffer, offset, length);
+      privateKey.setS(buffer, offset, length);
       break;
 
     default:
@@ -116,38 +118,49 @@ class PIVKeyECC extends PIVKeyPKI {
    */
   private void allocate() {
 
-    if (keyPair != null) {
+    if (publicKey != null && privateKey != null) {
       return;
     }
 
-    ECPrivateKey privateKey;
-    ECPublicKey publicKey;
-    
-    switch (getMechanism()) {
-    case Constants.ID_ALG_ECC_P256:
-    case Constants.ID_ALG_ECC_CS2:
-      privateKey = (ECPrivateKey)Platform.Cryptography.buildKey(KeyBuilder.ALG_TYPE_EC_FP_PRIVATE, KeyBuilder.LENGTH_EC_FP_256);
-      publicKey = (ECPublicKey)Platform.Cryptography.buildKey(KeyBuilder.ALG_TYPE_EC_FP_PUBLIC, KeyBuilder.LENGTH_EC_FP_256);
-      break;
-
-    case Constants.ID_ALG_ECC_P384:
-    case Constants.ID_ALG_ECC_CS7:
-      privateKey = (ECPrivateKey)Platform.Cryptography.buildKey(KeyBuilder.ALG_TYPE_EC_FP_PRIVATE, KeyBuilder.LENGTH_EC_FP_384);
-      publicKey = (ECPublicKey)Platform.Cryptography.buildKey(KeyBuilder.ALG_TYPE_EC_FP_PUBLIC, KeyBuilder.LENGTH_EC_FP_384);
-      break;
-
-    default:
-      ISOException.throwIt(ISO7816.SW_DATA_INVALID);
-      return; // Keep compiler happy
+    if (!Platform.Cryptography.supportsMechanism(getMechanism())) {
+      ISOException.throwIt(ISO7816.SW_FUNC_NOT_SUPPORTED);
     }
     
-    keyPair = new KeyPair(publicKey, privateKey);
+    try {
+      switch (getMechanism()) {
+      case Constants.ID_ALG_ECC_P256:
+      case Constants.ID_ALG_ECC_CS2:
+        privateKey = (ECPrivateKey) Platform.Cryptography.buildKey(KeyBuilder.ALG_TYPE_EC_FP_PRIVATE,
+            KeyBuilder.LENGTH_EC_FP_256);
+        publicKey = (ECPublicKey) Platform.Cryptography.buildKey(KeyBuilder.ALG_TYPE_EC_FP_PUBLIC,
+            KeyBuilder.LENGTH_EC_FP_256);
+        break;
+
+      case Constants.ID_ALG_ECC_P384:
+      case Constants.ID_ALG_ECC_CS7:
+        privateKey = (ECPrivateKey) Platform.Cryptography.buildKey(KeyBuilder.ALG_TYPE_EC_FP_PRIVATE,
+            KeyBuilder.LENGTH_EC_FP_384);
+        publicKey = (ECPublicKey) Platform.Cryptography.buildKey(KeyBuilder.ALG_TYPE_EC_FP_PUBLIC,
+            KeyBuilder.LENGTH_EC_FP_384);
+        break;
+
+      default:
+        ISOException.throwIt(ISO7816.SW_DATA_INVALID);
+        return; // Keep compiler happy
+      }
+    } catch (CryptoException ex) {
+      Platform.Cryptography.onCryptoException(getMechanism(), ex);
+    }
   }
 
   @Override
   short sign(byte[] inBuffer, short inOffset, short inLength, byte[] outBuffer, short outOffset) {
-    return Platform.Cryptography.sign((ECPrivateKey) keyPair.getPrivate(), inBuffer, inOffset, inLength, outBuffer,
-        outOffset);
+    try {
+      return Platform.Cryptography.sign(privateKey, inBuffer, inOffset, inLength, outBuffer, outOffset);
+    } catch (CryptoException ex) {
+      Platform.Cryptography.onCryptoException(getMechanism(), ex);
+      return (short) 0; // Keep compiler happy
+    }
   }
 
   @Override
@@ -155,17 +168,32 @@ class PIVKeyECC extends PIVKeyPKI {
 
     // PRE-CONDITION 1 - The input buffer must equal the expected public key point value
     // NOTE: This is checked by the underlying crypto implementation now
-
-    return Platform.Cryptography.computeECDH((ECPrivateKey) keyPair.getPrivate(), inBuffer, inOffset, inLength,
-        outBuffer, outOffset);
+    try {
+      return Platform.Cryptography.computeECDH(privateKey, inBuffer, inOffset, inLength, outBuffer, outOffset);
+    } catch (CryptoException ex) {
+      Platform.Cryptography.onCryptoException(getMechanism(), ex);
+      return (short) 0; // Keep compiler happy
+    }
   }
 
   @Override
   short generate(byte[] outBuffer, short outOffset) throws CardRuntimeException {
+    if (!Platform.Cryptography.supportsGenerate(getMechanism())) {
+      ISOException.throwIt(ISO7816.SW_FUNC_NOT_SUPPORTED);
+    }
+
     short length = 0;
     clear();
     allocate();
-    keyPair.genKeyPair();
+    
+    try {
+      KeyPair keyPair = new KeyPair(publicKey, privateKey);
+      keyPair.genKeyPair();
+    } catch (CryptoException ex) {
+      clear();
+      Platform.Cryptography.onGenerateException(getMechanism(), ex);
+      return (short) 0; // Keep compiler happy
+    }
 
     TLVWriter writer = TLVWriter.getInstance();
 
@@ -174,7 +202,7 @@ class PIVKeyECC extends PIVKeyPKI {
     writer.writeTagByte(ELEMENT_ECC_POINT);
     writer.writeLength(getPublicPointLength());
     outOffset = writer.getOffset();
-    outOffset += ((ECPublicKey) keyPair.getPublic()).getW(outBuffer, outOffset);
+    outOffset += publicKey.getW(outBuffer, outOffset);
     writer.setOffset(outOffset);
     length = writer.finish();
 
@@ -236,17 +264,24 @@ class PIVKeyECC extends PIVKeyPKI {
    */
   @Override
   boolean isInitialised() {
-    return (keyPair != null && keyPair.getPrivate().isInitialized() && keyPair.getPublic().isInitialized());
+    return (privateKey != null && privateKey.isInitialized() && publicKey != null && publicKey.isInitialized());
   }
 
   @Override
   void clear() {
-    if (keyPair == null)
+    if (privateKey == null && publicKey == null) {
       return;
+    }
 
-    keyPair.getPrivate().clearKey();
-    keyPair.getPublic().clearKey();
-    keyPair = null;
+    if (privateKey != null) {
+      privateKey.clearKey();
+      privateKey = null;
+    }
+
+    if (publicKey != null) {
+      publicKey.clearKey();
+      publicKey = null;
+    }
 
     Platform.requestObjectDeletion();
   }
