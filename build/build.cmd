@@ -5,7 +5,7 @@ REM These values must be defined correctly
 REM *********************************************************************
 
 set ANT_HOME=..\tools\ant
-set JAVA_HOME=..\tools\sdk\jdk-11.0.2
+set JAVA_HOME=..\tools\sdk\jdk-11.0.30
 
 IF NOT EXIST %JAVA_HOME% (
 	ECHO The JDK path %JAVA_HOME% does not exist, aborting.
