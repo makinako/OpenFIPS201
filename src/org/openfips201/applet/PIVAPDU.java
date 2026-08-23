@@ -773,7 +773,12 @@ final class PIVAPDU {
         apdu.setOutgoingLength(outLength);
         apdu.sendBytes(Constants.ZERO_SHORT, outLength);
       } else {
-        // Same as plaintext
+        short remaining = (short)(context[CONTEXT_REMAINING] - inLength);
+        if (remaining > 0) {
+          status = ISO7816.SW_BYTES_REMAINING_00;
+          status |= (remaining > (short)0xff) ? (short)0xff : remaining;
+        }
+
         apdu.setOutgoingLength(outLength);
         if (outLength > 0) {
           apdu.sendBytesLong(data, context[CONTEXT_OFFSET], outLength);
