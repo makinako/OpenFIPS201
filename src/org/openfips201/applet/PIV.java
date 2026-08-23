@@ -264,7 +264,7 @@ final class PIV {
       // Special - Handle the 2-byte BITG case
       case Constants.ID_DATA_BITG:
         buffer[0] = Constants.ID_DATA_BITG_MSB;
-        buffer[1] = Constants.ID_DATA_BITG_MSB;
+        buffer[1] = Constants.ID_DATA_BITG_LSB;
         buffer[2] = 0;
         length = 3;
         break;
