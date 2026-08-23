@@ -264,7 +264,7 @@ final class PIV {
       // Special - Handle the 2-byte BITG case
       case Constants.ID_DATA_BITG:
         buffer[0] = Constants.ID_DATA_BITG_MSB;
-        buffer[1] = Constants.ID_DATA_BITG_MSB;
+        buffer[1] = Constants.ID_DATA_BITG_LSB;
         buffer[2] = 0;
         length = 3;
         break;
@@ -2198,6 +2198,105 @@ final class PIV {
   }
 
   /**
+   * Deletes a data object (container) identified by its 1-3 byte identifier.
+   *
+   * @throws ISOException SW_REFERENCE_NOT_FOUND if no container matches the identifier
+   */
+  private void processDeleteObjectRequest(TLVReader reader) {
+    // PRE-CONDITION 1 - The 'ID' tag MUST be present
+    if (!reader.match(Constants.TAG_OBJECT_ID)) {
+      ISOException.throwIt(Constants.SW_PUT_DATA_ID_MISSING);
+      return;
+    }
+ 
+    // PRE-CONDITION 2 - The 'ID' tag MUST have length between 1 and 3
+    short tagLength = reader.getLength();
+    if (tagLength < Constants.OBJECT_ID_MIN_LENGTH || tagLength > Constants.OBJECT_ID_MAX_LENGTH) {
+      ISOException.throwIt(Constants.SW_PUT_DATA_ID_INVALID_LENGTH);
+      return;
+    }
+ 
+    int id = PIVContainer.parseId(reader.getData(), reader.getDataOffset(), tagLength);
+    reader.moveNext();
+ 
+    // PRE-CONDITION 3 - The referenced object MUST exist
+    if (!dataStore.removeContainer(id)) {
+      ISOException.throwIt(Constants.SW_REFERENCE_NOT_FOUND);
+    }
+  }
+ 
+  /**
+   * Deletes a verifier (PIN/PUK) identified by its single-byte reference.
+   *
+   * @throws ISOException SW_REFERENCE_NOT_FOUND if no verifier matches the identifier
+   */
+  private void processDeletePinRequest(TLVReader reader) {
+    // PRE-CONDITION 1 - The 'ID' tag MUST be present
+    if (!reader.match(Constants.TAG_OBJECT_ID)) {
+      ISOException.throwIt(Constants.SW_PUT_DATA_ID_MISSING);
+      return;
+    }
+ 
+    // PRE-CONDITION 2 - The 'ID' tag MUST be length 1
+    if (reader.getLength() != (short) 1) {
+      ISOException.throwIt(Constants.SW_PUT_DATA_ID_INVALID_LENGTH);
+      return;
+    }
+ 
+    byte id = reader.toByte();
+    reader.moveNext();
+ 
+    // PRE-CONDITION 3 - The referenced verifier MUST exist
+    if (!dataStore.removeVerifier(id)) {
+      ISOException.throwIt(Constants.SW_REFERENCE_NOT_FOUND);
+    }
+  }
+ 
+  /**
+   * Deletes one or more keys identified by a single-byte reference. The 'KEY MECHANISM' tag is
+   * optional: when supplied, only the key matching both the id and mechanism is removed; when
+   * omitted, every key sharing the id is removed (a reference may hold multiple mechanisms).
+   *
+   * @throws ISOException SW_REFERENCE_NOT_FOUND if no matching key exists
+   */
+  private void processDeleteKeyRequest(TLVReader reader) {
+    // PRE-CONDITION 1 - The 'ID' tag MUST be present
+    if (!reader.match(Constants.TAG_OBJECT_ID)) {
+      ISOException.throwIt(Constants.SW_PUT_DATA_ID_MISSING);
+      return;
+    }
+ 
+    // PRE-CONDITION 2 - The 'ID' tag MUST be length 1
+    if (reader.getLength() != (short) 1) {
+      ISOException.throwIt(Constants.SW_PUT_DATA_ID_INVALID_LENGTH);
+      return;
+    }
+ 
+    byte id = reader.toByte();
+    reader.moveNext();
+ 
+    boolean found;
+    if (reader.match(Constants.TAG_KEY_MECHANISM)) {
+       // PRE-CONDITION 3 - If present, the 'KEY MECHANISM' tag MUST be length 1
+      if (reader.getLength() != (short) 1) {
+        ISOException.throwIt(Constants.SW_PUT_DATA_KEY_MECHANISM_INVALID);
+        return;
+      }
+ 
+      byte mechanism = reader.toByte();
+      reader.moveNext();
+      found = dataStore.removeKey(id, mechanism);
+    } else {
+      found = dataStore.removeKeysById(id);
+    }
+ 
+    // PRE-CONDITION 4 - At least one matching key MUST have existed
+    if (!found) {
+      ISOException.throwIt(Constants.SW_REFERENCE_NOT_FOUND);
+    }
+  }
+
+  /**
    * This is the administrative equivalent for the PUT DATA card and is intended for use by Card
    * Management Systems to generate the on-card file-system.
    *
@@ -2267,6 +2366,21 @@ final class PIV {
       case Constants.TAG_OP_CREATE_VERIFIER:
       case Constants.TAG_OP_CREATE_KEY:
         processCreateObjectRequest(operation, reader);
+        break;
+
+      // Delete a data object (container)
+      case Constants.TAG_OP_DELETE_OBJECT:
+        processDeleteObjectRequest(reader);
+        break;
+
+      // Delete a verifier
+      case Constants.TAG_OP_DELETE_PIN:
+        processDeletePinRequest(reader);
+        break;
+
+      // Delete a key
+      case Constants.TAG_OP_DELETE_KEY:
+        processDeleteKeyRequest(reader);
         break;
 
       // Update one or more configuration parameters

@@ -40,6 +40,7 @@ import javacard.security.PrivateKey;
 import javacard.security.RandomData;
 import javacard.security.SecretKey;
 import javacard.security.Signature;
+import javacard.security.CryptoException;
 import javacardx.crypto.Cipher;
 
 /*
@@ -192,42 +193,16 @@ class Platform {
     private static ECKey ecParamsP256 = null;
     private static ECKey ecParamsP384 = null;
 
+    // Basic support bitmap per mechanism ID
+    private static short mechanismSupport = (short) 0xffff;
+
+    // Keygen support bitmap per mechanism ID
+    private static short generateSupport = (short) 0xffff;
+
     private Cryptography() {
     }
 
     private static void init() {
-      if (cspECDH == null) {
-        // We know this primitive is supported by P71D600
-        cspECDH = KeyAgreement.getInstance(KeyAgreement.ALG_EC_SVDP_DH_PLAIN, false);
-      }
-
-      if (ecParamsP256 == null) {
-        ecParamsP256 = (ECKey) KeyBuilder.buildKey(KeyBuilder.ALG_TYPE_EC_FP_PARAMETERS,
-            JCSystem.MEMORY_TYPE_PERSISTENT, KeyBuilder.LENGTH_EC_FP_256, false);
-        ecParamsP256.setA(PIVKeyECC.ECParamsP256.A, (short) 0, (short) PIVKeyECC.ECParamsP256.A.length);
-        ecParamsP256.setB(PIVKeyECC.ECParamsP256.B, (short) 0, (short) PIVKeyECC.ECParamsP256.B.length);
-        ecParamsP256.setG(PIVKeyECC.ECParamsP256.G, (short) 0, (short) PIVKeyECC.ECParamsP256.G.length);
-        ecParamsP256.setR(PIVKeyECC.ECParamsP256.N, (short) 0, (short) PIVKeyECC.ECParamsP256.N.length);
-        ecParamsP256.setFieldFP(PIVKeyECC.ECParamsP256.P, (short) 0, (short) PIVKeyECC.ECParamsP256.P.length);
-        ecParamsP256.setK(PIVKeyECC.ECParamsP256.H);
-      }
-      if (ecParamsP384 == null) {
-        ecParamsP384 = (ECKey) KeyBuilder.buildKey(KeyBuilder.ALG_TYPE_EC_FP_PARAMETERS,
-            JCSystem.MEMORY_TYPE_PERSISTENT, KeyBuilder.LENGTH_EC_FP_384, false);
-        ecParamsP384.setA(PIVKeyECC.ECParamsP384.A, (short) 0, (short) PIVKeyECC.ECParamsP384.A.length);
-        ecParamsP384.setB(PIVKeyECC.ECParamsP384.B, (short) 0, (short) PIVKeyECC.ECParamsP384.B.length);
-        ecParamsP384.setG(PIVKeyECC.ECParamsP384.G, (short) 0, (short) PIVKeyECC.ECParamsP384.G.length);
-        ecParamsP384.setR(PIVKeyECC.ECParamsP384.N, (short) 0, (short) PIVKeyECC.ECParamsP384.N.length);
-        ecParamsP384.setFieldFP(PIVKeyECC.ECParamsP384.P, (short) 0, (short) PIVKeyECC.ECParamsP384.P.length);
-        ecParamsP384.setK(PIVKeyECC.ECParamsP384.H);
-      }
-
-      if (cspSHA256 == null) {
-        cspSHA256 = MessageDigest.getInstance(MessageDigest.ALG_SHA_256, false);
-      }
-      if (cspSHA384 == null) {
-        cspSHA384 = MessageDigest.getInstance(MessageDigest.ALG_SHA_384, false);
-      }
     }
 
     private static void terminate() {
@@ -239,6 +214,96 @@ class Platform {
       requestObjectDeletion();
     }
 
+    private static ECKey getEcParamsP256() {
+      if (ecParamsP256 == null) {
+        ecParamsP256 = (ECKey) KeyBuilder.buildKey(KeyBuilder.ALG_TYPE_EC_FP_PARAMETERS,
+            JCSystem.MEMORY_TYPE_PERSISTENT, KeyBuilder.LENGTH_EC_FP_256, false);
+        ecParamsP256.setA(PIVKeyECC.ECParamsP256.A, (short) 0, (short) PIVKeyECC.ECParamsP256.A.length);
+        ecParamsP256.setB(PIVKeyECC.ECParamsP256.B, (short) 0, (short) PIVKeyECC.ECParamsP256.B.length);
+        ecParamsP256.setG(PIVKeyECC.ECParamsP256.G, (short) 0, (short) PIVKeyECC.ECParamsP256.G.length);
+        ecParamsP256.setR(PIVKeyECC.ECParamsP256.N, (short) 0, (short) PIVKeyECC.ECParamsP256.N.length);
+        ecParamsP256.setFieldFP(PIVKeyECC.ECParamsP256.P, (short) 0, (short) PIVKeyECC.ECParamsP256.P.length);
+        ecParamsP256.setK(PIVKeyECC.ECParamsP256.H);
+      }
+      return ecParamsP256;
+    }
+
+    private static ECKey getEcParamsP384() {
+      if (ecParamsP384 == null) {
+        ecParamsP384 = (ECKey) KeyBuilder.buildKey(KeyBuilder.ALG_TYPE_EC_FP_PARAMETERS,
+            JCSystem.MEMORY_TYPE_PERSISTENT, KeyBuilder.LENGTH_EC_FP_384, false);
+        ecParamsP384.setA(PIVKeyECC.ECParamsP384.A, (short) 0, (short) PIVKeyECC.ECParamsP384.A.length);
+        ecParamsP384.setB(PIVKeyECC.ECParamsP384.B, (short) 0, (short) PIVKeyECC.ECParamsP384.B.length);
+        ecParamsP384.setG(PIVKeyECC.ECParamsP384.G, (short) 0, (short) PIVKeyECC.ECParamsP384.G.length);
+        ecParamsP384.setR(PIVKeyECC.ECParamsP384.N, (short) 0, (short) PIVKeyECC.ECParamsP384.N.length);
+        ecParamsP384.setFieldFP(PIVKeyECC.ECParamsP384.P, (short) 0, (short) PIVKeyECC.ECParamsP384.P.length);
+        ecParamsP384.setK(PIVKeyECC.ECParamsP384.H);
+      }
+      return ecParamsP384;
+    }
+
+    // Returns the indicator bit for a mechanism (zero if untracked). The PIV-SM cipher suites share
+    // the bit of the underlying curve.
+    private static short mechanismBit(byte mechanism) {
+      switch (mechanism) {
+      case Constants.ID_ALG_DEFAULT:
+      case Constants.ID_ALG_TDEA_3KEY:
+        return (short) 0x0001;
+      case Constants.ID_ALG_AES_128:
+        return (short) 0x0002;
+      case Constants.ID_ALG_AES_192:
+        return (short) 0x0004;
+      case Constants.ID_ALG_AES_256:
+        return (short) 0x0008;
+      case Constants.ID_ALG_RSA_1024:
+        return (short) 0x0010;
+      case Constants.ID_ALG_RSA_2048:
+        return (short) 0x0020;
+      case Constants.ID_ALG_RSA_3072:
+        return (short) 0x0040;
+      case Constants.ID_ALG_RSA_4096:
+        return (short) 0x0080;
+      case Constants.ID_ALG_ECC_P256:
+      case Constants.ID_ALG_ECC_CS2:
+        return (short) 0x0100;
+      case Constants.ID_ALG_ECC_P384:
+      case Constants.ID_ALG_ECC_CS7:
+        return (short) 0x0200;
+      default:
+        return (short) 0x0000;
+      }
+    }
+
+    private static void setUnsupported(byte mechanism) {
+      mechanismSupport &= (short) ~mechanismBit(mechanism);
+    }
+
+    private static void setGenerateUnsupported(byte mechanism) {
+      generateSupport &= (short) ~mechanismBit(mechanism);
+    }
+
+    static boolean supportsGenerate(byte mechanism) {
+      return supportsMechanism(mechanism) && (generateSupport & mechanismBit(mechanism)) != (short) 0;
+    }
+
+    // Ensures mechanism is flagged unsupported when encountering a NO_SUCH_ALGORITHM CryptoException.
+    static void onCryptoException(byte mechanism, CryptoException ex) {
+      if (ex.getReason() == CryptoException.NO_SUCH_ALGORITHM) {
+        setUnsupported(mechanism);
+        ISOException.throwIt(ISO7816.SW_FUNC_NOT_SUPPORTED);
+      }
+      throw ex;
+    }
+
+    // As per onCryptoException, but flagging keygen support.
+    static void onGenerateException(byte mechanism, CryptoException ex) {
+      if (ex.getReason() == CryptoException.NO_SUCH_ALGORITHM) {
+        setGenerateUnsupported(mechanism);
+        ISOException.throwIt(ISO7816.SW_FUNC_NOT_SUPPORTED);
+      }
+      throw ex;
+    }
+
     static boolean supportsMechanism(byte mechanism) {
 
       switch (mechanism) {
@@ -247,7 +312,7 @@ class Platform {
       case Constants.ID_ALG_DEFAULT:
       case Constants.ID_ALG_TDEA_3KEY:
       case Constants.ID_ALG_RSA_1024:
-        return !Config.FIPS_APPROVED_MODE;
+        return !Config.FIPS_APPROVED_MODE && (mechanismSupport & mechanismBit(mechanism)) != (short) 0;
       
       // Supported Algorithms
       case Constants.ID_ALG_AES_128:
@@ -260,7 +325,7 @@ class Platform {
       case Constants.ID_ALG_ECC_P384:
       case Constants.ID_ALG_ECC_CS2:
       case Constants.ID_ALG_ECC_CS7:
-        return true;
+        return (mechanismSupport & mechanismBit(mechanism)) != (short) 0;
 
       default:
         return false;
@@ -270,10 +335,16 @@ class Platform {
     static MessageDigest getMessageDigest(byte algorithm) {
       switch (algorithm) {
       case MessageDigest.ALG_SHA_256:
+        if (cspSHA256 == null) {
+          cspSHA256 = MessageDigest.getInstance(MessageDigest.ALG_SHA_256, false);
+        }
         cspSHA256.reset();
         return cspSHA256;
       case MessageDigest.ALG_SHA_384:
-        cspSHA256.reset();
+        if (cspSHA384 == null) {
+          cspSHA384 = MessageDigest.getInstance(MessageDigest.ALG_SHA_384, false);
+        }
+        cspSHA384.reset();
         return cspSHA384;
       default:
         ISOException.throwIt(ISO7816.SW_FUNC_NOT_SUPPORTED);
@@ -329,10 +400,10 @@ class Platform {
       case KeyBuilder.TYPE_EC_FP_PRIVATE:
       case KeyBuilder.TYPE_EC_FP_PUBLIC:
         if (length == KeyBuilder.LENGTH_EC_FP_256) {
-          return KeyBuilder.buildKeyWithSharedDomain(algorithm, JCSystem.MEMORY_TYPE_PERSISTENT, (Key) ecParamsP256,
+          return KeyBuilder.buildKeyWithSharedDomain(algorithm, JCSystem.MEMORY_TYPE_PERSISTENT, (Key) getEcParamsP256(),
               false);
         } else if (length == KeyBuilder.LENGTH_EC_FP_384) {
-          return KeyBuilder.buildKeyWithSharedDomain(algorithm, JCSystem.MEMORY_TYPE_PERSISTENT, (Key) ecParamsP384,
+          return KeyBuilder.buildKeyWithSharedDomain(algorithm, JCSystem.MEMORY_TYPE_PERSISTENT, (Key) getEcParamsP384(),
               false);
         } else {
           ISOException.throwIt(ISO7816.SW_FUNC_NOT_SUPPORTED);
@@ -544,7 +615,9 @@ class Platform {
       
       // NOTE: The Java Card implementation of generateSecret() performs sufficient buffer state and
       // length checking that we don't double-up here.
-      
+      if (cspECDH == null) {
+        cspECDH = KeyAgreement.getInstance(KeyAgreement.ALG_EC_SVDP_DH_PLAIN, false);
+      }
       cspECDH.init(privateKey);
       return cspECDH.generateSecret(inBuffer, inOffset, inLength, outBuffer, outOffset);
     }

@@ -65,6 +65,33 @@ final class PIVDataStore {
     }
   }
 
+  /**
+   * Unlinks and erases the container matching {@code id}. Unlinking is performed before erasure so
+   * that a tear can never leave a cleared object reachable from the store.
+   *
+   * @return true if a container was found and removed
+   */
+  boolean removeContainer(int id) {
+    PIVObject prev = null;
+    PIVObject current = firstContainer;
+    while (current != null) {
+      if (current.id == id) {
+        if (prev == null) {
+          firstContainer = (PIVContainer) current.nextObject;
+        } else {
+          prev.nextObject = current.nextObject;
+        }
+        current.clear();
+        current.nextObject = null;
+        Platform.requestObjectDeletion();
+        return true;
+      }
+      prev = current;
+      current = current.nextObject;
+    }
+    return false;
+  }
+
   PIVKey getKey(byte id) {
     if (firstKey == null) { 
       return null;
@@ -102,7 +129,68 @@ final class PIVDataStore {
     } else {
       firstKey.last().nextObject = key;
     }
-  }  
+  }
+
+  /**
+   * Unlinks and erases the single key matching both {@code id} and {@code mechanism}.
+   *
+   * @return true if a key was found and removed
+   */
+  boolean removeKey(byte id, byte mechanism) {
+    int target = id & 0xFF;
+    PIVObject prev = null;
+    PIVObject current = firstKey;
+    while (current != null) {
+      if (current.id == target && ((PIVKey) current).getMechanism() == mechanism) {
+        if (prev == null) {
+          firstKey = (PIVKey) current.nextObject;
+        } else {
+          prev.nextObject = current.nextObject;
+        }
+        current.clear();
+        current.nextObject = null;
+        Platform.requestObjectDeletion();
+        return true;
+      }
+      prev = current;
+      current = current.nextObject;
+    }
+    return false;
+  }
+
+  /**
+   * Unlinks and erases every key matching {@code id}, regardless of mechanism. This caters for the
+   * case where a single reference holds multiple keys (e.g. a PKI and a symmetric key at 9E).
+   *
+   * @return true if at least one key was found and removed
+   */
+  boolean removeKeysById(byte id) {
+    int target = id & 0xFF;
+    boolean removed = false;
+    PIVObject prev = null;
+    PIVObject current = firstKey;
+    while (current != null) {
+      if (current.id == target) {
+        PIVObject next = current.nextObject;
+        if (prev == null) {
+          firstKey = (PIVKey) next;
+        } else {
+          prev.nextObject = next;
+        }
+        current.clear();
+        current.nextObject = null;
+        removed = true;
+        current = next; // prev is unchanged, the removed node is gone
+      } else {
+        prev = current;
+        current = current.nextObject;
+      }
+    }
+    if (removed) {
+      Platform.requestObjectDeletion();
+    }
+    return removed;
+  }
 
   PIVVerifier getVerifier(byte id) {
     if (firstVerifier == null) { 
@@ -174,7 +262,35 @@ final class PIVDataStore {
       firstVerifier = verifier;
     } else {
       firstVerifier.last().nextObject = verifier;
-    }    
+    }
+  }
+
+  /**
+   * Unlinks and erases the verifier matching {@code id}. Note that clear() only resets the OwnerPIN
+   * state (the underlying object cannot be zeroised), so the node itself is released for reclamation.
+   *
+   * @return true if a verifier was found and removed
+   */
+  boolean removeVerifier(byte id) {
+    int target = id & 0xFF;
+    PIVObject prev = null;
+    PIVObject current = firstVerifier;
+    while (current != null) {
+      if (current.id == target) {
+        if (prev == null) {
+          firstVerifier = (PIVVerifier) current.nextObject;
+        } else {
+          prev.nextObject = current.nextObject;
+        }
+        current.clear();
+        current.nextObject = null;
+        Platform.requestObjectDeletion();
+        return true;
+      }
+      prev = current;
+      current = current.nextObject;
+    }
+    return false;
   }
 }
 

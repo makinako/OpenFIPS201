@@ -27,9 +27,11 @@ import javacard.framework.ISO7816;
 import javacard.framework.ISOException;
 import javacard.security.KeyBuilder;
 import javacard.security.KeyPair;
+import javacard.security.PrivateKey;
 import javacard.security.RSAPrivateCrtKey;
 import javacard.security.RSAPrivateKey;
 import javacard.security.RSAPublicKey;
+import javacard.security.CryptoException;
 
 final class PIVKeyRSA extends PIVKeyPKI {
 
@@ -64,7 +66,8 @@ final class PIVKeyRSA extends PIVKeyPKI {
   private static final short CONST_LENGTH_EXPONENT = (short) 3; // RSA - The public exponent length
 
   // PERSISTENT - The key store
-  private KeyPair keyPair;
+  private RSAPublicKey publicKey;
+  private PrivateKey privateKey;
 
   PIVKeyRSA(int id, byte modeContact, byte modeContactless, byte adminKey, byte mechanism,
       byte role, byte attributes) {
@@ -108,11 +111,9 @@ final class PIVKeyRSA extends PIVKeyPKI {
       allocate();
     }
 
-    RSAPublicKey publicKey = (RSAPublicKey) keyPair.getPublic();
-
-    if (keyPair.getPrivate() instanceof RSAPrivateCrtKey) {
+    if (privateKey instanceof RSAPrivateCrtKey) {
       // RSA-CRT
-      RSAPrivateCrtKey privateKey = (RSAPrivateCrtKey) keyPair.getPrivate();
+      RSAPrivateCrtKey crtKey = (RSAPrivateCrtKey) privateKey;
 
       switch (element) {
 
@@ -137,7 +138,7 @@ final class PIVKeyRSA extends PIVKeyPKI {
         if (length != (short) (getKeyLengthBytes() / 2)) {
           ISOException.throwIt(ISO7816.SW_WRONG_LENGTH);
         }
-        privateKey.setP(buffer, offset, length);
+        crtKey.setP(buffer, offset, length);
         break;
 
       // RSA Prime Exponent Q
@@ -145,7 +146,7 @@ final class PIVKeyRSA extends PIVKeyPKI {
         if (length != (short) (getKeyLengthBytes() / 2)) {
           ISOException.throwIt(ISO7816.SW_WRONG_LENGTH);
         }
-        privateKey.setQ(buffer, offset, length);
+        crtKey.setQ(buffer, offset, length);
         break;
 
       // RSA D mod P - 1
@@ -153,7 +154,7 @@ final class PIVKeyRSA extends PIVKeyPKI {
         if (length != (short) (getKeyLengthBytes() / 2)) {
           ISOException.throwIt(ISO7816.SW_WRONG_LENGTH);
         }
-        privateKey.setDP1(buffer, offset, length);
+        crtKey.setDP1(buffer, offset, length);
         break;
 
       // RSA D mod Q - 1
@@ -161,7 +162,7 @@ final class PIVKeyRSA extends PIVKeyPKI {
         if (length != (short) (getKeyLengthBytes() / 2)) {
           ISOException.throwIt(ISO7816.SW_WRONG_LENGTH);
         }
-        privateKey.setDQ1(buffer, offset, length);
+        crtKey.setDQ1(buffer, offset, length);
         break;
 
       // RSA Inverse Q
@@ -169,7 +170,7 @@ final class PIVKeyRSA extends PIVKeyPKI {
         if (length != (short) (getKeyLengthBytes() / 2)) {
           ISOException.throwIt(ISO7816.SW_WRONG_LENGTH);
         }
-        privateKey.setPQ(buffer, offset, length);
+        crtKey.setPQ(buffer, offset, length);
         break;
 
       default:
@@ -179,7 +180,7 @@ final class PIVKeyRSA extends PIVKeyPKI {
       }
     } else {
       // RSA
-      RSAPrivateKey privateKey = (RSAPrivateKey) keyPair.getPrivate();
+      RSAPrivateKey rsaKey = (RSAPrivateKey) privateKey;
 
       switch (element) {
 
@@ -190,7 +191,7 @@ final class PIVKeyRSA extends PIVKeyPKI {
         }
         // NOTE: We don't worry about transactions here since if this is torn between
         // writes, the caller can send it again
-        privateKey.setModulus(buffer, offset, length);
+        rsaKey.setModulus(buffer, offset, length);
         publicKey.setModulus(buffer, offset, length);
         break;
 
@@ -207,7 +208,7 @@ final class PIVKeyRSA extends PIVKeyPKI {
         if (length != getKeyLengthBytes()) {
           ISOException.throwIt(ISO7816.SW_WRONG_LENGTH);
         }
-        privateKey.setExponent(buffer, offset, length);
+        rsaKey.setExponent(buffer, offset, length);
         break;
 
       default:
@@ -223,16 +224,23 @@ final class PIVKeyRSA extends PIVKeyPKI {
    * Allocates memory for the private and public key parts
    */
   private void allocate() {
-    if (keyPair == null) {
-      // Generate the key based on our configuration
-      RSAPublicKey publicKey = (RSAPublicKey) Platform.Cryptography.buildKey(KeyBuilder.TYPE_RSA_PUBLIC, getKeyLengthBits());
+    if (publicKey != null && privateKey != null) {
+      return;
+    }
+
+    if (!Platform.Cryptography.supportsMechanism(getMechanism())) {
+      ISOException.throwIt(ISO7816.SW_FUNC_NOT_SUPPORTED);
+    }
+
+    try {
+      publicKey = (RSAPublicKey) Platform.Cryptography.buildKey(KeyBuilder.TYPE_RSA_PUBLIC, getKeyLengthBits());
       if (hasAttribute(ATTR_RSA_CRT)) {
-        RSAPrivateCrtKey privateKey = (RSAPrivateCrtKey) Platform.Cryptography.buildKey(KeyBuilder.TYPE_RSA_CRT_PRIVATE, getKeyLengthBits());
-        keyPair = new KeyPair(publicKey, privateKey);
+        privateKey = (PrivateKey) Platform.Cryptography.buildKey(KeyBuilder.TYPE_RSA_CRT_PRIVATE, getKeyLengthBits());
       } else {
-        RSAPrivateKey privateKey = (RSAPrivateKey) Platform.Cryptography.buildKey(KeyBuilder.TYPE_RSA_PRIVATE, getKeyLengthBits());
-        keyPair = new KeyPair(publicKey, privateKey);
+        privateKey = (PrivateKey) Platform.Cryptography.buildKey(KeyBuilder.TYPE_RSA_PRIVATE, getKeyLengthBits());
       }
+    } catch (CryptoException ex) {
+      Platform.Cryptography.onCryptoException(getMechanism(), ex);
     }
   }
 
@@ -241,19 +249,24 @@ final class PIVKeyRSA extends PIVKeyPKI {
    */
   @Override
   boolean isInitialised() {
-    return (keyPair != null && keyPair.getPrivate().isInitialized()
-        && keyPair.getPublic().isInitialized());
+    return (privateKey != null && privateKey.isInitialized() && publicKey != null && publicKey.isInitialized());
   }
 
   @Override
   void clear() {
-    if (keyPair == null) {
+    if (privateKey == null && publicKey == null) {
       return;
     }
 
-    keyPair.getPrivate().clearKey();
-    keyPair.getPublic().clearKey();
-    keyPair = null;
+    if (privateKey != null) {
+      privateKey.clearKey();
+      privateKey = null;
+    }
+
+    if (publicKey != null) {
+      publicKey.clearKey();
+      publicKey = null;
+    }
 
     Platform.requestObjectDeletion();
   }
@@ -266,8 +279,12 @@ final class PIVKeyRSA extends PIVKeyPKI {
     }
 
     // EXECUTION
-    return Platform.Cryptography.computeRSADP1(keyPair.getPrivate(), inBuffer, inOffset, inLength,
-        outBuffer, outOffset);
+    try {
+      return Platform.Cryptography.computeRSADP1(privateKey, inBuffer, inOffset, inLength, outBuffer, outOffset);
+    } catch (CryptoException ex) {
+      Platform.Cryptography.onCryptoException(getMechanism(), ex);
+      return (short) 0; // Keep compiler happy
+    }
   }
 
   @Override
@@ -281,11 +298,22 @@ final class PIVKeyRSA extends PIVKeyPKI {
   @Override
   short generate(byte[] outBuffer, short outOffset) throws CardRuntimeException {
 
+    if (!Platform.Cryptography.supportsGenerate(getMechanism())) {
+      ISOException.throwIt(ISO7816.SW_FUNC_NOT_SUPPORTED);
+    }
+
     try {
       // Clear and allocate the key objects
       clear();
       allocate();
-      keyPair.genKeyPair();
+      
+      try {
+        KeyPair keyPair = new KeyPair(publicKey, privateKey);
+        keyPair.genKeyPair();
+      } catch (CryptoException ex) {
+        Platform.Cryptography.onGenerateException(getMechanism(), ex);
+        return (short) 0; // Keep compiler happy
+      }
 
       TLVWriter writer = TLVWriter.getInstance();
 
@@ -300,8 +328,6 @@ final class PIVKeyRSA extends PIVKeyPKI {
         // We require a 3-byte length (255-32767)
         writer.init(outBuffer, outOffset, TLV.LENGTH_3BYTE_MAX, CONST_TAG_RESPONSE);
       }
-
-      RSAPublicKey publicKey = (RSAPublicKey) keyPair.getPublic();
 
       // Modulus
       writer.writeTagByte(CONST_TAG_MODULUS);
@@ -325,6 +351,10 @@ final class PIVKeyRSA extends PIVKeyPKI {
 
       // Done, return the response length
       return writer.finish();
+    } catch (ISOException ex) {
+      // Preserve an already-mapped status (e.g. unsupported); clear and rethrow before the re-wrap below.
+      clear();
+      throw ex;
     } catch (CardRuntimeException ex) {
       // At this point we are in a nondeterministic state so we will
       // clear both the public and private keys if they exist
